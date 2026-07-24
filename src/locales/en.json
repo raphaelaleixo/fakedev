@@ -1,0 +1,13 @@
+{
+  "home": {
+    "title": "A Fake Dev Goes to Amsterdam",
+    "subtitle": "A web-development game for (almost) everyone.",
+    "newGame": "New Game",
+    "resumeGame": "Resume Game",
+    "howToPlay": "How to Play"
+  },
+  "howToPlay": {
+    "title": "How to Play",
+    "back": "Back"
+  }
+}

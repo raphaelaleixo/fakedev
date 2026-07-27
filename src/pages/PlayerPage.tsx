@@ -5,6 +5,8 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import { useGame } from "../contexts/GameContext";
 import ControllerShell from "../components/controller/ControllerShell";
 import Composer from "../components/controller/Composer";
+import { StealPicker, VotePicker } from "../components/controller/VoteControls";
+import type { SeatInfo } from "../components/canvas/LiveInspector";
 import { getSecret } from "../game/content/deck";
 import { seatColorFor } from "../game/match";
 import { activePlayerId } from "../game/round";
@@ -15,11 +17,24 @@ import { color } from "../theme/tokens";
 export default function PlayerPage() {
   const { id, playerId } = useParams();
   const { t } = useTranslation();
-  const { roomState, matchState, loading, notFound, loadRoom, commitEdit } = useGame();
+  const { roomState, matchState, loading, notFound, loadRoom, commitEdit, vote, steal } =
+    useGame();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const seat = Number(playerId);
+
+  async function run(action: () => Promise<void>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "generic");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (id) loadRoom(id);
@@ -44,17 +59,17 @@ export default function PlayerPage() {
   const secret = getSecret(round.secretId);
   const active = activePlayerId(round);
 
+  const seats: SeatInfo[] = roomState.players
+    .filter((p) => p.status !== "empty")
+    .map((p) => ({
+      id: p.id,
+      name: p.name ?? `#${p.id}`,
+      color: p.data?.color ?? seatColorFor(p.id),
+    }));
+
   async function handleCommit(edit: Edit) {
     if (!id) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await commitEdit(id, edit);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "generic");
-    } finally {
-      setBusy(false);
-    }
+    await run(() => commitEdit(id, edit));
   }
 
   return (
@@ -63,10 +78,28 @@ export default function PlayerPage() {
       secretLabel={secret ? t(secret.labelKey) : undefined}
       seatName={slot.name ?? `#${seat}`}
       seatColor={slot.data?.color ?? seatColorFor(seat)}
+      roomState={roomState}
     >
-      {round.phase !== "turns" ? (
-        // TODO: countdown, vote, steal and result controls.
-        <Waiting>{t("controller.phaseWait", { phase: round.phase })}</Waiting>
+      {round.phase === "voting" ? (
+        <VotePicker
+          seats={seats}
+          voterId={seat}
+          locked={round.votes?.[seat]}
+          busy={busy}
+          onVote={(suspectId) => run(() => vote(id!, seat, suspectId))}
+        />
+      ) : round.phase === "steal" ? (
+        isChameleon && round.stealSlate ? (
+          <StealPicker
+            slate={round.stealSlate}
+            busy={busy}
+            onSteal={(guess) => run(() => steal(id!, guess))}
+          />
+        ) : (
+          <Waiting>{t("controller.stealWait")}</Waiting>
+        )
+      ) : round.phase !== "turns" ? (
+        <Waiting>{t("controller.lookUp")}</Waiting>
       ) : active === seat ? (
         <Box>
           <Typography variant="h4" sx={{ mb: 2 }}>
@@ -74,7 +107,7 @@ export default function PlayerPage() {
           </Typography>
           <Composer playerId={seat} turnIndex={round.turnIndex} onCommit={handleCommit} busy={busy} />
           {error && (
-            <Typography sx={{ mt: 2, color: color.alarm }}>
+            <Typography sx={{ mt: 2, color: color.flame }}>
               {t("controller.commitFailed")}
             </Typography>
           )}
@@ -104,6 +137,7 @@ function Bare({ children }: { children: React.ReactNode }) {
     <Box
       sx={{
         minHeight: "100dvh",
+        backgroundColor: color.ink,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

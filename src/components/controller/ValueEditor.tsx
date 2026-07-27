@@ -82,7 +82,7 @@ function Choices({
       exclusive
       value={value}
       onChange={(_, next) => next && onChange(next)}
-      sx={{ flexWrap: "wrap", gap: 0.5, "& .MuiToggleButton-root": { border: `1px solid ${color.rule}` } }}
+      sx={{ flexWrap: "wrap", gap: 0.5 }}
     >
       {options.map((option) => (
         <ToggleButton key={option.value} value={option.value} sx={{ fontFamily: font.mono }}>
@@ -119,7 +119,7 @@ function ColorEditor({
               cursor: "pointer",
               backgroundColor: swatch,
               border:
-                value === swatch ? `3px solid ${color.value}` : `1px solid ${color.rule}`,
+                value === swatch ? `3px solid ${color.flame}` : `1px solid ${color.inkRule}`,
             }}
           />
         ))}
@@ -207,7 +207,7 @@ function FreeText({
         slotProps={{ htmlInput: { maxLength: cap, spellCheck: false, autoCapitalize: "off" } }}
       />
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
-        <Typography variant="caption" sx={{ color: invalid ? color.alarm : color.muted }}>
+        <Typography variant="caption" sx={{ color: invalid ? color.flame : color.muted }}>
           {invalid ? t("composer.invalidValue") : ""}
         </Typography>
         {cap ? (

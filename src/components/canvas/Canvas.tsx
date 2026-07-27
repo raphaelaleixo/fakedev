@@ -24,7 +24,10 @@ export default function Canvas({ round, seats }: { round: Round; seats: SeatInfo
   return (
     <Box
       sx={{
-        height: "100vh",
+        flex: 1,
+        minHeight: 0,
+        backgroundColor: color.ink,
+        color: color.paper,
         display: "grid",
         gridTemplateRows: "auto 1fr",
         gap: 2,
@@ -44,7 +47,7 @@ export default function Canvas({ round, seats }: { round: Round; seats: SeatInfo
           <Typography variant="caption" sx={{ color: color.muted, display: "block" }}>
             {t("canvas.categoryLabel")}
           </Typography>
-          <Typography variant="h2" sx={{ fontSize: "clamp(1.5rem, 3.2vw, 2.75rem)" }}>
+          <Typography variant="h2" sx={{ fontSize: "clamp(1.5rem, 3.2vw, 2.75rem)", color: color.flame }}>
             {t(`deck.category.${round.categoryId}`)}
           </Typography>
         </Box>
@@ -54,7 +57,7 @@ export default function Canvas({ round, seats }: { round: Round; seats: SeatInfo
             sx={{
               fontFamily: font.mono,
               fontSize: "1rem",
-              color: color.ink,
+              color: color.paper,
               mb: 0.5,
             }}
           >

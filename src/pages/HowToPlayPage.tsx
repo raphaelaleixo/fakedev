@@ -1,11 +1,15 @@
 import { Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Container, Typography } from "@mui/material";
+import AppHeader from "../components/AppHeader";
+import { color } from "../theme/tokens";
 
 export default function HowToPlayPage() {
   const { t } = useTranslation();
   return (
-    <Container maxWidth="md">
+    <Box sx={{ minHeight: "100dvh", backgroundColor: color.ink, color: color.paper }}>
+      <AppHeader />
+      <Container maxWidth="md">
       <Box sx={{ py: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
           {t("howToPlay.title")}
@@ -15,6 +19,7 @@ export default function HowToPlayPage() {
           {t("howToPlay.back")}
         </Button>
       </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 }

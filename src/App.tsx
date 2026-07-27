@@ -10,6 +10,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import theme from "./theme/theme";
+import AppGlobalStyles from "./theme/globals";
 import { GameProvider } from "./contexts/GameContext";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -53,6 +54,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <AppGlobalStyles />
       <GameProvider>
         <Suspense fallback={<RouteFallback />}>
           <RouterProvider router={router} />

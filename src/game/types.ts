@@ -187,16 +187,20 @@ export interface InspectorLine {
 // Round and match state
 // ---------------------------------------------------------------------------
 
+/**
+ * Ten seats, ten hues. Deliberately excludes anything near the brand orange,
+ * which would read as "the app" rather than as a player.
+ */
 export type SeatColor =
   | "crimson"
-  | "amber"
-  | "lime"
-  | "emerald"
-  | "teal"
-  | "sky"
-  | "indigo"
+  | "rose"
   | "violet"
-  | "magenta"
+  | "indigo"
+  | "sky"
+  | "cyan"
+  | "teal"
+  | "emerald"
+  | "lime"
   | "slate";
 
 /** Game-specific payload carried on each `react-gameroom` player slot. */
@@ -292,12 +296,18 @@ export interface MatchState {
 // ---------------------------------------------------------------------------
 
 /**
- * The in-progress state of the four-step composer. Local to the phone; only a
+ * The in-progress state of the composer. Local to the controller; only a
  * completed edit is ever written. Illegal moves are impossible by construction
  * because every step is picked from a constrained set.
+ *
+ * Note this is keyed by **element**, not by log target. There are only two
+ * things on the canvas — `outer` and `inner` — and each owns a text slot, so
+ * the player picks an element and then what kind of edit to make on it. `text`
+ * is one of those kinds. `draftToEdit` maps that onto the log's four targets:
+ * outer's text is `{label}`, inner's text is `{text}`.
  */
 export interface ComposerDraft {
-  target?: EditTarget;
+  element?: ElementTarget;
   kind?: EditKind;
   key?: string;
   value?: string;

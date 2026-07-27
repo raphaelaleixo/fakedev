@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Box, Button, CircularProgress, Stack, TextField, Typography } from "@mui/material";
 import { PlayerSlotsGrid, buildPlayerUrl } from "react-gameroom";
 import { useGame } from "../contexts/GameContext";
+import AppHeader from "../components/AppHeader";
 import { color, font } from "../theme/tokens";
 
 /**
@@ -102,9 +103,20 @@ export default function PlayerJoinPage() {
 
 function Shell({ children }: { children: ReactNode }) {
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", p: 3 }}>
+    <Box
+      sx={{
+        minHeight: "100dvh",
+        backgroundColor: color.ink,
+        color: color.paper,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <AppHeader />
+      <Box sx={{ flex: 1, display: "flex", alignItems: "center", p: 3 }}>
       <Box sx={{ width: "100%", maxWidth: 460, mx: "auto", fontFamily: font.mono }}>
         {children}
+      </Box>
       </Box>
     </Box>
   );

@@ -1,15 +1,24 @@
 import { createTheme } from "@mui/material/styles";
 import { color, font, radius } from "./tokens";
 
+/**
+ * The app is dark. Every surface a player touches — cover, lobby, canvas,
+ * inspector, controller, ceremony — sits on ink, so the theme is dark by
+ * default rather than dark by exception.
+ *
+ * The one bright surface, the Render Window, is an iframe with its own
+ * document, so it is untouched by any of this. That's the point: the render
+ * stays a lit window onto real UI while everything around it is the game.
+ */
 const theme = createTheme({
   palette: {
-    mode: "light",
-    primary: { main: color.tag },
-    secondary: { main: color.value },
-    error: { main: color.alarm },
-    background: { default: color.paper, paper: color.chrome },
-    text: { primary: color.ink, secondary: color.muted },
-    divider: color.rule,
+    mode: "dark",
+    primary: { main: color.flame, contrastText: color.onFlame },
+    secondary: { main: color.paper, contrastText: color.ink },
+    error: { main: color.flame },
+    background: { default: color.ink, paper: color.inkPanel },
+    text: { primary: color.paper, secondary: color.muted },
+    divider: color.inkRule,
   },
   shape: { borderRadius: radius.md },
   typography: {
@@ -18,38 +27,52 @@ const theme = createTheme({
       fontFamily: font.display,
       fontWeight: 800,
       letterSpacing: "-0.03em",
-      lineHeight: 0.95,
+      lineHeight: 0.9,
+      textTransform: "uppercase",
     },
     h2: {
       fontFamily: font.display,
       fontWeight: 800,
       letterSpacing: "-0.02em",
-      lineHeight: 1,
+      lineHeight: 0.95,
+      textTransform: "uppercase",
     },
-    h3: { fontFamily: font.display, fontWeight: 600, letterSpacing: "-0.01em" },
+    h3: { fontFamily: font.display, fontWeight: 800, letterSpacing: "-0.01em" },
     h4: { fontFamily: font.display, fontWeight: 600 },
     body1: { fontFamily: font.prose },
     body2: { fontFamily: font.prose },
     button: {
       fontFamily: font.mono,
-      fontWeight: 500,
+      fontWeight: 700,
       textTransform: "none",
       letterSpacing: 0,
     },
-    caption: { fontFamily: font.mono, letterSpacing: "0.02em" },
+    caption: { fontFamily: font.mono, letterSpacing: "0.08em", textTransform: "uppercase" },
   },
   components: {
-    // DevTools separates with hairlines, never with elevation.
+    // Flat throughout: hairlines separate, elevation never does.
     MuiPaper: {
       defaultProps: { elevation: 0 },
       styleOverrides: {
-        root: { border: `1px solid ${color.rule}`, backgroundImage: "none" },
+        root: { border: `1px solid ${color.inkRule}`, backgroundImage: "none" },
       },
     },
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {
-        root: { borderRadius: radius.sm, paddingInline: 16 },
+        root: {
+          borderRadius: radius.sm,
+          paddingInline: 20,
+          paddingBlock: 10,
+          // Flame is a fill; as type it needs the dark field behind it, which
+          // it now has everywhere.
+          "&.Mui-disabled": {
+            color: color.inkPunct,
+            borderColor: color.inkRule,
+          },
+        },
+        contained: { "&:hover": { backgroundColor: color.paper, color: color.ink } },
+        outlined: { borderColor: color.inkRule, color: color.paper },
       },
     },
     MuiOutlinedInput: {
@@ -57,10 +80,48 @@ const theme = createTheme({
         root: {
           borderRadius: radius.sm,
           fontFamily: font.mono,
-          backgroundColor: color.paper,
+          backgroundColor: color.ink,
+          "& fieldset": { borderColor: color.inkRule },
+          "&:hover fieldset": { borderColor: color.inkPunct },
+        },
+        input: { color: color.paper },
+      },
+    },
+    MuiInputLabel: { styleOverrides: { root: { color: color.muted } } },
+    MuiFormHelperText: { styleOverrides: { root: { color: color.muted } } },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: radius.sm,
+          borderColor: color.inkRule,
+          color: color.muted,
+          fontFamily: font.mono,
+          "&:hover": { backgroundColor: color.inkPanel },
+          "&.Mui-selected": {
+            backgroundColor: color.flame,
+            color: color.onFlame,
+            "&:hover": { backgroundColor: color.flame },
+          },
         },
       },
     },
+    MuiAutocomplete: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: color.inkPanel,
+          border: `1px solid ${color.inkRule}`,
+          fontFamily: font.mono,
+        },
+        option: {
+          fontFamily: font.mono,
+          '&[aria-selected="true"], &.Mui-focused': {
+            backgroundColor: color.ink,
+            color: color.flame,
+          },
+        },
+      },
+    },
+    MuiSlider: { styleOverrides: { root: { color: color.flame } } },
   },
 });
 

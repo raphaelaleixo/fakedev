@@ -14,14 +14,13 @@ import { draftToEdit, isDraftSubmittable } from "../../game/composer";
 import { supportedCssProperties } from "../../game/css";
 import { rankSuggestions } from "../../game/suggest";
 import { ATTRIBUTE_SCHEMA, STYLE_SCHEMA, TAG_SUGGESTIONS, getKeySchema } from "../../game/content/keySchema";
-import type { ComposerDraft, Edit, EditKind, EditTarget } from "../../game/types";
+import type { ComposerDraft, Edit, EditKind, ElementTarget } from "../../game/types";
 import { color, font } from "../../theme/tokens";
 import ValueEditor from "./ValueEditor";
 
-const TARGETS: EditTarget[] = ["outer", "label", "inner", "text"];
-const KINDS: EditKind[] = ["tag", "attribute", "style"];
-
-const isTextTarget = (target?: EditTarget) => target === "label" || target === "text";
+/** Two things on the canvas. Each owns a text slot. */
+const ELEMENTS: ElementTarget[] = ["outer", "inner"];
+const KINDS: EditKind[] = ["tag", "attribute", "style", "text"];
 
 /**
  * The turn composer: target, type, key, value.
@@ -68,16 +67,16 @@ export default function Composer({
     setDraft((current) => ({ ...current, ...patch }));
   }
 
-  function chooseTarget(target: EditTarget) {
-    // Changing target invalidates everything downstream.
-    setDraft(isTextTarget(target) ? { target, kind: "text" } : { target });
+  function chooseElement(element: ElementTarget) {
+    // Changing the element invalidates everything downstream.
+    setDraft({ element });
   }
 
   function commit() {
     if (!submittable) return;
     onCommit(
       draftToEdit(draft, {
-        id: `${playerId}-${turnIndex}-${draft.target}-${draft.kind}`,
+        id: `${playerId}-${turnIndex}-${draft.element}-${draft.kind}`,
         playerId,
         turnIndex,
       }),
@@ -87,28 +86,28 @@ export default function Composer({
 
   return (
     <Stack spacing={3}>
-      <Step index={1} label={t("composer.target")}>
+      <Step index={1} label={t("composer.element")}>
         <ToggleButtonGroup
           exclusive
-          value={draft.target ?? null}
-          onChange={(_, next) => next && chooseTarget(next as EditTarget)}
+          value={draft.element ?? null}
+          onChange={(_, next) => next && chooseElement(next as ElementTarget)}
           sx={{ flexWrap: "wrap", gap: 0.5 }}
         >
-          {TARGETS.map((target) => (
-            <ToggleButton key={target} value={target} sx={{ fontFamily: font.mono }}>
-              {target}
+          {ELEMENTS.map((element) => (
+            <ToggleButton key={element} value={element} sx={{ fontFamily: font.mono }}>
+              {element}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
       </Step>
 
-      {draft.target && !isTextTarget(draft.target) && (
+      {draft.element && (
         <Step index={2} label={t("composer.kind")}>
           <ToggleButtonGroup
             exclusive
             value={draft.kind ?? null}
             onChange={(_, next) =>
-              next && setDraft({ target: draft.target, kind: next as EditKind })
+              next && setDraft({ element: draft.element, kind: next as EditKind })
             }
             sx={{ flexWrap: "wrap", gap: 0.5 }}
           >
@@ -123,7 +122,7 @@ export default function Composer({
 
       {/* A tag edit's choice is its value — there is no key step. */}
       {draft.kind === "tag" && (
-        <Step index={3} label={t("composer.element")}>
+        <Step index={3} label={t("composer.tagName")}>
           <SearchField
             options={TAG_SUGGESTIONS}
             inputValue={draft.value ?? ""}
@@ -147,10 +146,10 @@ export default function Composer({
         </Step>
       )}
 
-      {(isTextTarget(draft.target) ||
+      {(draft.kind === "text" ||
         (draft.kind === "attribute" && draft.key) ||
         (draft.kind === "style" && draft.key)) && (
-        <Step index={isTextTarget(draft.target) ? 2 : 4} label={t("composer.value")}>
+        <Step index={draft.kind === "text" ? 3 : 4} label={t("composer.value")}>
           <ValueEditor
             schema={schema}
             value={draft.value ?? ""}
@@ -160,7 +159,7 @@ export default function Composer({
         </Step>
       )}
 
-      {draft.target && (
+      {draft.element && (
         <Box>
           <Preview draft={draft} />
           <Button
@@ -239,7 +238,7 @@ function Step({
     <Box>
       <Typography
         variant="caption"
-        sx={{ display: "block", color: color.muted, mb: 0.75, letterSpacing: "0.06em" }}
+        sx={{ display: "block", color: color.muted, mb: 0.75, letterSpacing: "0.08em" }}
       >
         {index}. {label.toUpperCase()}
       </Typography>
@@ -255,20 +254,20 @@ function Preview({ draft }: { draft: ComposerDraft }) {
 
   let body: React.ReactNode = null;
   if (draft.kind === "text") {
-    body = <Box component="span" sx={{ color: color.value }}>&quot;{value}&quot;</Box>;
+    body = <Box component="span" sx={{ color: color.inkValue }}>&quot;{value}&quot;</Box>;
   } else if (draft.kind === "tag") {
-    body = <Box component="span" sx={{ color: color.tag }}>&lt;{value}&gt;</Box>;
+    body = <Box component="span" sx={{ color: color.inkTag }}>&lt;{value}&gt;</Box>;
   } else if (draft.key) {
     body = (
       <>
-        <Box component="span" sx={{ color: color.attr }}>{draft.key}</Box>
-        <Box component="span" sx={{ color: color.muted }}>
+        <Box component="span" sx={{ color: color.inkAttr }}>{draft.key}</Box>
+        <Box component="span" sx={{ color: color.inkPunct }}>
           {draft.kind === "style" ? ": " : "="}
         </Box>
-        <Box component="span" sx={{ color: color.value }}>
+        <Box component="span" sx={{ color: color.inkValue }}>
           {draft.kind === "style" ? value : `"${value}"`}
         </Box>
-        {draft.kind === "style" && <Box component="span" sx={{ color: color.muted }}>;</Box>}
+        {draft.kind === "style" && <Box component="span" sx={{ color: color.inkPunct }}>;</Box>}
       </>
     );
   }
@@ -281,13 +280,13 @@ function Preview({ draft }: { draft: ComposerDraft }) {
         p: 1,
         fontFamily: font.mono,
         fontSize: "0.9rem",
-        backgroundColor: color.chrome,
-        border: `1px solid ${color.rule}`,
+        backgroundColor: color.ink,
+        border: `1px solid ${color.inkRule}`,
         overflowX: "auto",
         whiteSpace: "pre",
       }}
     >
-      <Box component="span" sx={{ color: color.muted }}>{draft.target} </Box>
+      <Box component="span" sx={{ color: color.inkPunct }}>{draft.element} </Box>
       {body}
     </Box>
   );

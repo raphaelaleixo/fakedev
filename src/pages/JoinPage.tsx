@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { useGame } from "../contexts/GameContext";
+import AppHeader from "../components/AppHeader";
 import { color, font } from "../theme/tokens";
 
 /** Room code entry. The big screen creates rooms; this is how a player finds one. */
@@ -29,7 +30,17 @@ export default function JoinPage() {
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", p: 3 }}>
+    <Box
+      sx={{
+        minHeight: "100dvh",
+        backgroundColor: color.ink,
+        color: color.paper,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <AppHeader />
+      <Box sx={{ flex: 1, display: "flex", alignItems: "center", p: 3 }}>
       <Box sx={{ width: "100%", maxWidth: 460, mx: "auto", fontFamily: font.mono }}>
         <Typography variant="h3" gutterBottom>
           {t("join.heading")}
@@ -68,6 +79,7 @@ export default function JoinPage() {
         <Button variant="outlined" onClick={handleCreate} disabled={creating} fullWidth>
           {creating ? t("join.creating") : t("join.create")}
         </Button>
+      </Box>
       </Box>
     </Box>
   );

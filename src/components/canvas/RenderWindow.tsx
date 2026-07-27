@@ -20,7 +20,7 @@ export default function RenderWindow({ tree, title }: { tree: RenderTree; title:
       sx={{
         height: "100%",
         minHeight: 0,
-        border: `1px solid ${color.rule}`,
+        border: `4px solid ${color.paper}`,
         backgroundColor: color.paper,
         overflow: "hidden",
       }}

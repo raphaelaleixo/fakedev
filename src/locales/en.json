@@ -1,10 +1,21 @@
 {
   "home": {
     "title": "A Fake Dev Goes to Amsterdam",
+    "titleMain": "Fake Dev",
+    "titleTail": "goes to Amsterdam",
     "subtitle": "Build a component together. One of you has no idea what it is.",
     "newGame": "Open a room",
     "resumeGame": "Join a room",
-    "howToPlay": "How to play"
+    "howToPlay": "How to play",
+    "credit": "After A Fake Artist Goes to New York by Jun Sasaki, Oink Games."
+  },
+  "header": {
+    "home": "Home",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "close": "Close",
+    "roomHeading": "Room",
+    "joinLink": "Join"
   },
   "howToPlay": {
     "title": "How to Play",
@@ -43,8 +54,7 @@
     }
   },
   "room": {
-    "notFound": "No room with code {{code}}.",
-    "roundPlaceholder": "Round in progress — {{category}} / {{phase}}"
+    "notFound": "No room with code {{code}}."
   },
   "canvas": {
     "categoryLabel": "Category",
@@ -62,15 +72,16 @@
     "fakeDev": "FAKE DEV",
     "yourTurn": "Your turn",
     "otherTurn": "{{name}} is editing",
-    "phaseWait": "Look at the big screen — {{phase}}",
+    "lookUp": "Look at the big screen",
+    "stealWait": "The Chameleon is guessing",
     "waitingForStart": "Waiting for the round to start",
     "badSeat": "That seat isn't in this room.",
     "commitFailed": "That edit didn't land. Try again."
   },
   "composer": {
-    "target": "Where",
-    "kind": "What",
-    "element": "Element",
+    "element": "Which element",
+    "kind": "What kind of edit",
+    "tagName": "Element",
     "value": "Value",
     "commit": "Commit",
     "on": "on",
@@ -78,7 +89,8 @@
     "kinds": {
       "tag": "element",
       "attribute": "attribute",
-      "style": "css"
+      "style": "css",
+      "text": "text"
     },
     "key": {
       "attribute": "Attribute",
@@ -89,6 +101,34 @@
     "valuePlaceholder": "type a value…",
     "colorPlaceholder": "or any CSS color",
     "invalidValue": "The browser can't parse that."
+  },
+  "vote": {
+    "point": "Point!",
+    "heading": "Who's the fake dev?",
+    "locked": "locked in",
+    "thinking": "deciding",
+    "revealHeading": "The votes",
+    "whoIsFake": "Who's the fake dev?",
+    "confirm": "Lock it in",
+    "youPicked": "You pointed at",
+    "lockedIn": "That's locked. Look up."
+  },
+  "steal": {
+    "caught": "{{name}} was caught",
+    "guessing": "One guess at what you were building",
+    "heading": "What were they building?",
+    "oneShot": "One answer. No second attempt.",
+    "confirm": "That's my answer"
+  },
+  "result": {
+    "theSecretWas": "The Secret was",
+    "caught": "{{name}} was the Chameleon, and got caught",
+    "escaped": "{{name}} was the Chameleon, and walked away with it",
+    "tied": "The vote tied — {{name}} was the Chameleon, and escapes",
+    "stolen": "{{name}} was the Chameleon, got caught, and named it anyway",
+    "guessed": "They guessed {{guess}}",
+    "nextRound": "Next round",
+    "matchWinner": "{{names}} wins"
   },
   "deck": {
     "category": {

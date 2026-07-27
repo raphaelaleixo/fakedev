@@ -64,6 +64,30 @@ Four edit targets on a fixed base structure: `outer` and `inner` (elements),
 `text`. `Edit` is a discriminated union so invalid combinations — a keyless
 style edit, a tag on a text slot — are unrepresentable.
 
+**Players never see four targets.** The canvas has two *things*, and each owns a
+text slot, so the composer asks for an element (`outer` / `inner`) and then a
+kind (`element` / `attribute` / `css` / `text`). `draftToEdit` maps that onto the
+log: **outer's text is `{label}`, inner's text is `{text}`.**
+
+The inspector presents the same model — **two groups, one per element** — split
+the way DevTools splits. The **markup line** is the element as it stands, tag,
+attributes and text written as real HTML; the **box beneath** holds the CSS.
+That mirrors the composer exactly: element, attribute and text edits all change
+the markup, a declaration doesn't.
+
+**Every edit is written in its author's colour.** That makes who-wrote-what the
+thing you read first, which is the game-relevant question — only the punctuation
+stays muted, so `property: value;` survives as a shape. Seat colours are tuned
+to carry text against `ink`, which is possible because the app is dark
+throughout and they never appear on a light surface.
+
+Nothing is ever removed. An overridden edit drops out of the markup line and
+reappears in the box struck through, so the box is the live CSS plus the history
+of everything superseded.
+
+So `{label}` and `{text}` are *structure* names, used in `rules.md`, the types
+and the log. They are not player-facing vocabulary and shouldn't leak into UI.
+
 **Choosing the component is a turn.** Setting `inner` to `<button>` is a `tag`
 edit that costs a player their whole turn, exactly like a CSS declaration.
 Nothing about the structure is free.

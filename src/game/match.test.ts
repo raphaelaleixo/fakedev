@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { seatColorFor, startMatch, startNextRound } from "./match";
+import { advanceMatch, seatColorFor, startMatch, startNextRound } from "./match";
 import { MAX_PLAYERS, SEAT_COLOR_ORDER } from "./constants";
 import { ALL_SECRETS } from "./content/deck";
-import type { MatchState } from "./types";
+import type { MatchState, Round } from "./types";
 
 const seats = [1, 2, 3, 4];
 const rng = () => 0.5;
@@ -67,5 +67,69 @@ describe("seatColorFor", () => {
   test("keeps a seat's color stable across rejoins", () => {
     expect(seatColorFor(3)).toBe(seatColorFor(3));
     expect(seatColorFor(1)).toBe(SEAT_COLOR_ORDER[0]);
+  });
+});
+
+describe("advanceMatch", () => {
+  // Nothing banked yet, and the round below is index 0 — so the next round is 1.
+  const base: MatchState = {
+    status: "playing",
+    seats,
+    scores: { 1: 2 },
+    usedSecretIds: [],
+    round: null,
+  };
+
+  const resolved = (awards: Record<number, number>): Round => ({
+    index: 0,
+    categoryId: "form-states",
+    secretId: "form-states/disabled-button",
+    chameleonId: 3,
+    phase: "result",
+    turnOrder: seats,
+    turnIndex: 8,
+    edits: [],
+    votes: {},
+    outcome: {
+      caughtPlayerId: 3,
+      chameleonCaught: true,
+      tied: false,
+      stealCorrect: false,
+      awards,
+    },
+  });
+
+  test("banks the round's points", () => {
+    const next = advanceMatch(base, resolved({ 1: 1, 2: 1 }), rng);
+    expect(next.scores).toEqual({ 1: 3, 2: 1 });
+  });
+
+  test("deals the next round while the match is still live", () => {
+    const next = advanceMatch(base, resolved({ 1: 1 }), rng);
+    expect(next.status).toBe("playing");
+    expect(next.round?.phase).toBe("turns");
+    expect(next.round?.index).toBe(1);
+  });
+
+  test("does not deal a Secret already played", () => {
+    const next = advanceMatch(base, resolved({ 1: 1 }), rng);
+    expect(next.round?.secretId).not.toBe("form-states/disabled-button");
+  });
+
+  test("ends the match instead of dealing when someone reaches the target", () => {
+    const next = advanceMatch(base, resolved({ 1: 3 }), rng);
+    expect(next.status).toBe("finished");
+    expect(next.winnerIds).toEqual([1]);
+  });
+
+  test("keeps the finished round on screen so the result can be read", () => {
+    const next = advanceMatch(base, resolved({ 1: 3 }), rng);
+    expect(next.round?.outcome).toBeDefined();
+    expect(next.round?.phase).toBe("result");
+  });
+
+  test("refuses a round that has not resolved", () => {
+    const unresolved = { ...resolved({}), outcome: undefined };
+    expect(() => advanceMatch(base, unresolved, rng)).toThrow(/outcome/i);
   });
 });

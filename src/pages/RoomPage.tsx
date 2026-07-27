@@ -2,10 +2,19 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, CircularProgress, Typography } from "@mui/material";
+import type { RoomState } from "react-gameroom";
 import { useGame } from "../contexts/GameContext";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
+import {
+  CountdownScreen,
+  ResultScreen,
+  RevealScreen,
+  StealScreen,
+  VotingScreen,
+} from "../components/canvas/VoteScreens";
+import AppHeader from "../components/AppHeader";
 import { seatColorFor } from "../game/match";
 import { color } from "../theme/tokens";
 
@@ -13,7 +22,17 @@ import { color } from "../theme/tokens";
 export default function RoomPage() {
   const { id } = useParams();
   const { t } = useTranslation();
-  const { roomState, matchState, loading, notFound, loadRoom, startTheMatch } = useGame();
+  const {
+    roomState,
+    matchState,
+    loading,
+    notFound,
+    loadRoom,
+    startTheMatch,
+    openVoting,
+    closeVoting,
+    nextRound,
+  } = useGame();
   const [starting, setStarting] = useState(false);
 
   useEffect(() => {
@@ -31,6 +50,7 @@ export default function RoomPage() {
 
   if (roomState.status === "lobby") {
     return (
+      <Shell roomState={roomState}>
       <Lobby
         roomState={roomState}
         starting={starting}
@@ -43,6 +63,7 @@ export default function RoomPage() {
           }
         }}
       />
+      </Shell>
     );
   }
 
@@ -63,31 +84,75 @@ export default function RoomPage() {
       color: p.data?.color ?? seatColorFor(p.id),
     }));
 
-  if (round.phase === "turns") return <Canvas round={round} seats={seats} />;
+  // The big screen drives every phase transition. The domain helpers throw when
+  // the round isn't in the expected phase, so a second screen open on the same
+  // room is harmless rather than a double advance.
+  const screen = () => {
+    switch (round.phase) {
+      case "turns":
+        return <Canvas round={round} seats={seats} />;
+      case "countdown":
+        return <CountdownScreen onDone={() => id && openVoting(id)} />;
+      case "voting":
+        return <VotingScreen round={round} seats={seats} />;
+      case "reveal":
+        return <RevealScreen round={round} seats={seats} onDone={() => id && closeVoting(id)} />;
+      case "steal":
+        return <StealScreen round={round} seats={seats} />;
+      case "result":
+        return (
+          <ResultScreen
+            round={round}
+            seats={seats}
+            scores={matchState.scores ?? {}}
+            finished={matchState.status === "finished"}
+            winnerIds={matchState.winnerIds}
+            onNext={() => id && nextRound(id)}
+          />
+        );
+    }
+  };
 
-  // TODO: countdown, vote reveal, steal and resolution screens.
+  return <Shell roomState={roomState}>{screen()}</Shell>;
+}
+
+/** Masthead plus whatever the phase is showing, filling the viewport. */
+function Shell({
+  roomState,
+  children,
+}: {
+  roomState?: RoomState;
+  children: ReactNode;
+}) {
   return (
-    <Centered>
-      {t("room.roundPlaceholder", {
-        category: round.categoryId,
-        phase: round.phase,
-      })}
-    </Centered>
+    <Box
+      sx={{
+        minHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: color.ink,
+      }}
+    >
+      <AppHeader roomState={roomState} />
+      {children}
+    </Box>
   );
 }
 
 function Centered({ children }: { children: ReactNode }) {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        p: 4,
-      }}
-    >
-      <Typography sx={{ color: color.muted }}>{children}</Typography>
-    </Box>
+    <Shell>
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 4,
+        }}
+      >
+        <Typography sx={{ color: color.muted }}>{children}</Typography>
+      </Box>
+    </Shell>
   );
 }

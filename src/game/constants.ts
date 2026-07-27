@@ -29,38 +29,43 @@ export const TEXT_MAX_LENGTH = 24;
 export const SOFT_TIMER_SECONDS = 30;
 
 /**
- * Seat colors. Used to tint inspector lines by author and to identify players
- * in the turn rail — never as CSS values in the render, which has its own
- * swatch palette.
+ * Seat colors — the one place the duotone opens up, because ten
+ * distinguishable players is a mechanic rather than decoration.
  *
- * Tuned for the *light* inspector: each one has to hold contrast as text on
- * white and stay distinct from the other nine. The lighter tints that read well
- * on a dark panel are unusable here.
+ * **Tuned to carry text on the ink field**, which is the only surface they ever
+ * appear on now that the whole app is dark. Every one of them clears roughly
+ * 4.5:1 against `ink`, so an edit can be written in its author's color and
+ * still be read from across a room. `violet` and `indigo` are lighter than
+ * their siblings for exactly that reason — at the saturation the others use,
+ * both landed around 3:1 and would have been the two seats nobody could read.
+ *
+ * Nothing here sits near the brand orange, which would read as "the app"
+ * rather than as a player.
  */
 export const SEAT_COLORS: Record<SeatColor, string> = {
-  crimson: "#e11d48",
-  amber: "#b45309",
-  lime: "#4d7c0f",
-  emerald: "#047857",
-  teal: "#0f766e",
-  sky: "#0369a1",
-  indigo: "#4338ca",
-  violet: "#7c3aed",
-  magenta: "#a21caf",
-  slate: "#475569",
+  crimson: "#f16a6f",
+  rose: "#f2609b",
+  violet: "#b48ae8",
+  indigo: "#8098f0",
+  sky: "#3aa9ff",
+  cyan: "#22b8dd",
+  teal: "#2cc0ad",
+  emerald: "#45bd83",
+  lime: "#a8dd4a",
+  slate: "#a2a5b0",
 };
 
 /** Assignment order for seats 1..MAX_PLAYERS. */
 export const SEAT_COLOR_ORDER: SeatColor[] = [
   "crimson",
   "sky",
-  "amber",
-  "emerald",
+  "lime",
   "violet",
   "teal",
-  "magenta",
-  "lime",
+  "rose",
   "indigo",
+  "emerald",
+  "cyan",
   "slate",
 ];
 

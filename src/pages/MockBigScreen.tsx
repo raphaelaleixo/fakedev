@@ -1,12 +1,20 @@
 import { useState } from "react";
 import { Box, Button, ButtonGroup, Slider, Stack, Typography } from "@mui/material";
 import { createInitialRoom, joinPlayer, type RoomState } from "react-gameroom";
+import AppHeader from "../components/AppHeader";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
+import {
+  CountdownScreen,
+  ResultScreen,
+  RevealScreen,
+  StealScreen,
+  VotingScreen,
+} from "../components/canvas/VoteScreens";
 import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
 import { seatColorFor } from "../game/match";
-import type { FakeDevPlayerData } from "../game/types";
-import { MOCK_EDITS, MOCK_SEATS, mockRound } from "../mocks/fixtures";
+import type { FakeDevPlayerData, RoundPhase } from "../game/types";
+import { MOCK_EDITS, MOCK_SEATS, mockRound, mockRoundAt } from "../mocks/fixtures";
 import { color } from "../theme/tokens";
 
 const NAMES = ["Rafa", "Ana", "Tom", "Ines", "Joost", "Mira", "Dev", "Sanne", "Kai", "Noor"];
@@ -28,18 +36,72 @@ function roomWith(count: number): RoomState<FakeDevPlayerData> {
  * without a live room and a second device. The turn scrubber is the fastest way
  * to see the render and the inspector accumulate.
  */
+const PHASES: (RoundPhase | "lobby")[] = [
+  "lobby",
+  "turns",
+  "countdown",
+  "voting",
+  "reveal",
+  "steal",
+  "result",
+];
+
+const SCORES = { 1: 3, 2: 1, 4: 2, 5: 1 };
+
 export default function MockBigScreen() {
-  const [view, setView] = useState<"lobby" | "canvas">("canvas");
+  const [view, setView] = useState<RoundPhase | "lobby">("turns");
   const [count, setCount] = useState(3);
   const [turns, setTurns] = useState(MOCK_EDITS.length);
+  const [stole, setStole] = useState(false);
+
+  const guess = stole
+    ? "web-annoyances/cookie-consent-banner"
+    : "web-annoyances/captcha-box";
+
+  function screen() {
+    switch (view) {
+      case "lobby":
+        return <Lobby roomState={roomWith(count)} onStart={() => setView("turns")} />;
+      case "turns":
+        return <Canvas round={mockRound(turns)} seats={MOCK_SEATS} />;
+      case "countdown":
+        return <CountdownScreen onDone={() => setView("voting")} />;
+      case "voting":
+        return <VotingScreen round={mockRoundAt("voting")} seats={MOCK_SEATS} />;
+      case "reveal":
+        return (
+          <RevealScreen
+            round={mockRoundAt("reveal")}
+            seats={MOCK_SEATS}
+            onDone={() => setView("steal")}
+          />
+        );
+      case "steal":
+        return <StealScreen round={mockRoundAt("steal")} seats={MOCK_SEATS} />;
+      case "result":
+        return (
+          <ResultScreen
+            round={mockRoundAt("result", guess)}
+            seats={MOCK_SEATS}
+            scores={SCORES}
+            finished={false}
+            onNext={() => setView("turns")}
+          />
+        );
+    }
+  }
 
   return (
-    <Box>
-      {view === "lobby" ? (
-        <Lobby roomState={roomWith(count)} onStart={() => setView("canvas")} />
-      ) : (
-        <Canvas round={mockRound(turns)} seats={MOCK_SEATS} />
-      )}
+    <Box
+      sx={{
+        minHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: color.ink,
+      }}
+    >
+      <AppHeader roomState={roomWith(count)} />
+      {screen()}
 
       <Stack
         spacing={1}
@@ -49,27 +111,31 @@ export default function MockBigScreen() {
           left: 12,
           p: 1.5,
           minWidth: 260,
-          backgroundColor: color.paper,
-          border: `1px solid ${color.rule}`,
+          backgroundColor: color.inkPanel,
+          border: `1px solid ${color.inkRule}`,
           zIndex: 10,
         }}
       >
-        <ButtonGroup size="small" fullWidth>
-          <Button
-            variant={view === "lobby" ? "contained" : "outlined"}
-            onClick={() => setView("lobby")}
-          >
-            lobby
-          </Button>
-          <Button
-            variant={view === "canvas" ? "contained" : "outlined"}
-            onClick={() => setView("canvas")}
-          >
-            canvas
-          </Button>
-        </ButtonGroup>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+          {PHASES.map((phase) => (
+            <Button
+              key={phase}
+              size="small"
+              variant={view === phase ? "contained" : "outlined"}
+              onClick={() => setView(phase)}
+            >
+              {phase}
+            </Button>
+          ))}
+        </Box>
 
-        {view === "lobby" ? (
+        {view === "result" && (
+          <Button size="small" variant="outlined" onClick={() => setStole((s) => !s)}>
+            steal: {stole ? "correct" : "wrong"}
+          </Button>
+        )}
+
+        {view === "lobby" && (
           <ButtonGroup size="small" fullWidth>
             {[0, 1, 3, 4, 7, 10].map((n) => (
               <Button
@@ -81,7 +147,9 @@ export default function MockBigScreen() {
               </Button>
             ))}
           </ButtonGroup>
-        ) : (
+        )}
+
+        {view === "turns" && (
           <Box>
             <Typography variant="caption" sx={{ color: color.muted }}>
               turns played: {turns}

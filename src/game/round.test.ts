@@ -488,3 +488,29 @@ describe("phase guards", () => {
     expect(() => resolveRound(makeRound({ phase: "voting" }))).toThrow(/phase/i);
   });
 });
+
+describe("usedSecretIds stays a set", () => {
+  /** startNextRound derives the round index from this list's length. */
+  test("never records the same Secret twice", () => {
+    const match: MatchState = {
+      status: "playing",
+      seats: [1, 2, 3, 4],
+      scores: {},
+      usedSecretIds: ["form-states/disabled-button"],
+      round: null,
+    };
+    const round = makeRound({
+      phase: "result",
+      outcome: {
+        caughtPlayerId: 3,
+        chameleonCaught: true,
+        tied: false,
+        stealCorrect: false,
+        awards: {},
+      },
+    });
+    expect(applyRoundOutcome(match, round).usedSecretIds).toEqual([
+      "form-states/disabled-button",
+    ]);
+  });
+});

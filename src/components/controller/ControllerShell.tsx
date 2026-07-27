@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import { SEAT_COLORS } from "../../game/constants";
 import type { SeatColor } from "../../game/types";
+import type { RoomState } from "react-gameroom";
+import AppHeader from "../AppHeader";
 import { color, font } from "../../theme/tokens";
 
 /**
@@ -19,6 +21,7 @@ export default function ControllerShell({
   isChameleon,
   seatName,
   seatColor,
+  roomState,
   children,
 }: {
   /** The Secret's label, or undefined for the Chameleon. */
@@ -26,13 +29,23 @@ export default function ControllerShell({
   isChameleon: boolean;
   seatName: string;
   seatColor: SeatColor;
+  roomState?: RoomState;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
   const tint = SEAT_COLORS[seatColor];
 
   return (
-    <Box sx={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        minHeight: "100dvh",
+        backgroundColor: color.ink,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <AppHeader roomState={roomState} seatName={seatName} seatColor={seatColor} />
+
       <Box
         component="header"
         sx={{
@@ -41,14 +54,14 @@ export default function ControllerShell({
           zIndex: 2,
           px: 2,
           py: 1.5,
-          borderBottom: `1px solid ${color.rule}`,
+          borderBottom: `1px solid ${color.inkRule}`,
           borderLeft: `6px solid ${tint}`,
-          backgroundColor: isChameleon ? color.ink : color.chrome,
+          backgroundColor: color.ink,
         }}
       >
         <Typography
           variant="caption"
-          sx={{ color: isChameleon ? color.rule : color.muted, display: "block" }}
+          sx={{ color: color.muted, display: "block" }}
         >
           {isChameleon ? t("controller.yourRole") : t("controller.theSecret")}
         </Typography>
@@ -58,17 +71,24 @@ export default function ControllerShell({
             fontWeight: isChameleon ? 700 : 600,
             fontSize: isChameleon ? "1.5rem" : "1.6rem",
             letterSpacing: isChameleon ? "0.14em" : "-0.01em",
-            color: isChameleon ? "#ffffff" : color.ink,
+            color: isChameleon ? color.flame : color.paper,
           }}
         >
           {isChameleon ? t("controller.fakeDev") : secretLabel}
         </Typography>
-        <Typography variant="caption" sx={{ color: tint }}>
-          {seatName}
-        </Typography>
       </Box>
 
-      <Box sx={{ flex: 1, p: 2, maxWidth: 640, width: "100%", mx: "auto" }}>{children}</Box>
+      <Box sx={{ flex: 1, p: { xs: 1.5, sm: 2 }, width: "100%", maxWidth: 680, mx: "auto" }}>
+        <Box
+          sx={{
+            backgroundColor: color.inkPanel,
+            border: `1px solid ${color.inkRule}`,
+            p: { xs: 2, sm: 3 },
+          }}
+        >
+          {children}
+        </Box>
+      </Box>
     </Box>
   );
 }

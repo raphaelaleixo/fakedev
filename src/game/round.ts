@@ -328,7 +328,9 @@ export function applyRoundOutcome(match: MatchState, round: Round): MatchState {
   return {
     ...match,
     scores,
-    usedSecretIds: [...match.usedSecretIds, round.secretId],
+    // A set, not a log: `startNextRound` derives the round index from its
+    // length, so a duplicate would silently skip an index.
+    usedSecretIds: [...new Set([...match.usedSecretIds, round.secretId])],
     status: finished ? "finished" : "playing",
     ...(finished
       ? {

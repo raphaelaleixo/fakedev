@@ -43,9 +43,11 @@ export default function TurnRail({
                 py: 0.5,
                 fontFamily: font.mono,
                 fontSize: "0.95rem",
-                color: active ? color.paper : tint,
-                backgroundColor: active ? tint : "transparent",
-                border: `1px solid ${tint}`,
+                color: active ? color.ink : color.paper,
+                backgroundColor: active ? color.paper : "transparent",
+                // Order matters: the shorthand would wipe the seat rule.
+                border: `1px solid ${color.inkRule}`,
+                borderLeft: `4px solid ${tint}`,
                 opacity: active ? 1 : 0.55,
               }}
             >
@@ -66,13 +68,13 @@ export default function TurnRail({
         }}
       >
         <Box component="span">{t("canvas.turnCount", { turn: turnIndex + 1, total: totalTurns })}</Box>
-        <Box sx={{ flex: 1, height: 3, backgroundColor: color.rule, overflow: "hidden" }}>
+        <Box sx={{ flex: 1, height: 3, backgroundColor: color.inkRule, overflow: "hidden" }}>
           <Box
             // Restarting the element on each turn restarts the animation.
             key={turnIndex}
             sx={{
               height: "100%",
-              backgroundColor: color.selection,
+              backgroundColor: color.flame,
               transformOrigin: "left",
               animation: `shrink ${SOFT_TIMER_SECONDS}s linear forwards`,
               "@keyframes shrink": { from: { width: "100%" }, to: { width: "0%" } },

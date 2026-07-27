@@ -1,33 +1,40 @@
 import { Box } from "@mui/material";
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { color, font } from "../theme/tokens";
 
 /**
- * The primitives the whole game is drawn with: a line of syntax-highlighted
- * markup. The lobby uses them to render the room as a DOM node; the Live
- * Inspector will use the same pieces for the edit log, so authorship tinting
- * and strikethroughs stay consistent between the two screens.
+ * The primitives the game draws markup with: one line of syntax-highlighted
+ * code. The lobby renders the room as a DOM node with them.
+ *
+ * Everything sits on ink now, so there is one keying — `flame` gets to be a
+ * text colour here, which it can't be on white.
  */
+const ink = {
+  tag: color.inkTag,
+  attr: color.inkAttr,
+  value: color.inkValue,
+  punct: color.inkPunct,
+};
 
 export function Punct({ children }: { children: ReactNode }) {
-  return <Box component="span" sx={{ color: color.muted }}>{children}</Box>;
+  return <Box component="span" sx={{ color: ink.punct }}>{children}</Box>;
 }
 
 export function Tag({ children }: { children: ReactNode }) {
-  return <Box component="span" sx={{ color: color.tag }}>{children}</Box>;
+  return <Box component="span" sx={{ color: ink.tag }}>{children}</Box>;
 }
 
 export function Attr({ children }: { children: ReactNode }) {
-  return <Box component="span" sx={{ color: color.attr }}>{children}</Box>;
+  return <Box component="span" sx={{ color: ink.attr }}>{children}</Box>;
 }
 
 export function Value({ children }: { children: ReactNode }) {
-  return <Box component="span" sx={{ color: color.value }}>{children}</Box>;
+  return <Box component="span" sx={{ color: ink.value }}>{children}</Box>;
 }
 
 export function Comment({ children }: { children: ReactNode }) {
   return (
-    <Box component="span" sx={{ color: color.muted, fontStyle: "italic" }}>
+    <Box component="span" sx={{ color: ink.punct, fontStyle: "italic" }}>
       {"<!-- "}
       {children}
       {" -->"}
@@ -35,7 +42,7 @@ export function Comment({ children }: { children: ReactNode }) {
   );
 }
 
-/** An attribute pair: `name="value"`, with the quotes in the value color. */
+/** An attribute pair: `name="value"`, with the quotes in the value colour. */
 export function Pair({ name, children }: { name: string; children: ReactNode }) {
   return (
     <>
@@ -47,7 +54,7 @@ export function Pair({ name, children }: { name: string; children: ReactNode }) 
   );
 }
 
-/** A swatch rendered inline, the way DevTools previews a color value. */
+/** A swatch rendered inline, the way DevTools previews a colour value. */
 export function Swatch({ value }: { value: string }) {
   return (
     <Box
@@ -59,7 +66,6 @@ export function Swatch({ value }: { value: string }) {
         height: "0.7em",
         mr: 0.5,
         verticalAlign: "baseline",
-        border: `1px solid ${color.rule}`,
         backgroundColor: value,
       }}
     />
@@ -73,7 +79,7 @@ export function MarkupLine({
   sx,
 }: {
   indent?: number;
-  /** DevTools' selected-node wash. Used for the newest arrival. */
+  /** A wash for the newest arrival. */
   highlight?: boolean;
   children: ReactNode;
   sx?: object;
@@ -87,7 +93,7 @@ export function MarkupLine({
         whiteSpace: "pre",
         overflowX: "auto",
         pl: `${indent * 2}ch`,
-        backgroundColor: highlight ? color.selection : "transparent",
+        backgroundColor: highlight ? "rgba(255, 151, 46, 0.18)" : "transparent",
         transition: "background-color 600ms ease",
         "@media (prefers-reduced-motion: reduce)": { transition: "none" },
         ...sx,

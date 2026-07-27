@@ -35,7 +35,9 @@ export default function Lobby({
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        flex: 1,
+        backgroundColor: color.ink,
+        color: color.paper,
         display: "grid",
         gridTemplateColumns: { xs: "1fr", md: "1fr auto" },
         alignItems: "start",
@@ -46,7 +48,12 @@ export default function Lobby({
       <Box sx={{ minWidth: 0 }}>
         <Typography
           variant="h1"
-          sx={{ fontSize: "clamp(2rem, 5vw, 4rem)", maxWidth: "14ch", mb: 4 }}
+          sx={{
+            fontSize: "clamp(1.8rem, 4.4vw, 3.4rem)",
+            maxWidth: "14ch",
+            mb: 4,
+            color: color.paper,
+          }}
         >
           {t("home.title")}
         </Typography>
@@ -92,7 +99,7 @@ export default function Lobby({
         <Box
           sx={{
             p: 2,
-            border: `1px solid ${color.rule}`,
+            border: `4px solid ${color.paper}`,
             backgroundColor: color.paper,
             lineHeight: 0,
           }}
@@ -110,7 +117,8 @@ export default function Lobby({
               fontSize: "2.5rem",
               fontWeight: 700,
               letterSpacing: "0.08em",
-              color: color.value,
+              // On the ink field flame is a text colour again.
+              color: color.flame,
             }}
           >
             {roomState.roomId}
@@ -122,6 +130,14 @@ export default function Lobby({
           size="large"
           onClick={onStart}
           disabled={!canStart || starting}
+          sx={{
+            // MUI's disabled fill is a translucent black — invisible on ink.
+            "&.Mui-disabled": {
+              backgroundColor: "transparent",
+              color: color.muted,
+              border: `1px solid ${color.inkPunct}`,
+            },
+          }}
         >
           {canStart ? t("lobby.start") : t("lobby.waiting", { count: missing })}
         </Button>

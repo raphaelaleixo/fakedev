@@ -41,7 +41,7 @@ export default function MockController() {
         />
 
         {committed.length > 0 && (
-          <Box sx={{ mt: 4, pt: 2, borderTop: `1px solid ${color.rule}` }}>
+          <Box sx={{ mt: 4, pt: 2, borderTop: `1px solid ${color.inkRule}` }}>
             <Typography variant="caption" sx={{ color: color.muted }}>
               committed this session (mock only)
             </Typography>
@@ -62,8 +62,8 @@ export default function MockController() {
           bottom: 12,
           right: 12,
           p: 1.5,
-          backgroundColor: color.paper,
-          border: `1px solid ${color.rule}`,
+          backgroundColor: color.inkPanel,
+          border: `1px solid ${color.inkRule}`,
           zIndex: 10,
         }}
       >

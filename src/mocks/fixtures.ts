@@ -64,7 +64,9 @@ export const MOCK_EDITS: Edit[] = [
   // Superseded by turn 9 — this is the strikethrough case.
   edit(6, 2, { target: "inner", kind: "style", key: "background-color", value: "#34a853" }),
   edit(7, 3, { target: "text", kind: "text", value: "Continue" }),
-  edit(8, 4, { target: "inner", kind: "style", key: "color", value: "#ffffff" }),
+  // An attribute edit — invisible in the render, loud on the inspector, and
+  // ambiguous across the whole consent-prompt group.
+  edit(8, 4, { target: "outer", kind: "attribute", key: "role", value: "dialog" }),
   edit(9, 5, { target: "inner", kind: "style", key: "background-color", value: "#1a73e8" }),
 ];
 
@@ -79,5 +81,43 @@ export function mockRound(turnsPlayed = MOCK_EDITS.length): Round {
     turnIndex: turnsPlayed,
     edits: MOCK_EDITS.slice(0, turnsPlayed),
     votes: {},
+  };
+}
+
+/** Seats 1, 2 and 5 point at the Chameleon; 3 misfires; the Chameleon points at 1. */
+export const MOCK_VOTES: Record<number, number> = { 1: 4, 2: 4, 3: 2, 4: 1, 5: 4 };
+
+export const MOCK_SLATE = [
+  "web-annoyances/survey-invitation",
+  "web-annoyances/cookie-consent-banner",
+  "web-annoyances/captcha-box",
+  "web-annoyances/push-notification-prompt",
+  "web-annoyances/location-permission-prompt",
+];
+
+/** The same round frozen at any later phase, for building those screens. */
+export function mockRoundAt(phase: Round["phase"], stealGuess?: string): Round {
+  const base: Round = {
+    ...mockRound(),
+    phase,
+    turnIndex: MOCK_EDITS.length,
+    votes: phase === "countdown" ? {} : MOCK_VOTES,
+  };
+
+  if (phase === "steal") return { ...base, stealSlate: MOCK_SLATE };
+  if (phase !== "result") return base;
+
+  const correct = stealGuess === base.secretId;
+  return {
+    ...base,
+    stealSlate: MOCK_SLATE,
+    stealGuess,
+    outcome: {
+      caughtPlayerId: 4,
+      chameleonCaught: true,
+      tied: false,
+      stealCorrect: stealGuess ? correct : null,
+      awards: correct ? { 4: 3 } : { 1: 1, 2: 1, 5: 1 },
+    },
   };
 }

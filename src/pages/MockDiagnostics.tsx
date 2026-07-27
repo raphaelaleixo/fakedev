@@ -29,7 +29,7 @@ export default function MockDiagnostics() {
         actually sees — that readout matters more than the dropdown.
       </Typography>
 
-      <Box sx={{ p: 2, mb: 4, border: `2px solid ${color.value}`, fontSize: "0.85rem", lineHeight: 1.9 }}>
+      <Box sx={{ p: 2, mb: 4, border: `2px solid ${color.flame}`, fontSize: "0.85rem", lineHeight: 1.9 }}>
         <div>
           <strong>D — data only, no MUI.</strong>
         </div>
@@ -80,7 +80,7 @@ function Probe({
   const [seen, setSeen] = useState<{ query: string; count: number }>({ query: "-", count: -1 });
 
   return (
-    <Box sx={{ p: 2, border: `1px solid ${color.rule}` }}>
+    <Box sx={{ p: 2, border: `1px solid ${color.inkRule}` }}>
       <Typography variant="caption" sx={{ display: "block", color: color.muted, mb: 1 }}>
         {title}
       </Typography>

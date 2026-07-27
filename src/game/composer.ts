@@ -12,24 +12,28 @@
 import { getKeySchema } from "./content/keySchema";
 import { isValidDeclaration, nativeSupports, type SupportsFn } from "./css";
 import { TEXT_MAX_LENGTH } from "./constants";
-import type { ComposerDraft, Edit, EditKind, EditTarget } from "./types";
+import type { ComposerDraft, Edit, EditKind, ElementTarget, TextTarget } from "./types";
 
-export type ComposerStep = "target" | "kind" | "key" | "value";
+export type ComposerStep = "element" | "kind" | "key" | "value";
 
 /** Tag and attribute names must be plain identifiers. */
 const IDENTIFIER = /^[a-zA-Z][a-zA-Z0-9-]*$/;
 
-const isTextTarget = (target: EditTarget) => target === "label" || target === "text";
+/**
+ * The log has four targets, but the canvas has two *things*. Each element owns
+ * a text slot, so the composer asks for an element and then a kind — and a text
+ * edit resolves to whichever slot belongs to that element.
+ */
+const TEXT_SLOT: Record<ElementTarget, TextTarget> = { outer: "label", inner: "text" };
 
 /**
- * Which steps this draft has to walk. Text slots go straight to a value, and a
- * tag edit's choice *is* its value, so neither ever shows a key step.
+ * Which steps this draft has to walk. A tag edit's choice *is* its value and so
+ * is a text edit's, so neither ever shows a key step.
  */
-export function draftSteps(target: EditTarget, kind?: EditKind): ComposerStep[] {
-  if (isTextTarget(target)) return ["target", "value"];
-  if (!kind) return ["target", "kind"];
-  if (kind === "tag") return ["target", "kind", "value"];
-  return ["target", "kind", "key", "value"];
+export function draftSteps(kind?: EditKind): ComposerStep[] {
+  if (!kind) return ["element", "kind"];
+  if (kind === "tag" || kind === "text") return ["element", "kind", "value"];
+  return ["element", "kind", "key", "value"];
 }
 
 function isValidAttribute(key: string, value: string, supports: SupportsFn | null): boolean {
@@ -55,13 +59,14 @@ export function isDraftSubmittable(
   draft: ComposerDraft,
   supports: SupportsFn | null = nativeSupports(),
 ): boolean {
-  const { target, kind, key } = draft;
+  const { element, kind, key } = draft;
   const value = draft.value?.trim() ?? "";
 
-  if (!target || !value) return false;
-  if (isTextTarget(target)) return value.length <= TEXT_MAX_LENGTH;
+  if (!element || !value) return false;
 
   switch (kind) {
+    case "text":
+      return value.length <= TEXT_MAX_LENGTH;
     case "tag":
       return IDENTIFIER.test(value);
     case "attribute":
@@ -85,15 +90,16 @@ export interface EditMeta {
  * edits occupy different slots.
  */
 export function draftToEdit(draft: ComposerDraft, meta: EditMeta): Edit {
-  const { target, kind, key } = draft;
+  const { element, kind, key } = draft;
   const value = draft.value?.trim() ?? "";
 
-  if (!target || !value) throw new Error("Draft is incomplete.");
+  if (!element || !value) throw new Error("Draft is incomplete.");
 
-  if (isTextTarget(target)) return { ...meta, target, kind: "text", value };
-  if (kind === "tag") return { ...meta, target, kind: "tag", value };
+  // A text edit lands on the slot belonging to the chosen element.
+  if (kind === "text") return { ...meta, target: TEXT_SLOT[element], kind: "text", value };
+  if (kind === "tag") return { ...meta, target: element, kind: "tag", value };
   if ((kind === "attribute" || kind === "style") && key) {
-    return { ...meta, target, kind, key, value };
+    return { ...meta, target: element, kind, key, value };
   }
 
   throw new Error("Draft is incomplete.");

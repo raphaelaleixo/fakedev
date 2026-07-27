@@ -47,10 +47,10 @@ describe("Canvas", () => {
   });
 
   test("keeps a superseded declaration visible so it can be struck through", () => {
-    renderCanvas();
     // Turn 6 set the button green, turn 9 overrode it to blue. Both stay.
-    expect(screen.getByText("#34a853")).toBeInTheDocument();
-    expect(screen.getByText("#1a73e8")).toBeInTheDocument();
+    const { container } = renderCanvas();
+    expect(container.textContent).toContain("#34a853");
+    expect(container.textContent).toContain("#1a73e8");
   });
 
   test("credits each declaration to its author", () => {
@@ -75,9 +75,35 @@ describe("Canvas", () => {
     expect(srcdoc).not.toContain("#34a853");
   });
 
+  test("groups by element, the way the composer asks for an edit", () => {
+    renderCanvas();
+    expect(screen.getByText("outer")).toBeInTheDocument();
+    expect(screen.getByText("inner")).toBeInTheDocument();
+    // No group of its own for a text slot, and the log's slot names never show.
+    expect(screen.queryByText(/^label$/)).toBeNull();
+    expect(screen.queryByText("outer text")).toBeNull();
+    expect(screen.queryByText("inner text")).toBeNull();
+  });
+
+  test("writes tag, attributes and text as one line of real markup", () => {
+    // Turn 3 chose <button>, turn 8 set role, turns 5 and 7 set the text.
+    const { container } = renderCanvas();
+    expect(container.textContent).toContain('role="dialog"');
+    expect(container.textContent).toContain("<button>Continue");
+    expect(container.textContent).toContain("Lorem ipsum dolor sit");
+  });
+
+  test("keeps CSS in the box below the markup, not in the line", () => {
+    const { container } = renderCanvas();
+    expect(container.textContent).toContain("display: flex;");
+    expect(container.textContent).toContain("padding: 20px;");
+    // The declaration never leaks into the markup line.
+    expect(container.textContent).not.toContain("display: flex;>");
+  });
+
   test("renders an untouched round without falling over", () => {
     const { container } = renderCanvas(0);
     expect(container.querySelector("iframe")).toBeTruthy();
-    expect(screen.getAllByText("nothing yet")).toHaveLength(4);
+    expect(screen.getAllByText("nothing yet")).toHaveLength(2);
   });
 });

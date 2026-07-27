@@ -19,9 +19,10 @@ import {
 } from "react-gameroom";
 import { database } from "../firebase";
 import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
-import { seatColorFor, startMatch } from "../game/match";
-import { submitEdit } from "../game/round";
-import type { Edit, FakeDevPlayerData, MatchState } from "../game/types";
+import { advanceMatch, seatColorFor, startMatch } from "../game/match";
+import { beginVoting, castVote, resolveRound, submitEdit, submitSteal } from "../game/round";
+import { deserializeMatch } from "../game/serialize";
+import type { Edit, FakeDevPlayerData, MatchState, Round } from "../game/types";
 
 export interface GameContextValue {
   roomState: RoomState<FakeDevPlayerData> | null;
@@ -34,6 +35,11 @@ export interface GameContextValue {
   joinRoom: (roomId: string, name: string) => Promise<number>;
   startTheMatch: () => Promise<void>;
   commitEdit: (roomId: string, edit: Edit) => Promise<void>;
+  openVoting: (roomId: string) => Promise<void>;
+  vote: (roomId: string, voterId: number, suspectId: number) => Promise<void>;
+  closeVoting: (roomId: string) => Promise<void>;
+  steal: (roomId: string, guess: string) => Promise<void>;
+  nextRound: (roomId: string) => Promise<void>;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -68,7 +74,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
           // `players` back into a real array.
           setRoomState(deserializeRoom<FakeDevPlayerData>(data.room));
         }
-        setMatchState((data.game as MatchState | undefined) ?? null);
+        // Firebase deletes empty collections, so a freshly dealt round arrives
+        // with no `edits` key at all. Normalise before anything renders it.
+        setMatchState(data.game ? deserializeMatch(data.game) : null);
         setLoading(false);
       },
       (error) => {
@@ -136,14 +144,38 @@ export function GameProvider({ children }: { children: ReactNode }) {
    * what's actually in the database.
    */
   const commitEdit = useCallback(async (roomId: string, edit: Edit) => {
-    const snapshot = await get(ref(database, `${roomPath(roomId)}/game`));
-    const match = snapshot.val() as MatchState | null;
-    if (!match?.round) throw new Error("no-round");
+    await mutateRound(roomId, (round) => submitEdit(round, edit));
+  }, []);
 
-    const round = submitEdit({ ...match.round, edits: match.round.edits ?? [] }, edit);
-    await update(ref(database, `${roomPath(roomId)}/game`), {
-      round: JSON.parse(JSON.stringify(round)),
+  /**
+   * Phase transitions driven by the big screen. Each underlying helper throws
+   * when the round isn't in the phase it expects, which makes these naturally
+   * idempotent — a second big screen open on the same room, or a timer that
+   * fires twice, is a no-op rather than a double advance.
+   */
+  const openVoting = useCallback(async (roomId: string) => {
+    await mutateRound(roomId, beginVoting, { ignorePhaseErrors: true });
+  }, []);
+
+  const closeVoting = useCallback(async (roomId: string) => {
+    await mutateRound(roomId, (round) => resolveRound(round), { ignorePhaseErrors: true });
+  }, []);
+
+  const vote = useCallback(async (roomId: string, voterId: number, suspectId: number) => {
+    await mutateRound(roomId, (round) => castVote(round, voterId, suspectId));
+  }, []);
+
+  const steal = useCallback(async (roomId: string, guess: string) => {
+    await mutateRound(roomId, (round) => submitSteal(round, guess), {
+      ignorePhaseErrors: true,
     });
+  }, []);
+
+  /** Banks the round and deals the next, or ends the match. */
+  const nextRound = useCallback(async (roomId: string) => {
+    const match = await readMatch(roomId);
+    if (!match.round?.outcome) return;
+    await update(ref(database, `${roomPath(roomId)}/game`), serialize(advanceMatch(match, match.round)));
   }, []);
 
   return (
@@ -158,11 +190,53 @@ export function GameProvider({ children }: { children: ReactNode }) {
         joinRoom,
         startTheMatch,
         commitEdit,
+        openVoting,
+        vote,
+        closeVoting,
+        steal,
+        nextRound,
       }}
     >
       {children}
     </GameContext.Provider>
   );
+}
+
+/** Firebase rejects `undefined`, and stores arrays as keyed objects. */
+function serialize<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
+async function readMatch(roomId: string): Promise<MatchState> {
+  const snapshot = await get(ref(database, `${roomPath(roomId)}/game`));
+  if (!snapshot.val()) throw new Error("no-match");
+  return deserializeMatch(snapshot.val());
+}
+
+/**
+ * Read-modify-write on the round.
+ *
+ * Always re-reads rather than trusting the subscribed copy: a client may be a
+ * write behind, and the domain helpers' guards should run against what's
+ * actually in the database.
+ */
+async function mutateRound(
+  roomId: string,
+  change: (round: Round) => Round,
+  { ignorePhaseErrors = false }: { ignorePhaseErrors?: boolean } = {},
+): Promise<void> {
+  const match = await readMatch(roomId);
+  if (!match.round) throw new Error("no-round");
+
+  let next: Round;
+  try {
+    next = change(match.round);
+  } catch (error) {
+    if (ignorePhaseErrors) return;
+    throw error;
+  }
+
+  await update(ref(database, `${roomPath(roomId)}/game`), { round: serialize(next) });
 }
 
 export function useGame() {

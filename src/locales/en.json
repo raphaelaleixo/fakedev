@@ -1,13 +1,49 @@
 {
   "home": {
     "title": "A Fake Dev Goes to Amsterdam",
-    "subtitle": "A web-development game for (almost) everyone.",
-    "newGame": "New Game",
-    "resumeGame": "Resume Game",
-    "howToPlay": "How to Play"
+    "subtitle": "Build a component together. One of you has no idea what it is.",
+    "newGame": "Open a room",
+    "resumeGame": "Join a room",
+    "howToPlay": "How to play"
   },
   "howToPlay": {
     "title": "How to Play",
     "back": "Back"
+  },
+  "join": {
+    "heading": "Join a room",
+    "codeLabel": "Room code",
+    "submit": "Join",
+    "hostPrompt": "Running the big screen?",
+    "create": "Open a new room",
+    "creating": "Opening…"
+  },
+  "lobby": {
+    "treeLabel": "Players in this room",
+    "joinAt": "Room code",
+    "needMore_one": "{{count}} more dev to start",
+    "needMore_other": "{{count}} more devs to start",
+    "start": "Start the round",
+    "waiting_one": "Waiting for {{count}} more",
+    "waiting_other": "Waiting for {{count}} more"
+  },
+  "playerJoin": {
+    "heading": "Take a seat",
+    "roomLine": "Room {{code}}",
+    "nameLabel": "Your name",
+    "submit": "Join",
+    "joining": "Joining…",
+    "rejoinHeading": "Back to your seat",
+    "rejoinLink": "Resume",
+    "error": {
+      "generic": "That didn't work. Try again.",
+      "room-not-found": "No room with that code.",
+      "already-started": "That round already started.",
+      "room-full": "This room is full."
+    }
+  },
+  "room": {
+    "notFound": "No room with code {{code}}.",
+    "roundPlaceholder": "Round in progress — {{category}} / {{phase}}"
   }
 }

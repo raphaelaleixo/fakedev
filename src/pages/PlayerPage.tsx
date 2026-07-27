@@ -92,6 +92,7 @@ export default function PlayerPage() {
         isChameleon && round.stealSlate ? (
           <StealPicker
             slate={round.stealSlate}
+            edits={round.edits}
             busy={busy}
             onSteal={(guess) => run(() => steal(id!, guess))}
           />

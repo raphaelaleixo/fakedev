@@ -147,3 +147,19 @@ the ergonomic objection to free-form values (typing
 keyboard it's nothing).
 
 Routes and the two-surface split are unchanged.
+
+## The caught Chameleon sees the render before guessing
+
+`rules.md` lists the render under "Never shown" on a controller, and that holds
+everywhere except one screen: the steal.
+
+In the paper game the fake artist guesses **while looking at the finished
+drawing** — it's on the table in front of everyone. The render is that drawing.
+Now that it only appears at resolution, withholding it until after the guess
+would make our steal strictly harder than the source, and the 20% blind floor
+and the +3 payout were both balanced against the source.
+
+So the caught Chameleon's controller shows the render above the slate. The Devs
+still don't see it — the TV holds it for resolution — so the reveal beat
+survives intact, and the asymmetry is deliberate: the person guessing gets what
+the paper game gives them, and nobody else gets an early look.

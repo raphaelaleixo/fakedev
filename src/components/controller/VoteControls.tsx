@@ -3,6 +3,9 @@ import { Box, Button, Stack, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SEAT_COLORS } from "../../game/constants";
 import { getSecret } from "../../game/content/deck";
+import { foldEdits } from "../../game/fold";
+import RenderWindow from "../canvas/RenderWindow";
+import type { Edit } from "../../game/types";
 import { color, font } from "../../theme/tokens";
 import type { SeatInfo } from "../canvas/LiveInspector";
 
@@ -84,13 +87,27 @@ export function VotePicker({
 /**
  * The caught Chameleon's one guess: the Secret plus its four nearest
  * neighbours, shuffled. One answer, no second attempt.
+ *
+ * **This is the one place a controller shows the render**, which `rules.md`
+ * otherwise forbids outright. The exception is what keeps the steal as fair as
+ * the paper game's: there, the fake artist guesses while looking at the
+ * finished drawing, sitting on the table in front of everyone. The render is
+ * that drawing. Withholding it until after the guess would make our steal
+ * strictly harder than the source, and the 20% floor and the +3 payout were
+ * balanced around a real chance.
+ *
+ * The Devs still don't see it — the TV holds the render for resolution, so the
+ * reveal beat survives intact.
  */
 export function StealPicker({
   slate,
+  edits,
   onSteal,
   busy,
 }: {
   slate: string[];
+  /** The round's log, so the Chameleon can see what the table built. */
+  edits: Edit[];
   onSteal: (secretId: string) => void;
   busy?: boolean;
 }) {
@@ -100,6 +117,9 @@ export function StealPicker({
   return (
     <Stack spacing={2}>
       <Typography variant="h4">{t("steal.heading")}</Typography>
+      <Box sx={{ height: 240 }}>
+        <RenderWindow tree={foldEdits(edits)} title={t("canvas.renderWindow")} />
+      </Box>
       <Typography sx={{ color: color.muted }}>{t("steal.oneShot")}</Typography>
       <Stack spacing={1}>
         {slate.map((secretId) => {

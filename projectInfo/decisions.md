@@ -55,18 +55,32 @@ conclusion doesn't follow, because the browser validates CSS natively.
   and `rgba(0, 0, 0, 0.5)` render identically.
 
 **The property list costs zero bundle bytes** — it comes from the browser, not a
-package:
-
-```js
-const props = [...new Set([
-  ...Array.from(getComputedStyle(document.body)),
-  ...Object.getOwnPropertyNames(Object.getPrototypeOf(document.body.style)),
-])].filter((p) => CSS.supports(p, "initial"));
-```
-
-Automatically correct for the rendering device, no stale data, no prefix
-guessing. For comparison, the packaged alternatives are `mdn-data` 733 KB,
+package. For comparison, the packaged alternatives are `mdn-data` 733 KB,
 `css-tree` 1.36 MB, `known-css-properties` 38 KB.
+
+**Both sources are required, and this bit us.** Browsers disagree about where
+the property list lives:
+
+| Environment | `CSSStyleDeclaration.prototype` | computed style |
+|---|---|---|
+| Chrome | `["cssText", "cssFloat"]` — effectively nothing | the full list |
+| jsdom | ~1600 accessors | 1 entry |
+
+The first implementation read only the prototype. Every test passed, because
+tests run in jsdom, and in Chrome the composer's search returned **two**
+properties: `css-float` and `css-text`. The failure is silent — no error, no
+warning, just an autocomplete that matches nothing — and it cost two wrong
+fixes before an isolation panel found it.
+
+`supportedCssProperties` therefore merges computed style *and* the style
+object's own plus prototype names, and takes a `PropertySource` so both
+environments are covered by tests rather than by luck. `src/game/css.test.ts`
+holds a Chrome-shaped and a jsdom-shaped fake; deleting either source fails a
+test.
+
+**Lesson worth keeping:** "the browser already knows" is still the right call,
+but a browser API that differs across engines needs verifying *in the target
+browser*, not just in the test environment. jsdom passing is not evidence.
 
 **Why not the curated-only whitelist.** The rate-limiting argument — that
 unrestricted CSS lets one player finish the component in a single turn — inverts

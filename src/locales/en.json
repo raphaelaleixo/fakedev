@@ -56,6 +56,40 @@
   "inspector": {
     "untouched": "nothing yet"
   },
+  "controller": {
+    "theSecret": "You're building",
+    "yourRole": "Your role",
+    "fakeDev": "FAKE DEV",
+    "yourTurn": "Your turn",
+    "otherTurn": "{{name}} is editing",
+    "phaseWait": "Look at the big screen — {{phase}}",
+    "waitingForStart": "Waiting for the round to start",
+    "badSeat": "That seat isn't in this room.",
+    "commitFailed": "That edit didn't land. Try again."
+  },
+  "composer": {
+    "target": "Where",
+    "kind": "What",
+    "element": "Element",
+    "value": "Value",
+    "commit": "Commit",
+    "on": "on",
+    "off": "off",
+    "kinds": {
+      "tag": "element",
+      "attribute": "attribute",
+      "style": "css"
+    },
+    "key": {
+      "attribute": "Attribute",
+      "style": "Property"
+    },
+    "keyPlaceholder": "type to search…",
+    "elementPlaceholder": "div, button, input…",
+    "valuePlaceholder": "type a value…",
+    "colorPlaceholder": "or any CSS color",
+    "invalidValue": "The browser can't parse that."
+  },
   "deck": {
     "category": {
       "form-states": "Form States",

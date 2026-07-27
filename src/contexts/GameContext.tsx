@@ -20,7 +20,8 @@ import {
 import { database } from "../firebase";
 import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
 import { seatColorFor, startMatch } from "../game/match";
-import type { FakeDevPlayerData, MatchState } from "../game/types";
+import { submitEdit } from "../game/round";
+import type { Edit, FakeDevPlayerData, MatchState } from "../game/types";
 
 export interface GameContextValue {
   roomState: RoomState<FakeDevPlayerData> | null;
@@ -32,6 +33,7 @@ export interface GameContextValue {
   loadRoom: (roomId: string) => void;
   joinRoom: (roomId: string, name: string) => Promise<number>;
   startTheMatch: () => Promise<void>;
+  commitEdit: (roomId: string, edit: Edit) => Promise<void>;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -125,6 +127,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
   }, [roomState]);
 
+  /**
+   * Appends one commit and advances the turn.
+   *
+   * Re-reads the round first rather than trusting the subscribed copy: the
+   * controller may have been showing a state one write behind, and `submitEdit`
+   * throws on an out-of-turn edit, which is the check we want to run against
+   * what's actually in the database.
+   */
+  const commitEdit = useCallback(async (roomId: string, edit: Edit) => {
+    const snapshot = await get(ref(database, `${roomPath(roomId)}/game`));
+    const match = snapshot.val() as MatchState | null;
+    if (!match?.round) throw new Error("no-round");
+
+    const round = submitEdit({ ...match.round, edits: match.round.edits ?? [] }, edit);
+    await update(ref(database, `${roomPath(roomId)}/game`), {
+      round: JSON.parse(JSON.stringify(round)),
+    });
+  }, []);
+
   return (
     <GameContext.Provider
       value={{
@@ -136,6 +157,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         loadRoom,
         joinRoom,
         startTheMatch,
+        commitEdit,
       }}
     >
       {children}

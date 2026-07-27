@@ -1,5 +1,6 @@
 import { Box } from "@mui/material";
 import { slotHistories, type SlotHistory } from "../../game/fold";
+import ColorSwatch from "../ColorSwatch";
 import { SEAT_COLORS } from "../../game/constants";
 import type {
   Edit,
@@ -34,6 +35,10 @@ export interface SeatInfo {
  *
  * No author names here — the turn rail above carries the name-to-colour
  * mapping, and repeating it on every declaration would drown the code.
+ *
+ * Colour values get a swatch beside them, the way DevTools previews one. That
+ * keeps "who used the ugly green" a usable clue now that the render only
+ * appears at resolution.
  */
 export default function LiveInspector({
   edits,
@@ -196,9 +201,11 @@ function Value({
 }) {
   // Nobody has answered yet. The gap is the move, so it gets drawn.
   if (!history.current) return <Punct>…</Punct>;
+  const value = history.current.value ?? "";
   return (
     <Box component="span" sx={{ color: tint(history.current.playerId) }}>
-      {history.current.value}
+      <ColorSwatch value={value} />
+      {value}
     </Box>
   );
 }
@@ -220,6 +227,7 @@ function Overrides({
       <Punct> /* </Punct>
       {history.overridden.map((edit, i) => (
         <Box component="span" key={edit.id} sx={{ color: tint(edit.playerId) }}>
+          <ColorSwatch value={edit.value ?? ""} />
           {edit.value}
           {i < history.overridden.length - 1 && <Punct>, </Punct>}
         </Box>

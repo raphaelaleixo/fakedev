@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  isColorValue,
   isValidDeclaration,
   supportedCssProperties,
   toKebabCase,
@@ -135,5 +136,36 @@ describe("isValidDeclaration", () => {
 
   test("still rejects an empty value with no CSS.supports available", () => {
     expect(isValidDeclaration("color", "", null)).toBe(false);
+  });
+});
+
+describe("isColorValue", () => {
+  const supports = (property: string, value: string) =>
+    property === "color" &&
+    ["red", "#1a73e8", "rgb(0, 0, 0)", "transparent", "currentColor"].includes(value);
+
+  test("recognises the ways a colour gets written", () => {
+    expect(isColorValue("red", supports)).toBe(true);
+    expect(isColorValue("#1a73e8", supports)).toBe(true);
+    expect(isColorValue("rgb(0, 0, 0)", supports)).toBe(true);
+  });
+
+  test("ignores values that are not colours", () => {
+    expect(isColorValue("flex", supports)).toBe(false);
+    expect(isColorValue("20px", supports)).toBe(false);
+    expect(isColorValue("", supports)).toBe(false);
+  });
+
+  /**
+   * Strict where `isValidDeclaration` is permissive, and deliberately so: a
+   * missing swatch is invisible, a wrong one is a lie about what got played.
+   */
+  test("shows nothing rather than guessing when the browser cannot say", () => {
+    expect(isColorValue("red", null)).toBe(false);
+  });
+
+  test("skips keywords a swatch could not honestly draw", () => {
+    expect(isColorValue("currentColor", supports)).toBe(false);
+    expect(isColorValue("transparent", supports)).toBe(false);
   });
 });

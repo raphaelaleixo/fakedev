@@ -108,3 +108,28 @@ export function isValidDeclaration(
   if (!supports) return true;
   return supports(property, value);
 }
+
+/** Colour keywords a swatch cannot honestly draw — they depend on context. */
+const UNDRAWABLE = new Set(["currentcolor", "transparent", "inherit", "initial", "unset", "revert"]);
+
+/**
+ * Whether a value is a colour worth previewing beside, the way DevTools shows a
+ * swatch next to one.
+ *
+ * Asks the browser rather than pattern-matching hex and `rgb(`, so named
+ * colours, `hsl()`, `color-mix()` and whatever lands next all work for free.
+ *
+ * Deliberately **strict** where `isValidDeclaration` is permissive: with no
+ * `CSS.supports` available this returns false rather than guessing. A missing
+ * swatch is invisible; a wrong one misreports what somebody played, and this
+ * game is people reading each other's moves.
+ */
+export function isColorValue(
+  value: string,
+  supports: SupportsFn | null = nativeSupports(),
+): boolean {
+  const candidate = value.trim();
+  if (!candidate || !supports) return false;
+  if (UNDRAWABLE.has(candidate.toLowerCase())) return false;
+  return supports("color", candidate);
+}

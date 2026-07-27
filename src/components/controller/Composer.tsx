@@ -22,6 +22,7 @@ import {
 import type { ComposerDraft, ComposerMove, Edit, ElementTarget } from "../../game/types";
 import { color, font } from "../../theme/tokens";
 import ValueEditor from "./ValueEditor";
+import ColorSwatch from "../ColorSwatch";
 
 /** Two things on the canvas. Each owns a text slot. */
 const ELEMENTS: ElementTarget[] = ["outer", "inner"];
@@ -193,7 +194,14 @@ export default function Composer({
                 >
                   <Box component="span">{slot.key}</Box>
                   <Box component="span" sx={{ opacity: 0.7, fontSize: "0.85em" }}>
-                    {slot.value === undefined ? t("composer.open") : slot.value}
+                    {slot.value === undefined ? (
+                      t("composer.open")
+                    ) : (
+                      <>
+                        <ColorSwatch value={slot.value} />
+                        {slot.value}
+                      </>
+                    )}
                   </Box>
                 </Button>
               );
@@ -363,6 +371,7 @@ function Preview({ draft }: { draft: ComposerDraft }) {
         <Box component="span" sx={punct}>
           {draft.slotKind === "style" ? ": " : "="}
         </Box>
+        <ColorSwatch value={value} />
         {draft.slotKind === "style" ? value : `"${value}"`}
         {draft.slotKind === "style" && (
           <Box component="span" sx={punct}>

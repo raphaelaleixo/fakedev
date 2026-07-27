@@ -1,5 +1,14 @@
 import { describe, expect, test } from "vitest";
 import { ALL_SECRETS, CATEGORIES, getGroupSecrets, getSecret } from "./deck";
+import en from "../../locales/en.json";
+
+function lookup(key: string): unknown {
+  return key.split(".").reduce<unknown>(
+    (node, part) =>
+      node && typeof node === "object" ? (node as Record<string, unknown>)[part] : undefined,
+    en,
+  );
+}
 
 /**
  * Guards the deck's structural invariants. `cards.md` says the screening rules
@@ -49,6 +58,15 @@ describe("deck", () => {
   test("resolves a secret by id", () => {
     expect(getSecret("everyday-components/progress-bar")?.group).toBe("wide-bar");
     expect(getSecret("nope/nope")).toBeUndefined();
+  });
+
+  test("gives every category and secret a label that actually resolves", () => {
+    for (const category of CATEGORIES) {
+      expect(lookup(category.labelKey), category.labelKey).toEqual(expect.any(String));
+    }
+    for (const secret of ALL_SECRETS) {
+      expect(lookup(secret.labelKey), secret.labelKey).toEqual(expect.any(String));
+    }
   });
 
   test("returns a full 5-card slate including the secret itself", () => {

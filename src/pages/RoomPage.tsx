@@ -4,6 +4,9 @@ import { useTranslation } from "react-i18next";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { useGame } from "../contexts/GameContext";
 import Lobby from "../components/Lobby";
+import Canvas from "../components/canvas/Canvas";
+import type { SeatInfo } from "../components/canvas/LiveInspector";
+import { seatColorFor } from "../game/match";
 import { color } from "../theme/tokens";
 
 /** The big screen. Lobby until the match starts, then the canvas. */
@@ -43,12 +46,31 @@ export default function RoomPage() {
     );
   }
 
-  // TODO: the canvas — Render Window + Live Inspector, turn rail, vote, resolution.
+  const round = matchState?.round;
+  if (!round) {
+    return (
+      <Centered>
+        <CircularProgress />
+      </Centered>
+    );
+  }
+
+  const seats: SeatInfo[] = roomState.players
+    .filter((p) => p.status === "ready")
+    .map((p) => ({
+      id: p.id,
+      name: p.name ?? `#${p.id}`,
+      color: p.data?.color ?? seatColorFor(p.id),
+    }));
+
+  if (round.phase === "turns") return <Canvas round={round} seats={seats} />;
+
+  // TODO: countdown, vote reveal, steal and resolution screens.
   return (
     <Centered>
       {t("room.roundPlaceholder", {
-        category: matchState?.round?.categoryId ?? "—",
-        phase: matchState?.round?.phase ?? "—",
+        category: round.categoryId,
+        phase: round.phase,
       })}
     </Centered>
   );

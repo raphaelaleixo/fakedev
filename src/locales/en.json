@@ -57,7 +57,7 @@
     "notFound": "No room with code {{code}}."
   },
   "canvas": {
-    "categoryLabel": "Category",
+    "brief": "Style × Component",
     "renderWindow": "Render window",
     "playerTurn": "{{name}} is editing",
     "turnsDone": "Turns are up",
@@ -76,7 +76,10 @@
     "stealWait": "The Chameleon is guessing",
     "waitingForStart": "Waiting for the round to start",
     "badSeat": "That seat isn't in this room.",
-    "commitFailed": "That edit didn't land. Try again."
+    "commitFailed": "That edit didn't land. Try again.",
+    "styleLabel": "Style",
+    "componentLabel": "Component",
+    "decksHint": "Everything it could be"
   },
   "composer": {
     "element": "Which element",
@@ -121,93 +124,57 @@
     "caught": "{{name}} was caught",
     "guessing": "One guess at what you were building",
     "heading": "What were they building?",
-    "oneShot": "One answer. No second attempt.",
-    "confirm": "That's my answer"
+    "oneShot": "One answer each. No second attempt.",
+    "confirm": "That's my answer",
+    "headingStyle": "What style was it?",
+    "headingComponent": "And what was it?"
   },
   "result": {
-    "theSecretWas": "The Secret was",
+    "theSecretWas": "It was",
     "caught": "{{name}} was the Chameleon, and got caught",
     "escaped": "{{name}} was the Chameleon, and walked away with it",
     "tied": "The vote tied — {{name}} was the Chameleon, and escapes",
-    "stolen": "{{name}} was the Chameleon, got caught, and named it anyway",
+    "stolen": "{{name}} was the Chameleon, got caught, and named both",
     "guessed": "They guessed {{guess}}",
     "nextRound": "Next round",
-    "matchWinner": "{{names}} wins"
+    "matchWinner": "{{names}} wins",
+    "half": "{{name}} was the Chameleon, got caught, and named half of it",
+    "guessedNothing": "{{name}} was the Chameleon, got caught, and got neither"
   },
   "deck": {
-    "category": {
-      "form-states": "Form States",
-      "design-eras": "Design Eras",
-      "web-annoyances": "Web Annoyances",
-      "everyday-components": "Everyday Components"
-    },
-    "form-states": {
-      "placeholder-text": "Placeholder Text",
-      "password-field": "Password Field",
-      "search-input": "Search Input",
-      "autofilled-input": "Autofilled Input",
-      "read-only-input": "Read-only Input",
-      "validation-error": "Validation Error",
-      "required-field": "Required Field",
-      "character-counter": "Character Counter",
-      "success-confirmation": "Success Confirmation",
-      "focused-input": "Focused Input",
-      "disabled-button": "Disabled Button",
-      "loading-button": "Loading Button",
-      "file-upload-field": "File Upload Field",
-      "checked-checkbox": "Checked Checkbox",
-      "toggle-switch-off": "Toggle Switch (Off)"
-    },
-    "design-eras": {
-      "web-2-glossy-button": "Web 2.0 Glossy Button",
-      "brutalist-button": "Brutalist Button",
-      "neumorphic-button": "Neumorphic Button",
-      "y2k-chrome-button": "Y2K Chrome Button",
-      "claymorphic-button": "Claymorphic Button",
-      "windows-95-dialog": "Windows 95 Dialog",
-      "glassmorphism-card": "Glassmorphism Card",
-      "bootstrap-alert": "Bootstrap Alert",
+    "style": {
+      "windows-95": "Windows 95",
+      "web-2-glossy": "Web 2.0 Glossy",
+      "brutalist": "Brutalist",
+      "skeuomorphic": "Skeuomorphic",
+      "material": "Material",
+      "neumorphic": "Neumorphic",
+      "glassmorphism": "Glassmorphism",
+      "bootstrap": "Bootstrap",
       "dos-terminal": "DOS Terminal",
+      "flat-design": "Flat Design",
       "metro-tile": "Metro Tile",
-      "skeuomorphic-toggle": "Skeuomorphic Toggle",
-      "material-fab": "Material FAB",
-      "geocities-marquee": "GeoCities Marquee",
-      "flat-design-badge": "Flat Design Badge",
-      "vaporwave-banner": "Vaporwave Banner"
+      "y2k-chrome": "Y2K Chrome",
+      "vaporwave": "Vaporwave",
+      "claymorphic": "Claymorphic",
+      "wireframe": "Wireframe"
     },
-    "web-annoyances": {
-      "age-verification-gate": "Age Verification Gate",
-      "ad-blocker-detected-wall": "Ad Blocker Detected Wall",
-      "open-in-app-interstitial": "“Open in App” Interstitial",
-      "exit-intent-modal": "Exit-Intent Modal",
-      "newsletter-signup-popup": "Newsletter Signup Popup",
-      "push-notification-prompt": "Push Notification Prompt",
-      "location-permission-prompt": "Location Permission Prompt",
-      "captcha-box": "CAPTCHA Box",
-      "cookie-consent-banner": "Cookie Consent Banner",
-      "survey-invitation": "Survey Invitation",
-      "paywall-fade": "Paywall Fade",
-      "live-chat-bubble": "Live Chat Bubble",
-      "autoplay-video-player": "Autoplay Video Player",
-      "fake-urgency-timer": "Fake Urgency Timer",
-      "unsubscribe-guilt-trip": "Unsubscribe Guilt Trip"
-    },
-    "everyday-components": {
+    "component": {
       "progress-bar": "Progress Bar",
       "range-slider": "Range Slider",
-      "skeleton-loader": "Skeleton Loader",
-      "alert-banner": "Alert Banner",
-      "search-bar": "Search Bar",
-      "notification-badge": "Notification Badge",
+      "toggle-switch": "Toggle Switch",
       "avatar": "Avatar",
+      "notification-badge": "Notification Badge",
       "tag-chip": "Tag / Chip",
       "tooltip": "Tooltip",
-      "keyboard-shortcut-hint": "Keyboard Shortcut Hint",
+      "search-bar": "Search Bar",
+      "alert-banner": "Alert Banner",
       "modal-dialog": "Modal Dialog",
-      "accordion-header": "Accordion Header",
-      "empty-state": "Empty State",
-      "dropdown-trigger": "Dropdown Trigger",
-      "breadcrumb-trail": "Breadcrumb Trail"
+      "icon-button": "Icon Button",
+      "segmented-control": "Segmented Control",
+      "checkbox": "Checkbox",
+      "skeleton-loader": "Skeleton Loader",
+      "keyboard-key": "Keyboard Key"
     }
   }
 }

@@ -1,4 +1,4 @@
-import type { Edit, Round } from "../game/types";
+import type { Edit, Round, StealGuess } from "../game/types";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
 import { seatColorFor } from "../game/match";
 
@@ -12,11 +12,10 @@ import { seatColorFor } from "../game/match";
  * lost — so a fixture that looks like that would teach us the wrong thing about
  * whether the canvas works.
  *
- * The Secret here is Cookie Consent Banner, but what renders is a small white
- * card with copy and one blue affordance. That is honestly *any* of the five
- * cards in the `consent-prompt` group — CAPTCHA Box, Push Notification Prompt,
- * Location Permission Prompt and Survey Invitation would all look like this at
- * this stage. It makes sense as a component; it does not announce itself.
+ * The Secret here is *Flat Design · Progress Bar*, but what the board shows is a
+ * padded white box with a blue child. That is honestly any number of components
+ * in any number of styles at this stage. It makes sense; it does not announce
+ * itself.
  *
  * The label is lorem ipsum on purpose: it commits to body copy of a certain
  * length without committing to what the copy says. Structural signal, zero
@@ -71,8 +70,8 @@ export const MOCK_EDITS: Edit[] = [
 export function mockRound(turnsPlayed = MOCK_EDITS.length): Round {
   return {
     index: 0,
-    categoryId: "web-annoyances",
-    secretId: "web-annoyances/cookie-consent-banner",
+    styleId: "flat-design",
+    componentId: "progress-bar",
     chameleonId: 4,
     phase: "turns",
     turnOrder: [1, 2, 3, 4, 5],
@@ -85,16 +84,13 @@ export function mockRound(turnsPlayed = MOCK_EDITS.length): Round {
 /** Seats 1, 2 and 5 point at the Chameleon; 3 misfires; the Chameleon points at 1. */
 export const MOCK_VOTES: Record<number, number> = { 1: 4, 2: 4, 3: 2, 4: 1, 5: 4 };
 
-export const MOCK_SLATE = [
-  "web-annoyances/survey-invitation",
-  "web-annoyances/cookie-consent-banner",
-  "web-annoyances/captcha-box",
-  "web-annoyances/push-notification-prompt",
-  "web-annoyances/location-permission-prompt",
-];
+export const MOCK_SLATE = {
+  styles: ["wireframe", "flat-design", "brutalist", "material", "vaporwave"],
+  components: ["avatar", "toggle-switch", "progress-bar", "tooltip", "tag-chip"],
+};
 
 /** The same round frozen at any later phase, for building those screens. */
-export function mockRoundAt(phase: Round["phase"], stealGuess?: string): Round {
+export function mockRoundAt(phase: Round["phase"], stealGuess?: StealGuess): Round {
   const base: Round = {
     ...mockRound(),
     phase,
@@ -105,7 +101,14 @@ export function mockRoundAt(phase: Round["phase"], stealGuess?: string): Round {
   if (phase === "steal") return { ...base, stealSlate: MOCK_SLATE };
   if (phase !== "result") return base;
 
-  const correct = stealGuess === base.secretId;
+  const steal = stealGuess
+    ? {
+        style: stealGuess.styleId === base.styleId,
+        component: stealGuess.componentId === base.componentId,
+      }
+    : null;
+  const halves = steal ? Number(steal.style) + Number(steal.component) : 0;
+
   return {
     ...base,
     stealSlate: MOCK_SLATE,
@@ -114,8 +117,13 @@ export function mockRoundAt(phase: Round["phase"], stealGuess?: string): Round {
       caughtPlayerId: 4,
       chameleonCaught: true,
       tied: false,
-      stealCorrect: stealGuess ? correct : null,
-      awards: correct ? { 4: 3 } : { 1: 1, 2: 1, 5: 1 },
+      steal,
+      awards:
+        halves === 2
+          ? { 4: 2 }
+          : halves === 1
+            ? { 4: 1, 1: 1, 2: 1, 5: 1 }
+            : { 1: 1, 2: 1, 5: 1 },
     },
   };
 }

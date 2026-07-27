@@ -13,8 +13,8 @@ import { deserializeMatch } from "./serialize";
  */
 const round = {
   index: 0,
-  categoryId: "form-states",
-  secretId: "form-states/disabled-button",
+  styleId: "brutalist",
+  componentId: "progress-bar",
   chameleonId: 3,
   phase: "turns",
   turnOrder: [1, 2, 3, 4],
@@ -32,10 +32,12 @@ describe("deserializeMatch", () => {
     expect(deserializeMatch(match).round?.votes).toEqual({});
   });
 
-  test("restores an empty scoreboard and used pile", () => {
+  test("restores an empty scoreboard and both used pools", () => {
     const result = deserializeMatch(match);
     expect(result.scores).toEqual({});
-    expect(result.usedSecretIds).toEqual([]);
+    expect(result.usedStyleIds).toEqual([]);
+    expect(result.usedComponentIds).toEqual([]);
+    expect(result.roundIndex).toBe(0);
   });
 
   test("turns Firebase's index-keyed object back into an ordered array", () => {
@@ -56,12 +58,13 @@ describe("deserializeMatch", () => {
     const raw = {
       ...match,
       scores: { 1: 3 },
-      usedSecretIds: ["form-states/loading-button"],
+      usedStyleIds: ["wireframe"],
+      usedComponentIds: ["avatar"],
       round: { ...round, edits: [], votes: { 1: 3 } },
     };
     const result = deserializeMatch(raw);
     expect(result.scores).toEqual({ 1: 3 });
-    expect(result.usedSecretIds).toEqual(["form-states/loading-button"]);
+    expect(result.usedStyleIds).toEqual(["wireframe"]);
     expect(result.round?.votes).toEqual({ 1: 3 });
   });
 
@@ -79,7 +82,7 @@ describe("deserializeMatch", () => {
       round: {
         ...round,
         phase: "result",
-        outcome: { caughtPlayerId: null, chameleonCaught: false, tied: true, stealCorrect: null },
+        outcome: { caughtPlayerId: null, chameleonCaught: false, tied: true, steal: null },
       },
     };
     expect(deserializeMatch(raw).round?.outcome?.awards).toEqual({});
@@ -115,6 +118,8 @@ describe("a real round trip", () => {
 
     const stored = throughFirebase(JSON.parse(JSON.stringify(startMatch([1, 2, 3, 4]))));
     expect((stored as Record<string, unknown>).scores).toBeUndefined();
+    // roundIndex 0 is falsy-but-meaningful; Firebase keeps it, we default it.
+    expect(deserializeMatch(stored).roundIndex).toBe(0);
 
     const match = deserializeMatch(stored);
     expect(match.round?.edits).toEqual([]);

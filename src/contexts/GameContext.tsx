@@ -22,7 +22,7 @@ import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
 import { advanceMatch, seatColorFor, startMatch } from "../game/match";
 import { beginVoting, castVote, resolveRound, submitEdit, submitSteal } from "../game/round";
 import { deserializeMatch } from "../game/serialize";
-import type { Edit, FakeDevPlayerData, MatchState, Round } from "../game/types";
+import type { Edit, FakeDevPlayerData, MatchState, Round, StealGuess } from "../game/types";
 
 export interface GameContextValue {
   roomState: RoomState<FakeDevPlayerData> | null;
@@ -38,7 +38,7 @@ export interface GameContextValue {
   openVoting: (roomId: string) => Promise<void>;
   vote: (roomId: string, voterId: number, suspectId: number) => Promise<void>;
   closeVoting: (roomId: string) => Promise<void>;
-  steal: (roomId: string, guess: string) => Promise<void>;
+  steal: (roomId: string, guess: StealGuess) => Promise<void>;
   nextRound: (roomId: string) => Promise<void>;
 }
 
@@ -165,7 +165,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     await mutateRound(roomId, (round) => castVote(round, voterId, suspectId));
   }, []);
 
-  const steal = useCallback(async (roomId: string, guess: string) => {
+  const steal = useCallback(async (roomId: string, guess: StealGuess) => {
     await mutateRound(roomId, (round) => submitSteal(round, guess), {
       ignorePhaseErrors: true,
     });

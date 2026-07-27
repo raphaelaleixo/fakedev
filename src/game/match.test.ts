@@ -1,19 +1,20 @@
 import { describe, expect, test } from "vitest";
 import { advanceMatch, seatColorFor, startMatch, startNextRound } from "./match";
 import { MAX_PLAYERS, SEAT_COLOR_ORDER } from "./constants";
-import { ALL_SECRETS } from "./content/deck";
 import type { MatchState, Round } from "./types";
 
 const seats = [1, 2, 3, 4];
 const rng = () => 0.5;
 
 describe("startMatch", () => {
-  test("opens a match with a clean scoreboard", () => {
+  test("opens a match with a clean scoreboard and both pools empty", () => {
     const match = startMatch(seats, rng);
     expect(match.status).toBe("playing");
     expect(match.seats).toEqual(seats);
     expect(match.scores).toEqual({});
-    expect(match.usedSecretIds).toEqual([]);
+    expect(match.usedStyleIds).toEqual([]);
+    expect(match.usedComponentIds).toEqual([]);
+    expect(match.roundIndex).toBe(0);
     expect(match.winnerIds).toBeUndefined();
   });
 
@@ -30,7 +31,9 @@ describe("startNextRound", () => {
     status: "playing",
     seats,
     scores: { 1: 3 },
-    usedSecretIds: ["form-states/disabled-button"],
+    usedStyleIds: ["brutalist"],
+    usedComponentIds: ["progress-bar"],
+    roundIndex: 0,
     round: null,
   };
 
@@ -40,14 +43,35 @@ describe("startNextRound", () => {
     expect(next.scores).toEqual({ 1: 3 });
   });
 
-  test("never deals a Secret already played this match", () => {
+  test("never deals a half already played this match", () => {
     const next = startNextRound(played, rng);
-    expect(next.round?.secretId).not.toBe("form-states/disabled-button");
+    expect(next.round?.styleId).not.toBe("brutalist");
+    expect(next.round?.componentId).not.toBe("progress-bar");
   });
 
-  test("counts the round index off the used pile, so it survives a reload", () => {
-    const deep = { ...played, usedSecretIds: ALL_SECRETS.slice(0, 7).map((s) => s.id) };
-    expect(startNextRound(deep, rng).round?.index).toBe(7);
+  test("carries the round index forward explicitly", () => {
+    const deep = { ...played, roundIndex: 6 };
+    const next = startNextRound(deep, rng);
+    expect(next.roundIndex).toBe(7);
+    expect(next.round?.index).toBe(7);
+  });
+
+  test("keeps fifteen rounds available before either deck runs dry", () => {
+    let match = startMatch(seats, () => 0.5);
+    const styles = new Set<string>();
+    const components = new Set<string>();
+    for (let i = 0; i < 15; i++) {
+      styles.add(match.round!.styleId);
+      components.add(match.round!.componentId);
+      match = {
+        ...match,
+        usedStyleIds: [...match.usedStyleIds, match.round!.styleId],
+        usedComponentIds: [...match.usedComponentIds, match.round!.componentId],
+      };
+      if (i < 14) match = startNextRound(match, () => 0.5);
+    }
+    expect(styles.size).toBe(15);
+    expect(components.size).toBe(15);
   });
 
   test("refuses to deal into a finished match", () => {
@@ -76,14 +100,16 @@ describe("advanceMatch", () => {
     status: "playing",
     seats,
     scores: { 1: 2 },
-    usedSecretIds: [],
+    usedStyleIds: [],
+    usedComponentIds: [],
+    roundIndex: 0,
     round: null,
   };
 
   const resolved = (awards: Record<number, number>): Round => ({
     index: 0,
-    categoryId: "form-states",
-    secretId: "form-states/disabled-button",
+    styleId: "brutalist",
+    componentId: "progress-bar",
     chameleonId: 3,
     phase: "result",
     turnOrder: seats,
@@ -94,7 +120,7 @@ describe("advanceMatch", () => {
       caughtPlayerId: 3,
       chameleonCaught: true,
       tied: false,
-      stealCorrect: false,
+      steal: { style: false, component: false },
       awards,
     },
   });
@@ -111,9 +137,10 @@ describe("advanceMatch", () => {
     expect(next.round?.index).toBe(1);
   });
 
-  test("does not deal a Secret already played", () => {
+  test("does not deal a half already played", () => {
     const next = advanceMatch(base, resolved({ 1: 1 }), rng);
-    expect(next.round?.secretId).not.toBe("form-states/disabled-button");
+    expect(next.round?.styleId).not.toBe("brutalist");
+    expect(next.round?.componentId).not.toBe("progress-bar");
   });
 
   test("ends the match instead of dealing when someone reaches the target", () => {

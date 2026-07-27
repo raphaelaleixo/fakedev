@@ -18,15 +18,18 @@ function renderCanvas(turnsPlayed?: number) {
 }
 
 describe("Canvas", () => {
-  test("shows the Category, which is public all round", () => {
+  /** Nothing about the answer is public — only the shape of it. */
+  test("names the shape of the answer and nothing more", () => {
     renderCanvas();
-    expect(screen.getByText("Web Annoyances")).toBeInTheDocument();
+    expect(screen.getByText("Style × Component")).toBeInTheDocument();
   });
 
-  test("never puts the Secret on the big screen", () => {
+  test("never puts either half of the Secret on the big screen", () => {
     const { container } = renderCanvas();
-    expect(screen.queryByText(/Cookie Consent Banner/)).toBeNull();
-    expect(container.innerHTML).not.toContain("cookie-consent-banner");
+    expect(screen.queryByText(/Progress Bar/)).toBeNull();
+    expect(screen.queryByText(/Flat Design/)).toBeNull();
+    expect(container.innerHTML).not.toContain("progress-bar");
+    expect(container.innerHTML).not.toContain("flat-design");
   });
 
   test("never puts the Chameleon's identity on the big screen", () => {

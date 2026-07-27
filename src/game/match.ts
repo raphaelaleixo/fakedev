@@ -12,26 +12,31 @@ export function startMatch(seats: number[], rng?: Rng): MatchState {
     status: "playing",
     seats,
     scores: {},
-    usedSecretIds: [],
-    round: createRound({ index: 0, seats, usedSecretIds: [], rng }),
+    usedStyleIds: [],
+    usedComponentIds: [],
+    roundIndex: 0,
+    round: createRound({ index: 0, seats, usedStyleIds: [], usedComponentIds: [], rng }),
   };
 }
 
 /**
- * Deals the next round after the previous one resolved. The round index is
- * derived from the used pile rather than tracked separately, so it can't drift
- * out of sync with the deck.
+ * Deals the next round after the previous one resolved.
+ *
+ * Neither half of the Secret can repeat, so both used pools are passed through.
  */
 export function startNextRound(match: MatchState, rng?: Rng): MatchState {
   if (match.status === "finished") {
     throw new Error("Match is finished; no further rounds.");
   }
+  const roundIndex = match.roundIndex + 1;
   return {
     ...match,
+    roundIndex,
     round: createRound({
-      index: match.usedSecretIds.length,
+      index: roundIndex,
       seats: match.seats,
-      usedSecretIds: match.usedSecretIds,
+      usedStyleIds: match.usedStyleIds,
+      usedComponentIds: match.usedComponentIds,
       rng,
     }),
   };

@@ -1,11 +1,13 @@
 import {
   CHAMELEON_POINTS,
   CORRECT_VOTER_POINTS,
+  PARTIAL_STEAL_POINTS,
+  STEAL_SLATE_SIZE,
   TARGET_SCORE,
   TURNS_PER_PLAYER,
 } from "./constants";
-import { CATEGORIES, getGroupSecrets, getSecret } from "./content/deck";
-import type { Category, Edit, MatchState, Round } from "./types";
+import { COMPONENTS, STYLES } from "./content/deck";
+import type { Card, Edit, MatchState, Round, StealGuess, StealResult } from "./types";
 
 /** Vote tally: how many pointed at each suspect, and who is at the top. */
 export interface VoteTally {
@@ -64,34 +66,45 @@ export interface ScoreRoundInput {
   chameleonId: number;
   /** voterId -> suspectId. */
   votes: Record<number, number>;
-  /** The caught Chameleon's pick, or null when no steal happened. */
-  stealGuess: string | null;
-  secretId: string;
+  /** Which halves the Chameleon named. Null when they were never caught. */
+  steal: StealResult | null;
 }
 
 /**
  * Points for one round, playerId -> points. Players who score nothing are
  * absent rather than zero.
  *
- * Rebalanced from the paper game because there is no Question Master: the
- * Chameleon earns 3 rather than 2 since they no longer split a payout, and
- * only *correct voters* score rather than every Dev equally — otherwise 9 of
- * 10 players gain a point most rounds and the race to 5 is a formality.
+ *   escapes            Chameleon +2
+ *   caught, both       Chameleon +2
+ *   caught, one        Chameleon +1, each correct voter +1
+ *   caught, neither    each correct voter +1
+ *
+ * Escaping and a perfect steal pay the same, as they do in the paper game —
+ * both are simply "the Chameleon won this round".
+ *
+ * The gradient lives on the Chameleon's side. Devs get a flat +1 whenever they
+ * catch a Chameleon who doesn't fully recover: they can't influence the steal,
+ * so paying them differently for its outcome would reward luck.
+ *
+ * Only correct voters score, which is our one real departure from the paper
+ * game's scoring — it pays every artist equally. The app knows each individual
+ * vote, so this rewards deduction rather than attendance.
  */
 export function scoreRound({
   chameleonId,
   votes,
-  stealGuess,
-  secretId,
+  steal,
 }: ScoreRoundInput): Record<number, number> {
   const { chameleonCaught } = resolveVotes(votes, chameleonId);
 
-  // Escaped outright, or caught and then named the Secret.
-  if (!chameleonCaught || stealGuess === secretId) {
-    return { [chameleonId]: CHAMELEON_POINTS };
-  }
+  if (!chameleonCaught) return { [chameleonId]: CHAMELEON_POINTS };
+
+  const halves = steal ? Number(steal.style) + Number(steal.component) : 0;
+  if (halves === 2) return { [chameleonId]: CHAMELEON_POINTS };
 
   const awards: Record<number, number> = {};
+  if (halves === 1) awards[chameleonId] = PARTIAL_STEAL_POINTS;
+
   for (const [voterId, suspectId] of Object.entries(votes)) {
     const voter = Number(voterId);
     // The Chameleon's own vote never earns them anything.
@@ -122,60 +135,73 @@ function shuffle<T>(items: T[], rng: Rng): T[] {
   return out;
 }
 
-/**
- * The caught Chameleon's 5-card slate: the Secret's similarity group, shuffled
- * so the true card's position is randomized. Drawn at steal time, not at round
- * setup, so it can't leak early.
- */
-export function buildStealSlate(secretId: string, rng: Rng = Math.random): string[] {
-  const secret = getSecret(secretId);
-  if (!secret) throw new Error(`Unknown secret: ${secretId}`);
-  return shuffle(
-    getGroupSecrets(secret).map((s) => s.id),
+/** Five drawn from a deck, always including the answer, order randomized. */
+function slateFor(deck: Card[], answerId: string, rng: Rng): string[] {
+  const answer = deck.find((card) => card.id === answerId);
+  if (!answer) throw new Error(`Unknown card: ${answerId}`);
+  const decoys = shuffle(
+    deck.filter((card) => card.id !== answerId),
     rng,
-  );
+  ).slice(0, STEAL_SLATE_SIZE - 1);
+  return shuffle([answer, ...decoys], rng).map((card) => card.id);
+}
+
+/**
+ * The caught Chameleon's two slates — five styles and five components, each
+ * containing the true answer. Drawn at steal time, not at setup, so they can't
+ * leak early, and drawn fresh each time so the same Secret never presents the
+ * same five twice.
+ */
+export function buildStealSlate(
+  styleId: string,
+  componentId: string,
+  rng: Rng = Math.random,
+): { styles: string[]; components: string[] } {
+  return {
+    styles: slateFor(STYLES, styleId, rng),
+    components: slateFor(COMPONENTS, componentId, rng),
+  };
 }
 
 export interface CreateRoundInput {
   index: number;
   /** Seat ids in table order. */
   seats: number[];
-  /** Secrets already played this match, excluded from the draw. */
-  usedSecretIds: string[];
+  /** Halves already played this match, excluded from the draw. */
+  usedStyleIds: string[];
+  usedComponentIds: string[];
   rng?: Rng;
 }
 
+/** Draws from a deck, skipping what a match has already used. */
+function draw(deck: Card[], used: string[], rng: Rng): Card {
+  const unused = deck.filter((card) => !used.includes(card.id));
+  // Fifteen rounds are available before this can happen, which no match
+  // reaches — but a match has no hard round cap, so exhausting a deck
+  // reshuffles rather than deadlocking.
+  return pickOne(unused.length > 0 ? unused : deck, rng);
+}
+
 /**
- * Round setup. Draws the Category, the Secret, the Chameleon and the starting
+ * Round setup. Draws the style, the component, the Chameleon and the starting
  * player — in that order, which is what the RNG sequence in the tests assumes.
  */
 export function createRound({
   index,
   seats,
-  usedSecretIds,
+  usedStyleIds,
+  usedComponentIds,
   rng = Math.random,
 }: CreateRoundInput): Round {
-  const used = new Set(usedSecretIds);
-  const unused = (category: Category) =>
-    category.secrets.filter((s) => !used.has(s.id));
-
-  // With 60 cards this is unreachable in a real match, but a match has no hard
-  // round cap — so exhausting the deck reshuffles rather than deadlocking.
-  let available = CATEGORIES.filter((c) => unused(c).length > 0);
-  if (available.length === 0) {
-    used.clear();
-    available = [...CATEGORIES];
-  }
-
-  const category = pickOne(available, rng);
-  const secret = pickOne(unused(category), rng);
+  const style = draw(STYLES, usedStyleIds, rng);
+  const component = draw(COMPONENTS, usedComponentIds, rng);
   const chameleonId = pickOne(seats, rng);
   const startIndex = Math.floor(rng() * seats.length);
 
   return {
     index,
-    categoryId: category.id,
-    secretId: secret.id,
+    styleId: style.id,
+    componentId: component.id,
     chameleonId,
     phase: "turns",
     // Seat order, rotated to begin at the drawn starting player.
@@ -256,19 +282,18 @@ export function castVote(round: Round, voterId: number, suspectId: number): Roun
   return { ...round, votes, phase: everyoneVoted ? "reveal" : round.phase };
 }
 
-function finish(round: Round, stealGuess: string | null, tally: VoteResult): Round {
+function finish(round: Round, guess: StealGuess | null, tally: VoteResult): Round {
+  const steal: StealResult | null = guess
+    ? { style: guess.styleId === round.styleId, component: guess.componentId === round.componentId }
+    : null;
+
   return {
     ...round,
     phase: "result",
     outcome: {
       ...tally,
-      stealCorrect: stealGuess === null ? null : stealGuess === round.secretId,
-      awards: scoreRound({
-        chameleonId: round.chameleonId,
-        votes: round.votes,
-        stealGuess,
-        secretId: round.secretId,
-      }),
+      steal,
+      awards: scoreRound({ chameleonId: round.chameleonId, votes: round.votes, steal }),
     },
   };
 }
@@ -289,12 +314,12 @@ export function resolveRound(round: Round, rng: Rng = Math.random): Round {
   return {
     ...round,
     phase: "steal",
-    stealSlate: buildStealSlate(round.secretId, rng),
+    stealSlate: buildStealSlate(round.styleId, round.componentId, rng),
   };
 }
 
-/** The caught Chameleon's one guess. No second attempt. */
-export function submitSteal(round: Round, guess: string): Round {
+/** The caught Chameleon's one guess per axis. No second attempt. */
+export function submitSteal(round: Round, guess: StealGuess): Round {
   if (round.phase !== "steal") {
     throw new Error(`Cannot steal during the ${round.phase} phase.`);
   }
@@ -328,9 +353,9 @@ export function applyRoundOutcome(match: MatchState, round: Round): MatchState {
   return {
     ...match,
     scores,
-    // A set, not a log: `startNextRound` derives the round index from its
-    // length, so a duplicate would silently skip an index.
-    usedSecretIds: [...new Set([...match.usedSecretIds, round.secretId])],
+    // Tracked separately so neither half ever recurs in a match.
+    usedStyleIds: [...new Set([...match.usedStyleIds, round.styleId])],
+    usedComponentIds: [...new Set([...match.usedComponentIds, round.componentId])],
     status: finished ? "finished" : "playing",
     ...(finished
       ? {

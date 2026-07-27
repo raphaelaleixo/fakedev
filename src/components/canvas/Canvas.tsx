@@ -10,7 +10,8 @@ import TurnRail from "./TurnRail";
 /**
  * The big screen during a round.
  *
- * The Category is always up; the Secret never is, until resolution.
+ * Nothing about the Secret is public — the header only names the *shape* of the
+ * answer, `style × component`, so everyone knows what the Chameleon must guess.
  *
  * **The canvas shows code, not the render.** Finishing the component was never
  * the goal — the table is watching who is working toward it — and half the
@@ -48,11 +49,9 @@ export default function Canvas({ round, seats }: { round: Round; seats: SeatInfo
         }}
       >
         <Box>
-          <Typography variant="caption" sx={{ color: color.muted, display: "block" }}>
-            {t("canvas.categoryLabel")}
-          </Typography>
-          <Typography variant="h2" sx={{ fontSize: "clamp(1.5rem, 3.2vw, 2.75rem)", color: color.flame }}>
-            {t(`deck.category.${round.categoryId}`)}
+          {/* Nothing about the answer is public — only the shape of it. */}
+          <Typography variant="h2" sx={{ fontSize: "clamp(1.2rem, 2.6vw, 2rem)", color: color.flame }}>
+            {t("canvas.brief")}
           </Typography>
         </Box>
 

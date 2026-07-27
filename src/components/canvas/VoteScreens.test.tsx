@@ -57,10 +57,10 @@ describe("RevealScreen", () => {
 describe("StealScreen", () => {
   test("never shows the slate on the big screen", () => {
     const { container } = show(<StealScreen round={mockRoundAt("steal")} seats={MOCK_SEATS} />);
-    for (const secretId of MOCK_SLATE) {
-      expect(container.innerHTML).not.toContain(secretId);
+    for (const id of [...MOCK_SLATE.styles, ...MOCK_SLATE.components]) {
+      expect(container.innerHTML).not.toContain(id);
     }
-    expect(container.textContent).not.toContain("Cookie Consent Banner");
+    expect(container.textContent).not.toContain("Progress Bar");
   });
 });
 
@@ -78,7 +78,7 @@ describe("ResultScreen", () => {
    */
   test("shows the render for the first time, in a fully sandboxed stage", () => {
     const { container } = show(
-      <ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />,
+      <ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />,
     );
     const iframe = container.querySelector("iframe");
     // An empty sandbox blocks scripts entirely — what makes free-form values
@@ -89,7 +89,7 @@ describe("ResultScreen", () => {
 
   test("renders the winning value, not the one it overrode", () => {
     const { container } = show(
-      <ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />,
+      <ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />,
     );
     const srcdoc = container.querySelector("iframe")?.getAttribute("srcdoc") ?? "";
     expect(srcdoc).toContain("#1a73e8");
@@ -98,52 +98,65 @@ describe("ResultScreen", () => {
 
   test("leaves a declaration nobody answered out of the render", () => {
     const { container } = show(
-      <ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />,
+      <ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />,
     );
     // Turn 8 opened `role` and no one answered it.
     expect(container.querySelector("iframe")?.getAttribute("srcdoc")).not.toContain("role");
   });
 
-  test("reveals the Secret", () => {
-    show(<ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />);
-    expect(screen.getByText("Cookie Consent Banner")).toBeInTheDocument();
+  test("reveals both halves of the Secret", () => {
+    show(<ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />);
+    expect(screen.getByText("Flat Design")).toBeInTheDocument();
+    expect(screen.getByText("Progress Bar")).toBeInTheDocument();
   });
 
   test("names the Chameleon even when they were caught and lost", () => {
-    show(<ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />);
-    expect(screen.getByText(/Ines was the Chameleon, and got caught/)).toBeInTheDocument();
+    show(<ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />);
+    expect(screen.getByText(/Ines was the Chameleon, got caught, and got neither/)).toBeInTheDocument();
   });
 
-  test("credits a successful steal", () => {
+  test("credits naming both halves", () => {
     show(
       <ResultScreen
-        round={mockRoundAt("result", "web-annoyances/cookie-consent-banner")}
+        round={mockRoundAt("result", { styleId: "flat-design", componentId: "progress-bar" })}
         {...props}
       />,
     );
-    expect(screen.getByText(/named it anyway/)).toBeInTheDocument();
+    expect(screen.getByText(/named both/)).toBeInTheDocument();
+  });
+
+  test("credits naming half of it, and pays both sides", () => {
+    show(
+      <ResultScreen
+        round={mockRoundAt("result", { styleId: "flat-design", componentId: "avatar" })}
+        {...props}
+      />,
+    );
+    expect(screen.getByText(/named half of it/)).toBeInTheDocument();
+    // Chameleon +1, and the three correct voters +1 each.
+    expect(screen.getAllByText("+1")).toHaveLength(4);
   });
 
   test("shows what a failed steal guessed", () => {
-    show(<ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />);
-    expect(screen.getByText(/They guessed CAPTCHA Box/)).toBeInTheDocument();
+    show(<ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />);
+    expect(screen.getByText(/They guessed Wireframe · Avatar/)).toBeInTheDocument();
   });
 
   test("shows this round's points beside the running totals", () => {
-    show(<ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />);
+    show(<ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />);
     // Seats 1, 2 and 5 voted correctly.
     expect(screen.getAllByText("+1")).toHaveLength(3);
   });
 
   test("offers the next round while the match is live", () => {
-    show(<ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />);
+    show(<ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />);
     expect(screen.getByRole("button", { name: "Next round" })).toBeInTheDocument();
   });
 
   test("declares the winner instead once the match is over", () => {
     show(
       <ResultScreen
-        round={mockRoundAt("result", "web-annoyances/captcha-box")}
+        round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })}
         {...props}
         finished
         winnerIds={[1]}
@@ -156,7 +169,7 @@ describe("ResultScreen", () => {
   test("shares the win when two players tie at the top", () => {
     show(
       <ResultScreen
-        round={mockRoundAt("result", "web-annoyances/captcha-box")}
+        round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })}
         {...props}
         finished
         winnerIds={[1, 2]}

@@ -65,19 +65,26 @@ describe("StealPicker", () => {
     expect(iframe?.getAttribute("srcdoc")).toContain("Lorem ipsum dolor sit");
   });
 
-  test("offers the whole slate", () => {
+  test("offers both slates", () => {
     steal();
-    expect(screen.getByRole("button", { name: "Cookie Consent Banner" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "CAPTCHA Box" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Wireframe" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Progress Bar" })).toBeInTheDocument();
   });
 
-  test("takes one answer, on confirm", async () => {
+  /** Splitting the guess is what keeps catching the Chameleon worth doing. */
+  test("needs an answer on both axes before it will commit", async () => {
     const onSteal = vi.fn();
     const { user } = steal(onSteal);
-    await user.click(screen.getByRole("button", { name: "CAPTCHA Box" }));
-    expect(onSteal).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "That's my answer" }));
-    expect(onSteal).toHaveBeenCalledWith("web-annoyances/captcha-box");
+    const confirm = () => screen.getByRole("button", { name: "That's my answer" });
+
+    expect(confirm()).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Brutalist" }));
+    expect(confirm()).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Avatar" }));
+    expect(confirm()).toBeEnabled();
+
+    await user.click(confirm());
+    expect(onSteal).toHaveBeenCalledWith({ styleId: "brutalist", componentId: "avatar" });
   });
 
   test("never names the Secret before the guess is made", () => {

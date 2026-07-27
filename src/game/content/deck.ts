@@ -1,203 +1,81 @@
 /**
- * The 60-card deck: 4 categories × 15 Secrets.
+ * The two decks: 15 styles × 15 components = 225 Secrets from 30 authored items.
  *
- * Every card passes the two screening rules in `projectInfo/cards.md` — it must
- * be expressible as `outer → {label} + inner → {text}`, and it must share a
- * silhouette with the rest of its category.
+ * A round draws one of each. Both halves are hidden from the Chameleon, and
+ * neither repeats within a match.
  *
- * Groups hold exactly 5 cards, which makes 15 per category exactly 3 groups.
- * The steal slate *is* the caught Chameleon's group, shuffled — so cards in a
- * group must be genuinely confusable from the canvas alone. Grouping is by
- * *silhouette*, not by theme: what the render looks like decides the group.
+ * Every entry passes the four screening rules in `projectInfo/cards.md`:
+ * expressible as container-plus-one-child, identity surviving meaningless copy,
+ * needing several distinct moves, and built from different moves than its
+ * siblings.
  *
- * `sketch` is authoring guidance for the key schema and for screening. It is
- * never shown in game.
+ * `sketch` is authoring guidance — what the code should read as. Never shown in
+ * game.
  */
 
-import type { Category, CategoryId, Secret } from "../types";
+import type { Card } from "../types";
 
-/** Builds one similarity group. Enforces the 5-card rule at module load. */
-function group(
-  categoryId: CategoryId,
-  groupId: string,
-  entries: ReadonlyArray<readonly [slug: string, sketch: string]>,
-): Secret[] {
-  if (entries.length !== 5) {
-    throw new Error(
-      `Group ${categoryId}/${groupId} has ${entries.length} cards; groups must hold exactly 5.`,
-    );
-  }
-  return entries.map(([slug, sketch]) => ({
-    id: `${categoryId}/${slug}`,
-    categoryId,
-    labelKey: `deck.${categoryId}.${slug}`,
+const card = (list: "style" | "component") =>
+  (id: string, sketch: string): Card => ({
+    id,
+    labelKey: `deck.${list}.${id}`,
     sketch,
-    group: groupId,
-  }));
+  });
+
+const style = card("style");
+const component = card("component");
+
+/**
+ * What it looks like. Each is a distinct combination of surface moves — fill,
+ * border, radius, shadow, type.
+ */
+export const STYLES: Card[] = [
+  style("windows-95", "grey fill, hard outset bevel, black title strip, system font"),
+  style("web-2-glossy", "rounded, vertical gradient, top highlight, drop shadow"),
+  style("brutalist", "thick black border, zero radius, system font, hard offset shadow"),
+  style("skeuomorphic", "textured gradient, inset shadow, bevelled edge"),
+  style("material", "bold accent fill, elevation shadow, uppercase medium type"),
+  style("neumorphic", "fill matching the background, dual light and dark shadows, soft radius"),
+  style("glassmorphism", "translucent fill, backdrop-filter blur, thin light border"),
+  style("bootstrap", "pale tinted fill, thin border, small radius, muted darker text"),
+  style("dos-terminal", "black fill, green monospace, zero radius"),
+  style("flat-design", "solid saturated fill, no shadow, no gradient, small radius"),
+  style("metro-tile", "perfect square, flat saturated fill, white type bottom-left"),
+  style("y2k-chrome", "silver gradient, bevel, blue glow, heavy weight"),
+  style("vaporwave", "magenta-to-cyan gradient, wide letter-spacing, glow"),
+  style("claymorphic", "puffy, very high radius, pastel, soft inner and outer shadow"),
+  style("wireframe", "no fill, grey dashed border, monospace, low contrast"),
+];
+
+/**
+ * What it is. Each is a distinct silhouette built from container plus child.
+ */
+export const COMPONENTS: Card[] = [
+  component("progress-bar", "wide track, colored fill at part width"),
+  component("range-slider", "thin track, round thumb"),
+  component("toggle-switch", "pill track, circular knob at one end"),
+  component("avatar", "circle, centred initials"),
+  component("notification-badge", "small circle, number, offset to a corner"),
+  component("tag-chip", "small pill, soft fill, tiny text"),
+  component("tooltip", "small dark rounded box, small text"),
+  component("search-bar", "wide rounded input, placeholder"),
+  component("alert-banner", "full-width strip, tinted, glyph beside text"),
+  component("modal-dialog", "centred panel, shadow, a button inside"),
+  component("icon-button", "square, one glyph centred, no label"),
+  component("segmented-control", "wide bordered track, one filled active segment"),
+  component("checkbox", "small square, check glyph, label beside"),
+  // Only playable because the canvas is code: its identity is having no content.
+  component("skeleton-loader", "grey rounded bars, deliberately no content"),
+  component("keyboard-key", "small bordered kbd, monospace glyph, subtle depth"),
+];
+
+const STYLE_BY_ID = new Map(STYLES.map((c) => [c.id, c]));
+const COMPONENT_BY_ID = new Map(COMPONENTS.map((c) => [c.id, c]));
+
+export function getStyle(id: string): Card | undefined {
+  return STYLE_BY_ID.get(id);
 }
 
-// ---------------------------------------------------------------------------
-// Form States — silhouette: a single form control. Divergence: what state.
-// The tightest category in the deck, so the steal stays hard.
-// ---------------------------------------------------------------------------
-
-const formStates: Secret[] = [
-  // A field with something in it or behind it. Divergence is content and color.
-  ...group("form-states", "text-field", [
-    ["placeholder-text", "empty input, grey italic placeholder"],
-    ["password-field", "input type=password, dots, monospace"],
-    ["search-input", "input with a magnifier, placeholder 'Search'"],
-    ["autofilled-input", "the unmistakable Chrome autofill yellow background"],
-    ["read-only-input", "muted background, no border, readonly"],
-  ]),
-  // A field plus a colored state signal. Several differ only in hue.
-  ...group("form-states", "field-state", [
-    ["validation-error", "input with red border, red helper text below"],
-    ["required-field", "label with a red asterisk beside the control"],
-    ["character-counter", "input with '0/280' beneath, right-aligned"],
-    ["success-confirmation", "green border, checkmark, text 'Saved'"],
-    ["focused-input", "input with a blue focus ring / outline"],
-  ]),
-  // Something you press. Muted/greyed styling is shared across most of them.
-  ...group("form-states", "pressable", [
-    ["disabled-button", "greyed button, reduced opacity, disabled, text 'Submit'"],
-    ["loading-button", "button with a spinner, text 'Loading…'"],
-    ["file-upload-field", "button 'Choose File' beside muted 'No file chosen'"],
-    ["checked-checkbox", "input type=checkbox, checked, text label"],
-    ["toggle-switch-off", "pill track, knob left, muted grey"],
-  ]),
-];
-
-// ---------------------------------------------------------------------------
-// Design Eras — silhouette varies by card. Divergence: era aesthetic.
-// Deliberately the loosest category; grouped by form factor to compensate.
-// ---------------------------------------------------------------------------
-
-const designEras: Secret[] = [
-  // All buttons. They differ only in surface treatment — the strongest group
-  // in the deck for steal difficulty.
-  ...group("design-eras", "era-button", [
-    ["web-2-glossy-button", "rounded, gradient, top highlight, drop shadow"],
-    ["brutalist-button", "raw black border, no radius, system font, harsh"],
-    ["neumorphic-button", "soft dual shadows, background-matched, barely there"],
-    ["y2k-chrome-button", "silver gradient, bevel, blue glow"],
-    ["claymorphic-button", "puffy, high radius, pastel, soft inner shadow"],
-  ]),
-  // Rectangular panels holding text.
-  ...group("design-eras", "era-panel", [
-    ["windows-95-dialog", "grey box, hard black/white bevel edges, title bar"],
-    ["glassmorphism-card", "translucent, backdrop-filter blur, thin light border"],
-    ["bootstrap-alert", "pale blue box, subtle border radius, muted dark blue text"],
-    ["dos-terminal", "black background, green monospace, blocky cursor"],
-    ["metro-tile", "square, flat saturated color, white text bottom-left"],
-  ]),
-  // The leftovers, and the deck's weakest group: silhouettes genuinely diverge,
-  // so a caught Chameleon who lands here has an easier steal than elsewhere.
-  ...group("design-eras", "era-object", [
-    ["skeuomorphic-toggle", "leather/metal texture, inset shadow, real switch"],
-    ["material-fab", "circular, bold accent color, elevation shadow, centered icon"],
-    ["geocities-marquee", "clashing colors, tiled background (no scroll — no <marquee>)"],
-    ["flat-design-badge", "solid fill, zero shadow, no gradient, sharp corners"],
-    ["vaporwave-banner", "magenta/cyan gradient, wide-spaced text"],
-  ]),
-];
-
-// ---------------------------------------------------------------------------
-// Web Annoyances — silhouette: an interrupt or overlay. Divergence: which
-// dark pattern. The funniest category, and the most recognizable from few edits.
-// ---------------------------------------------------------------------------
-
-const webAnnoyances: Secret[] = [
-  // Big centered panel, guilt copy, one CTA. Very confusable with each other.
-  ...group("web-annoyances", "blocking-panel", [
-    ["age-verification-gate", "dark full-screen block, 'Are you 18 or older?'"],
-    ["ad-blocker-detected-wall", "blocking panel, guilt copy, no dismiss"],
-    ["open-in-app-interstitial", "full-cover panel, app icon, big CTA"],
-    ["exit-intent-modal", "'Wait! Don't go!', oversized close button"],
-    ["newsletter-signup-popup", "centered modal, email input, dim backdrop"],
-  ]),
-  // A small-to-medium box asking you to agree to something, with a button.
-  ...group("web-annoyances", "consent-prompt", [
-    ["push-notification-prompt", "small top-left card, 'Allow' / 'Block'"],
-    ["location-permission-prompt", "pin icon, 'Know your location?'"],
-    ["captcha-box", "bordered box, checkbox, 'I'm not a robot'"],
-    ["cookie-consent-banner", "bottom bar, dense text, 'Accept All' button"],
-    ["survey-invitation", "slide-in corner card, 'Got 2 minutes?'"],
-  ]),
-  // The visually distinctive ones. Divergent silhouettes, but these are also
-  // the cards Devs can signal fastest, so the group balances out.
-  ...group("web-annoyances", "attention-grab", [
-    ["paywall-fade", "text with a gradient mask fading to white, button below"],
-    ["live-chat-bubble", "bottom-right circle, avatar, 'Hi! Need help?'"],
-    ["autoplay-video-player", "black rect, play overlay, mute icon"],
-    ["fake-urgency-timer", "red countdown, 'Only 2 left at this price!'"],
-    ["unsubscribe-guilt-trip", "tiny 'No thanks, I hate saving money' link"],
-  ]),
-];
-
-// ---------------------------------------------------------------------------
-// Everyday Components — silhouette: a bread-and-butter UI primitive.
-// The most familiar category, so Devs signal fast — which makes the
-// Chameleon's job hardest here.
-// ---------------------------------------------------------------------------
-
-const everydayComponents: Secret[] = [
-  // Wide horizontal elements. Progress Bar and Range Slider are near-twins.
-  ...group("everyday-components", "wide-bar", [
-    ["progress-bar", "grey track, colored fill at ~60% width"],
-    ["range-slider", "thin track, round thumb, filled left portion"],
-    ["skeleton-loader", "grey rounded bars, no content"],
-    ["alert-banner", "full-width tinted strip, icon, message"],
-    ["search-bar", "rounded input, magnifier, wide"],
-  ]),
-  // Small rounded things with tiny text.
-  ...group("everyday-components", "small-pill", [
-    ["notification-badge", "red circle, white number, top-right overlap"],
-    ["avatar", "circle, initials, centered"],
-    ["tag-chip", "small pill, soft background, tiny text, optional ×"],
-    ["tooltip", "small dark rounded box (no pointer arrow — no pseudo-elements)"],
-    ["keyboard-shortcut-hint", "muted 'Press' beside a bordered kbd '⌘K'"],
-  ]),
-  // A box or row carrying a label plus an affordance.
-  ...group("everyday-components", "panel-row", [
-    ["modal-dialog", "centered white panel, shadow (no dimmed backdrop)"],
-    ["accordion-header", "full-width row, label left, chevron right"],
-    ["empty-state", "centered illustration slot, muted 'Nothing here yet'"],
-    ["dropdown-trigger", "bordered box, label left, caret right"],
-    ["breadcrumb-trail", "small muted text with a '/' separator"],
-  ]),
-];
-
-export const CATEGORIES: Category[] = [
-  { id: "form-states", labelKey: "deck.category.form-states", secrets: formStates },
-  { id: "design-eras", labelKey: "deck.category.design-eras", secrets: designEras },
-  {
-    id: "web-annoyances",
-    labelKey: "deck.category.web-annoyances",
-    secrets: webAnnoyances,
-  },
-  {
-    id: "everyday-components",
-    labelKey: "deck.category.everyday-components",
-    secrets: everydayComponents,
-  },
-];
-
-export const ALL_SECRETS: Secret[] = CATEGORIES.flatMap((c) => c.secrets);
-
-const SECRETS_BY_ID = new Map(ALL_SECRETS.map((s) => [s.id, s]));
-
-export function getSecret(id: string): Secret | undefined {
-  return SECRETS_BY_ID.get(id);
-}
-
-export function getCategory(id: CategoryId): Category | undefined {
-  return CATEGORIES.find((c) => c.id === id);
-}
-
-/** The 5 cards of a Secret's similarity group — the steal slate before shuffling. */
-export function getGroupSecrets(secret: Secret): Secret[] {
-  const category = getCategory(secret.categoryId);
-  if (!category) return [];
-  return category.secrets.filter((s) => s.group === secret.group);
+export function getComponent(id: string): Card | undefined {
+  return COMPONENT_BY_ID.get(id);
 }

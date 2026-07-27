@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ALL_SECRETS, CATEGORIES, getGroupSecrets, getSecret } from "./deck";
+import { COMPONENTS, STYLES, getComponent, getStyle } from "./deck";
 import en from "../../locales/en.json";
 
 function lookup(key: string): unknown {
@@ -11,69 +11,42 @@ function lookup(key: string): unknown {
 }
 
 /**
- * Guards the deck's structural invariants. `cards.md` says the screening rules
- * apply to anything added later — this is where that gets enforced, so a 61st
- * card or a lopsided group fails CI instead of surfacing as a broken steal.
+ * Guards the decks' structural invariants. `cards.md` says the screening rules
+ * apply to anything added later — this is where that gets enforced, so a
+ * sixteenth style or a missing label fails CI instead of surfacing mid-game.
  */
-describe("deck", () => {
-  test("holds 4 categories of 15 secrets", () => {
-    expect(CATEGORIES).toHaveLength(4);
-    for (const category of CATEGORIES) {
-      expect(category.secrets, category.id).toHaveLength(15);
-    }
-    expect(ALL_SECRETS).toHaveLength(60);
+describe("the decks", () => {
+  test("holds fifteen of each", () => {
+    expect(STYLES).toHaveLength(15);
+    expect(COMPONENTS).toHaveLength(15);
   });
 
-  test("gives every secret a unique id", () => {
-    const ids = new Set(ALL_SECRETS.map((s) => s.id));
-    expect(ids.size).toBe(ALL_SECRETS.length);
+  test("offers 225 Secrets from thirty authored items", () => {
+    expect(STYLES.length * COMPONENTS.length).toBe(225);
   });
 
-  test("files every secret under its own category", () => {
-    for (const category of CATEGORIES) {
-      for (const secret of category.secrets) {
-        expect(secret.categoryId, secret.id).toBe(category.id);
-      }
-    }
+  test("gives every entry a unique id within its deck", () => {
+    expect(new Set(STYLES.map((c) => c.id)).size).toBe(STYLES.length);
+    expect(new Set(COMPONENTS.map((c) => c.id)).size).toBe(COMPONENTS.length);
   });
 
-  test("splits each category into exactly 3 groups of 5", () => {
-    for (const category of CATEGORIES) {
-      const sizes = new Map<string, number>();
-      for (const secret of category.secrets) {
-        sizes.set(secret.group, (sizes.get(secret.group) ?? 0) + 1);
-      }
-      expect([...sizes.keys()], category.id).toHaveLength(3);
-      for (const [groupId, size] of sizes) {
-        expect(size, `${category.id}/${groupId}`).toBe(5);
-      }
+  test("gives every entry a label that actually resolves", () => {
+    for (const card of [...STYLES, ...COMPONENTS]) {
+      expect(lookup(card.labelKey), card.labelKey).toEqual(expect.any(String));
     }
   });
 
-  test("never reuses a group id across categories", () => {
-    const groups = ALL_SECRETS.map((s) => s.group);
-    expect(new Set(groups).size).toBe(12);
-  });
-
-  test("resolves a secret by id", () => {
-    expect(getSecret("everyday-components/progress-bar")?.group).toBe("wide-bar");
-    expect(getSecret("nope/nope")).toBeUndefined();
-  });
-
-  test("gives every category and secret a label that actually resolves", () => {
-    for (const category of CATEGORIES) {
-      expect(lookup(category.labelKey), category.labelKey).toEqual(expect.any(String));
-    }
-    for (const secret of ALL_SECRETS) {
-      expect(lookup(secret.labelKey), secret.labelKey).toEqual(expect.any(String));
+  test("gives every entry an authoring sketch", () => {
+    for (const card of [...STYLES, ...COMPONENTS]) {
+      expect(card.sketch.length, card.id).toBeGreaterThan(10);
     }
   });
 
-  test("returns a full 5-card slate including the secret itself", () => {
-    for (const secret of ALL_SECRETS) {
-      const slate = getGroupSecrets(secret);
-      expect(slate, secret.id).toHaveLength(5);
-      expect(slate.map((s) => s.id), secret.id).toContain(secret.id);
-    }
+  test("resolves a card by id, and only from its own deck", () => {
+    expect(getStyle("brutalist")?.labelKey).toBe("deck.style.brutalist");
+    expect(getComponent("progress-bar")?.labelKey).toBe("deck.component.progress-bar");
+    // The two decks are separate namespaces; a style is not a component.
+    expect(getComponent("brutalist")).toBeUndefined();
+    expect(getStyle("progress-bar")).toBeUndefined();
   });
 });

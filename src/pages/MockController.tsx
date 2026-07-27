@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import ControllerShell from "../components/controller/ControllerShell";
 import Composer from "../components/controller/Composer";
 import { StealPicker, VotePicker } from "../components/controller/VoteControls";
-import { getSecret } from "../game/content/deck";
+import { getComponent, getStyle } from "../game/content/deck";
 import { seatColorFor } from "../game/match";
 import { MOCK_SEATS, MOCK_SLATE, MOCK_VOTES, mockRound } from "../mocks/fixtures";
-import type { Edit } from "../game/types";
+import type { Edit, StealGuess } from "../game/types";
 import { color, font } from "../theme/tokens";
 
 /**
@@ -25,12 +25,13 @@ export default function MockController() {
   const [seat, setSeat] = useState(1);
   const [view, setView] = useState<View>("turn");
   const [committed, setCommitted] = useState<Edit[]>([]);
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<StealGuess | null>(null);
 
   const round = mockRound();
   const player = MOCK_SEATS.find((s) => s.id === seat)!;
   const isChameleon = round.chameleonId === seat;
-  const secret = getSecret(round.secretId);
+  const style = getStyle(round.styleId);
+  const component = getComponent(round.componentId);
 
   function body() {
     switch (view) {
@@ -104,14 +105,18 @@ export default function MockController() {
     <Box>
       <ControllerShell
         isChameleon={isChameleon}
-        secretLabel={secret ? t(secret.labelKey) : undefined}
+        secret={
+          style && component
+            ? { style: t(style.labelKey), component: t(component.labelKey) }
+            : undefined
+        }
         seatName={player.name}
         seatColor={player.color ?? seatColorFor(seat)}
       >
         {body()}
         {picked && (
           <Typography sx={{ mt: 3, color: color.flame, fontFamily: font.mono }}>
-            guessed: {picked}
+            guessed: {picked.styleId} · {picked.componentId}
           </Typography>
         )}
       </ControllerShell>

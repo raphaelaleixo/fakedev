@@ -14,7 +14,7 @@ import {
   tallyVotes,
   totalTurns,
 } from "./round";
-import { ALL_SECRETS, getCategory, getSecret } from "./content/deck";
+import { COMPONENTS, STYLES, getComponent, getStyle } from "./content/deck";
 import type { Edit, MatchState, Round } from "./types";
 
 describe("tallyVotes", () => {
@@ -73,65 +73,48 @@ describe("resolveVotes", () => {
 });
 
 describe("scoreRound", () => {
-  test("pays the Chameleon 3 when the Devs catch the wrong player", () => {
-    const awards = scoreRound({
-      chameleonId: 3,
-      votes: { 1: 2, 2: 2, 3: 2, 4: 1 },
-      stealGuess: null,
-      secretId: "form-states/disabled-button",
-    });
-    expect(awards).toEqual({ 3: 3 });
+  const votes = { 1: 3, 2: 3, 3: 1, 4: 2 }; // seats 1 and 2 caught seat 3
+  const escaped = { 1: 2, 2: 2, 3: 2, 4: 1 }; // they caught seat 2 instead
+
+  test("pays the Chameleon 2 for escaping", () => {
+    expect(scoreRound({ chameleonId: 3, votes: escaped, steal: null })).toEqual({ 3: 2 });
   });
 
-  test("pays the Chameleon 3 when the vote ties", () => {
-    const awards = scoreRound({
-      chameleonId: 3,
-      votes: { 1: 3, 2: 3, 3: 2, 4: 2 },
-      stealGuess: null,
-      secretId: "form-states/disabled-button",
-    });
-    expect(awards).toEqual({ 3: 3 });
+  test("pays the Chameleon 2 for escaping on a tie", () => {
+    const tied = { 1: 3, 2: 3, 3: 2, 4: 2 };
+    expect(scoreRound({ chameleonId: 3, votes: tied, steal: null })).toEqual({ 3: 2 });
   });
 
-  test("pays the Chameleon 3 when caught but the steal lands", () => {
-    const awards = scoreRound({
-      chameleonId: 3,
-      votes: { 1: 3, 2: 3, 3: 1, 4: 3 },
-      stealGuess: "form-states/disabled-button",
-      secretId: "form-states/disabled-button",
-    });
-    expect(awards).toEqual({ 3: 3 });
+  /** Escaping and a perfect steal pay the same, as in the paper game. */
+  test("pays the Chameleon 2 for a perfect steal, and the Devs nothing", () => {
+    const steal = { style: true, component: true };
+    expect(scoreRound({ chameleonId: 3, votes, steal })).toEqual({ 3: 2 });
   });
 
-  test("pays 1 to each correct voter when the steal misses", () => {
-    const awards = scoreRound({
-      chameleonId: 3,
-      votes: { 1: 3, 2: 3, 3: 1, 4: 2 },
-      stealGuess: "form-states/loading-button",
-      secretId: "form-states/disabled-button",
-    });
-    expect(awards).toEqual({ 1: 1, 2: 1 });
+  test("splits the round when the Chameleon gets one axis", () => {
+    const steal = { style: true, component: false };
+    expect(scoreRound({ chameleonId: 3, votes, steal })).toEqual({ 3: 1, 1: 1, 2: 1 });
+  });
+
+  test("splits it the same way whichever axis they got", () => {
+    const steal = { style: false, component: true };
+    expect(scoreRound({ chameleonId: 3, votes, steal })).toEqual({ 3: 1, 1: 1, 2: 1 });
+  });
+
+  test("pays only the correct voters when the Chameleon gets neither", () => {
+    const steal = { style: false, component: false };
+    expect(scoreRound({ chameleonId: 3, votes, steal })).toEqual({ 1: 1, 2: 1 });
   });
 
   test("pays nothing to Devs who voted wrong", () => {
-    const awards = scoreRound({
-      chameleonId: 3,
-      votes: { 1: 3, 2: 3, 3: 1, 4: 2 },
-      stealGuess: "form-states/loading-button",
-      secretId: "form-states/disabled-button",
-    });
-    expect(awards[4]).toBeUndefined();
+    const steal = { style: false, component: false };
+    expect(scoreRound({ chameleonId: 3, votes, steal })[4]).toBeUndefined();
   });
 
   test("never pays the Chameleon for voting for themselves", () => {
-    const awards = scoreRound({
-      chameleonId: 3,
-      votes: { 1: 3, 2: 3, 3: 3, 4: 2 },
-      stealGuess: "form-states/loading-button",
-      secretId: "form-states/disabled-button",
-    });
-    expect(awards[3]).toBeUndefined();
-    expect(awards).toEqual({ 1: 1, 2: 1 });
+    const selfVote = { 1: 3, 2: 3, 3: 3, 4: 2 };
+    const steal = { style: false, component: false };
+    expect(scoreRound({ chameleonId: 3, votes: selfVote, steal })).toEqual({ 1: 1, 2: 1 });
   });
 });
 
@@ -142,42 +125,50 @@ function seededRng(...values: number[]) {
 }
 
 describe("buildStealSlate", () => {
-  test("is the Secret's similarity group, all 5 cards", () => {
-    const slate = buildStealSlate("everyday-components/progress-bar", seededRng(0.3));
-    expect([...slate].sort()).toEqual(
-      [
-        "everyday-components/alert-banner",
-        "everyday-components/progress-bar",
-        "everyday-components/range-slider",
-        "everyday-components/search-bar",
-        "everyday-components/skeleton-loader",
-      ].sort(),
-    );
+  const slate = (r = 0.3) => buildStealSlate("brutalist", "progress-bar", seededRng(r));
+
+  test("offers five of each", () => {
+    expect(slate().styles).toHaveLength(5);
+    expect(slate().components).toHaveLength(5);
   });
 
-  test("always contains the true Secret", () => {
-    for (const secret of ALL_SECRETS) {
-      expect(buildStealSlate(secret.id, seededRng(0.7)), secret.id).toContain(secret.id);
-    }
+  test("always contains both true answers", () => {
+    expect(slate().styles).toContain("brutalist");
+    expect(slate().components).toContain("progress-bar");
   });
 
-  test("randomizes the true Secret's position rather than fixing it", () => {
-    const positions = new Set(
-      [0.05, 0.35, 0.65, 0.95].map((r) =>
-        buildStealSlate("everyday-components/progress-bar", seededRng(r)).indexOf(
-          "everyday-components/progress-bar",
-        ),
-      ),
-    );
-    expect(positions.size).toBeGreaterThan(1);
+  test("draws each half from its own deck only", () => {
+    const { styles, components } = slate();
+    expect(styles.every((id) => STYLES.some((c) => c.id === id))).toBe(true);
+    expect(components.every((id) => COMPONENTS.some((c) => c.id === id))).toBe(true);
+  });
+
+  test("never repeats a card within a slate", () => {
+    expect(new Set(slate().styles).size).toBe(5);
+    expect(new Set(slate().components).size).toBe(5);
+  });
+
+  /**
+   * Drawn fresh at steal time, so the same Secret never presents the same five
+   * twice — the flaw the old fixed similarity groups had.
+   */
+  test("varies the decoys between draws", () => {
+    const seen = new Set([0.1, 0.35, 0.6, 0.85].map((r) => slate(r).styles.join()));
+    expect(seen.size).toBeGreaterThan(1);
+  });
+
+  test("refuses an id that is not in the deck", () => {
+    expect(() => buildStealSlate("nope", "progress-bar", seededRng(0.3))).toThrow(/unknown/i);
   });
 });
 
 describe("createRound", () => {
   const seats = [1, 2, 3, 4];
+  const fresh = (rng = seededRng(0)) =>
+    createRound({ index: 0, seats, usedStyleIds: [], usedComponentIds: [], rng });
 
   test("starts a round ready for its first turn", () => {
-    const round = createRound({ index: 0, seats, usedSecretIds: [], rng: seededRng(0) });
+    const round = fresh();
     expect(round.index).toBe(0);
     expect(round.phase).toBe("turns");
     expect(round.turnIndex).toBe(0);
@@ -186,50 +177,67 @@ describe("createRound", () => {
     expect(round.outcome).toBeUndefined();
   });
 
-  test("draws a Secret belonging to the drawn Category", () => {
-    const round = createRound({ index: 0, seats, usedSecretIds: [], rng: seededRng(0.42) });
-    expect(getSecret(round.secretId)?.categoryId).toBe(round.categoryId);
+  test("draws one half from each deck", () => {
+    const round = fresh(seededRng(0.42));
+    expect(getStyle(round.styleId)).toBeDefined();
+    expect(getComponent(round.componentId)).toBeDefined();
   });
 
   test("makes exactly one seated player the Chameleon", () => {
-    const round = createRound({ index: 0, seats, usedSecretIds: [], rng: seededRng(0.9) });
-    expect(seats).toContain(round.chameleonId);
+    expect(seats).toContain(fresh(seededRng(0.9)).chameleonId);
   });
 
-  test("never redraws a Secret already used this match", () => {
-    const category = getCategory("form-states")!;
-    const used = category.secrets.slice(0, 14).map((s) => s.id);
+  test("never redraws a style already played this match", () => {
+    const used = STYLES.slice(0, 14).map((c) => c.id);
     const round = createRound({
       index: 1,
       seats,
-      usedSecretIds: used,
-      // rng 0 picks the first category, which has exactly one card left.
+      usedStyleIds: used,
+      usedComponentIds: [],
       rng: seededRng(0),
     });
-    expect(used).not.toContain(round.secretId);
+    expect(used).not.toContain(round.styleId);
   });
 
-  test("skips a fully-used Category rather than drawing from it", () => {
-    const used = getCategory("form-states")!.secrets.map((s) => s.id);
-    const round = createRound({ index: 1, seats, usedSecretIds: used, rng: seededRng(0) });
-    expect(round.categoryId).not.toBe("form-states");
+  test("never redraws a component already played this match", () => {
+    const used = COMPONENTS.slice(0, 14).map((c) => c.id);
+    const round = createRound({
+      index: 1,
+      seats,
+      usedStyleIds: [],
+      usedComponentIds: used,
+      rng: seededRng(0),
+    });
+    expect(used).not.toContain(round.componentId);
   });
 
-  test("reshuffles the deck when every Secret has been used", () => {
-    const used = ALL_SECRETS.map((s) => s.id);
-    const round = createRound({ index: 60, seats, usedSecretIds: used, rng: seededRng(0) });
-    expect(round.secretId).toBeTruthy();
-    expect(getSecret(round.secretId)).toBeDefined();
+  test("tracks the two pools independently", () => {
+    // Every style used, no component used: the component must still be fresh.
+    const round = createRound({
+      index: 15,
+      seats,
+      usedStyleIds: STYLES.map((c) => c.id),
+      usedComponentIds: [COMPONENTS[0].id],
+      rng: seededRng(0),
+    });
+    expect(round.componentId).not.toBe(COMPONENTS[0].id);
+  });
+
+  test("reshuffles a deck rather than deadlocking once it is exhausted", () => {
+    const round = createRound({
+      index: 15,
+      seats,
+      usedStyleIds: STYLES.map((c) => c.id),
+      usedComponentIds: COMPONENTS.map((c) => c.id),
+      rng: seededRng(0),
+    });
+    expect(getStyle(round.styleId)).toBeDefined();
+    expect(getComponent(round.componentId)).toBeDefined();
   });
 
   test("orders turns by seat order, starting at the drawn player", () => {
-    const round = createRound({
-      index: 0,
-      seats,
-      usedSecretIds: [],
-      // Fourth rng draw picks the starting player: 0.5 of 4 seats -> index 2.
-      rng: seededRng(0, 0, 0, 0.5),
-    });
+    // Fourth rng draw picks the starting player: 0.5 of 4 seats -> index 2.
+    const round = fresh(seededRng(0, 0, 0, 0.5));
     expect(round.turnOrder).toEqual([3, 4, 1, 2]);
   });
 
@@ -237,7 +245,8 @@ describe("createRound", () => {
     const round = createRound({
       index: 0,
       seats: [1, 2, 3, 4, 5, 6, 7],
-      usedSecretIds: [],
+      usedStyleIds: [],
+      usedComponentIds: [],
       rng: seededRng(0.8),
     });
     expect([...round.turnOrder].sort()).toEqual([1, 2, 3, 4, 5, 6, 7]);
@@ -247,8 +256,8 @@ describe("createRound", () => {
 function makeRound(overrides: Partial<Round> = {}): Round {
   return {
     index: 0,
-    categoryId: "form-states",
-    secretId: "form-states/disabled-button",
+    styleId: "brutalist",
+    componentId: "progress-bar",
     chameleonId: 3,
     phase: "turns",
     turnOrder: [3, 4, 1, 2],
@@ -343,14 +352,16 @@ describe("voting", () => {
 });
 
 describe("resolveRound", () => {
-  test("sends a caught Chameleon to the steal with a 5-card slate", () => {
+  test("sends a caught Chameleon to the steal with both slates", () => {
     const round = resolveRound(
       makeRound({ phase: "reveal", votes: { 1: 3, 2: 3, 3: 1, 4: 3 } }),
       seededRng(0.3),
     );
     expect(round.phase).toBe("steal");
-    expect(round.stealSlate).toHaveLength(5);
-    expect(round.stealSlate).toContain("form-states/disabled-button");
+    expect(round.stealSlate?.styles).toHaveLength(5);
+    expect(round.stealSlate?.components).toHaveLength(5);
+    expect(round.stealSlate?.styles).toContain("brutalist");
+    expect(round.stealSlate?.components).toContain("progress-bar");
     expect(round.outcome).toBeUndefined();
   });
 
@@ -365,8 +376,8 @@ describe("resolveRound", () => {
       caughtPlayerId: 2,
       chameleonCaught: false,
       tied: false,
-      stealCorrect: null,
-      awards: { 3: 3 },
+      steal: null,
+      awards: { 3: 2 },
     });
   });
 
@@ -377,7 +388,7 @@ describe("resolveRound", () => {
     );
     expect(round.phase).toBe("result");
     expect(round.outcome?.tied).toBe(true);
-    expect(round.outcome?.awards).toEqual({ 3: 3 });
+    expect(round.outcome?.awards).toEqual({ 3: 2 });
   });
 });
 
@@ -385,24 +396,37 @@ describe("submitSteal", () => {
   const caught = makeRound({
     phase: "steal",
     votes: { 1: 3, 2: 3, 3: 1, 4: 2 },
-    stealSlate: ["form-states/loading-button", "form-states/disabled-button"],
+    stealSlate: { styles: ["brutalist", "wireframe"], components: ["progress-bar", "avatar"] },
   });
 
-  test("pays the Chameleon when the steal lands", () => {
-    const round = submitSteal(caught, "form-states/disabled-button");
+  test("pays the Chameleon 2 for naming both", () => {
+    const round = submitSteal(caught, { styleId: "brutalist", componentId: "progress-bar" });
     expect(round.phase).toBe("result");
-    expect(round.outcome?.stealCorrect).toBe(true);
-    expect(round.outcome?.awards).toEqual({ 3: 3 });
+    expect(round.outcome?.steal).toEqual({ style: true, component: true });
+    expect(round.outcome?.awards).toEqual({ 3: 2 });
   });
 
-  test("pays only the correct voters when the steal misses", () => {
-    const round = submitSteal(caught, "form-states/loading-button");
-    expect(round.outcome?.stealCorrect).toBe(false);
+  test("splits the round when they name exactly one", () => {
+    const round = submitSteal(caught, { styleId: "brutalist", componentId: "avatar" });
+    expect(round.outcome?.steal).toEqual({ style: true, component: false });
+    expect(round.outcome?.awards).toEqual({ 3: 1, 1: 1, 2: 1 });
+  });
+
+  test("pays only the correct voters when they name neither", () => {
+    const round = submitSteal(caught, { styleId: "wireframe", componentId: "avatar" });
+    expect(round.outcome?.steal).toEqual({ style: false, component: false });
     expect(round.outcome?.awards).toEqual({ 1: 1, 2: 1 });
   });
 
+  test("records the guess so the result can show it", () => {
+    const guess = { styleId: "wireframe", componentId: "avatar" };
+    expect(submitSteal(caught, guess).stealGuess).toEqual(guess);
+  });
+
   test("refuses a guess outside the steal phase", () => {
-    expect(() => submitSteal(makeRound(), "form-states/disabled-button")).toThrow(/phase/i);
+    expect(() =>
+      submitSteal(makeRound(), { styleId: "brutalist", componentId: "progress-bar" }),
+    ).toThrow(/phase/i);
   });
 });
 
@@ -411,7 +435,9 @@ describe("applyRoundOutcome", () => {
     status: "playing",
     seats: [1, 2, 3, 4],
     scores: { 1: 2, 3: 1 },
-    usedSecretIds: ["form-states/loading-button"],
+    usedStyleIds: ["wireframe"],
+    usedComponentIds: ["avatar"],
+    roundIndex: 1,
     round: null,
   };
 
@@ -422,7 +448,7 @@ describe("applyRoundOutcome", () => {
         caughtPlayerId: 3,
         chameleonCaught: true,
         tied: false,
-        stealCorrect: false,
+        steal: { style: false, component: false },
         awards,
       },
     });
@@ -432,12 +458,10 @@ describe("applyRoundOutcome", () => {
     expect(next.scores).toEqual({ 1: 3, 2: 1, 3: 1 });
   });
 
-  test("retires the Secret so it cannot repeat this match", () => {
+  test("retires both halves so neither can repeat this match", () => {
     const next = applyRoundOutcome(match, resolved({ 1: 1 }));
-    expect(next.usedSecretIds).toEqual([
-      "form-states/loading-button",
-      "form-states/disabled-button",
-    ]);
+    expect(next.usedStyleIds).toEqual(["wireframe", "brutalist"]);
+    expect(next.usedComponentIds).toEqual(["avatar", "progress-bar"]);
   });
 
   test("keeps playing while everyone is below the target", () => {
@@ -489,14 +513,15 @@ describe("phase guards", () => {
   });
 });
 
-describe("usedSecretIds stays a set", () => {
-  /** startNextRound derives the round index from this list's length. */
-  test("never records the same Secret twice", () => {
+describe("the used pools stay sets", () => {
+  test("never records the same half twice", () => {
     const match: MatchState = {
       status: "playing",
       seats: [1, 2, 3, 4],
       scores: {},
-      usedSecretIds: ["form-states/disabled-button"],
+      usedStyleIds: ["brutalist"],
+      usedComponentIds: ["progress-bar"],
+      roundIndex: 1,
       round: null,
     };
     const round = makeRound({
@@ -505,12 +530,12 @@ describe("usedSecretIds stays a set", () => {
         caughtPlayerId: 3,
         chameleonCaught: true,
         tied: false,
-        stealCorrect: false,
+        steal: { style: false, component: false },
         awards: {},
       },
     });
-    expect(applyRoundOutcome(match, round).usedSecretIds).toEqual([
-      "form-states/disabled-button",
-    ]);
+    const next = applyRoundOutcome(match, round);
+    expect(next.usedStyleIds).toEqual(["brutalist"]);
+    expect(next.usedComponentIds).toEqual(["progress-bar"]);
   });
 });

@@ -13,39 +13,21 @@
 // Content: categories, secrets, key schema
 // ---------------------------------------------------------------------------
 
-export type CategoryId =
-  | "form-states"
-  | "design-eras"
-  | "web-annoyances"
-  | "everyday-components";
-
 /**
- * One card. `id` is stable and is what gets written to game state — labels are
- * i18n keys, so they must never be used as identity.
+ * One entry in either deck. A Secret is a style **and** a component, so the two
+ * lists have the same shape and differ only in what they answer: how it looks,
+ * and what it is.
+ *
+ * `id` is stable and is what gets written to game state — labels are i18n keys,
+ * so they must never be used as identity.
  */
-export interface Secret {
-  /** Stable identity, e.g. "form-states/disabled-button". */
+export interface Card {
+  /** Stable identity, e.g. "brutalist" or "progress-bar". */
   id: string;
-  categoryId: CategoryId;
-  /** i18n key resolving to the public label, e.g. "Disabled Button". */
+  /** i18n key resolving to the public label. */
   labelKey: string;
-  /** Authoring note — what the canvas should read as. Never shown in game. */
+  /** Authoring note — what the code should read as. Never shown in game. */
   sketch: string;
-  /** Devs-only thumbnail, phone header. Never on the TV. */
-  styleRef?: string;
-  /**
-   * Similarity group. Groups hold exactly 5 cards, so the steal slate *is* the
-   * Secret's group — the true card plus its 4 nearest neighbours, shuffled.
-   * 15 cards per category means exactly 3 groups each.
-   */
-  group: string;
-}
-
-export interface Category {
-  id: CategoryId;
-  labelKey: string;
-  /** Exactly 15 per the deck spec; not enforced by the type. */
-  secrets: Secret[];
 }
 
 /** How a key's value is composed in the controller. Drives the editor widget. */
@@ -235,19 +217,32 @@ export interface Vote {
   suspectId: number;
 }
 
+/** A caught Chameleon's guess: one answer per axis. */
+export interface StealGuess {
+  styleId: string;
+  componentId: string;
+}
+
+/** Which halves they got. Null when no steal happened. */
+export interface StealResult {
+  style: boolean;
+  component: boolean;
+}
+
 /**
- * Round state. Everything lives in one shared node, including `secretId` and
+ * Round state. Everything lives in one shared node, including the Secret and
  * `chameleonId` — this is a game played with friends in one room, so hidden
- * info is hidden by what each surface *renders*, not by what it receives.
- * The TV never draws the Secret before resolution and the Chameleon's phone
+ * info is hidden by what each surface *renders*, not by what it receives. The
+ * TV never draws the Secret before resolution and the Chameleon's controller
  * shows FAKE DEV, but both hold the data.
  */
 export interface Round {
   /** 0-based index within the match. */
   index: number;
-  categoryId: CategoryId;
-  /** Never rendered on the TV until `outcome` lands. */
-  secretId: string;
+  /** Half the Secret: how it looks. Never rendered until `outcome` lands. */
+  styleId: string;
+  /** Half the Secret: what it is. Never rendered until `outcome` lands. */
+  componentId: string;
   /** Never rendered anywhere until `outcome` lands. */
   chameleonId: number;
   phase: RoundPhase;
@@ -260,12 +255,12 @@ export interface Round {
   /** voterId -> suspectId. Locked once written. */
   votes: Record<number, number>;
   /**
-   * Written at steal time, not at setup: the Secret's similarity group,
-   * shuffled. 5 secret ids.
+   * Written at steal time, not at setup: five of each, shuffled, always
+   * including the true answer.
    */
-  stealSlate?: string[];
-  /** The caught Chameleon's pick, a secret id. */
-  stealGuess?: string;
+  stealSlate?: { styles: string[]; components: string[] };
+  /** The caught Chameleon's one answer per axis. */
+  stealGuess?: StealGuess;
   /** Written when the round resolves; this is when hidden info becomes visible. */
   outcome?: RoundOutcome;
 }
@@ -277,8 +272,8 @@ export interface RoundOutcome {
   chameleonCaught: boolean;
   /** True when the vote tied for most-pointed. */
   tied: boolean;
-  /** Null when no steal happened. */
-  stealCorrect: boolean | null;
+  /** Which halves the Chameleon got. Null when they were never caught. */
+  steal: StealResult | null;
   /** Points awarded this round only, playerId -> points. Fold into scores. */
   awards: Record<number, number>;
 }
@@ -292,8 +287,14 @@ export interface MatchState {
   seats: number[];
   /** playerId -> cumulative points. */
   scores: Record<number, number>;
-  /** Secret ids already played this match; excluded from selection. */
-  usedSecretIds: string[];
+  /**
+   * Tracked separately so neither half ever recurs in a match. Fifteen rounds
+   * are available before either pool is exhausted, which no match reaches.
+   */
+  usedStyleIds: string[];
+  usedComponentIds: string[];
+  /** 0-based, explicit. Deriving it from a used pile coupled two things badly. */
+  roundIndex: number;
   round: Round | null;
   /** Set when status is "finished". More than one id means a shared win. */
   winnerIds?: number[];

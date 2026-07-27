@@ -3,7 +3,7 @@ import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SEAT_COLORS } from "../../game/constants";
 import { tallyVotes } from "../../game/round";
-import { getSecret } from "../../game/content/deck";
+import { getComponent, getStyle } from "../../game/content/deck";
 import { foldEdits } from "../../game/fold";
 import RenderWindow from "./RenderWindow";
 import type { Round } from "../../game/types";
@@ -209,17 +209,22 @@ export function ResultScreen({
   const { t } = useTranslation();
   const outcome = round.outcome;
   const chameleon = seats.find((s) => s.id === round.chameleonId);
-  const secret = getSecret(round.secretId);
+  const style = getStyle(round.styleId);
+  const component = getComponent(round.componentId);
+  const halves = outcome?.steal
+    ? Number(outcome.steal.style) + Number(outcome.steal.component)
+    : 0;
 
   const headline = !outcome
     ? ""
-    : outcome.stealCorrect
-      ? t("result.stolen", { name: chameleon?.name })
-      : outcome.chameleonCaught
-        ? t("result.caught", { name: chameleon?.name })
-        : outcome.tied
-          ? t("result.tied", { name: chameleon?.name })
-          : t("result.escaped", { name: chameleon?.name });
+    : outcome.steal
+      ? t(
+          halves === 2 ? "result.stolen" : halves === 1 ? "result.half" : "result.guessedNothing",
+          { name: chameleon?.name },
+        )
+      : outcome.tied
+        ? t("result.tied", { name: chameleon?.name })
+        : t("result.escaped", { name: chameleon?.name });
 
   return (
     <Stage>
@@ -240,9 +245,15 @@ export function ResultScreen({
           </Typography>
           <Typography
             variant="h1"
-            sx={{ fontSize: "clamp(2rem, 5vw, 4rem)", color: color.flame }}
+            sx={{ fontSize: "clamp(1.6rem, 4vw, 3.2rem)", color: color.flame }}
           >
-            {secret ? t(secret.labelKey) : round.secretId}
+            {style ? t(style.labelKey) : round.styleId}
+          </Typography>
+          <Typography
+            variant="h1"
+            sx={{ fontSize: "clamp(1.6rem, 4vw, 3.2rem)", color: color.paper }}
+          >
+            {component ? t(component.labelKey) : round.componentId}
           </Typography>
         </Box>
       </Box>
@@ -251,12 +262,17 @@ export function ResultScreen({
         {headline}
       </Typography>
 
-      {round.stealGuess && !outcome?.stealCorrect && (
+      {round.stealGuess && halves < 2 && (
         <Typography sx={{ color: color.muted, fontFamily: font.mono }}>
           {t("result.guessed", {
-            guess: getSecret(round.stealGuess)
-              ? t(getSecret(round.stealGuess)!.labelKey)
-              : round.stealGuess,
+            guess: [
+              getStyle(round.stealGuess.styleId),
+              getComponent(round.stealGuess.componentId),
+            ]
+              .map((card, i) =>
+                card ? t(card.labelKey) : [round.stealGuess!.styleId, round.stealGuess!.componentId][i],
+              )
+              .join(" · "),
           })}
         </Typography>
       )}

@@ -59,7 +59,14 @@ function deserializeRound(value: unknown): Round | null {
     edits: asArray<Edit>(raw.edits),
     votes: asNumberMap(raw.votes),
     turnOrder: asArray<number>(raw.turnOrder),
-    ...(raw.stealSlate ? { stealSlate: asArray<string>(raw.stealSlate) } : {}),
+    ...(raw.stealSlate
+      ? {
+          stealSlate: {
+            styles: asArray<string>((raw.stealSlate as Raw).styles),
+            components: asArray<string>((raw.stealSlate as Raw).components),
+          },
+        }
+      : {}),
     ...(outcome ? { outcome } : {}),
   };
 }
@@ -70,7 +77,9 @@ export function deserializeMatch(value: unknown): MatchState {
     ...(raw as unknown as MatchState),
     seats: asArray<number>(raw.seats),
     scores: asNumberMap(raw.scores),
-    usedSecretIds: asArray<string>(raw.usedSecretIds),
+    usedStyleIds: asArray<string>(raw.usedStyleIds),
+    usedComponentIds: asArray<string>(raw.usedComponentIds),
+    roundIndex: typeof raw.roundIndex === "number" ? raw.roundIndex : 0,
     round: deserializeRound(raw.round),
   };
 }

@@ -52,11 +52,14 @@ export default function MockBigScreen() {
   const [view, setView] = useState<RoundPhase | "lobby">("turns");
   const [count, setCount] = useState(3);
   const [turns, setTurns] = useState(MOCK_EDITS.length);
-  const [stole, setStole] = useState(false);
+  const [steal, setSteal] = useState(0);
 
-  const guess = stole
-    ? "web-annoyances/cookie-consent-banner"
-    : "web-annoyances/captcha-box";
+  // Cycles the three steal outcomes: both, one, neither.
+  const guess = [
+    { styleId: "flat-design", componentId: "progress-bar" },
+    { styleId: "flat-design", componentId: "avatar" },
+    { styleId: "wireframe", componentId: "avatar" },
+  ][steal];
 
   function screen() {
     switch (view) {
@@ -130,8 +133,8 @@ export default function MockBigScreen() {
         </Box>
 
         {view === "result" && (
-          <Button size="small" variant="outlined" onClick={() => setStole((s) => !s)}>
-            steal: {stole ? "correct" : "wrong"}
+          <Button size="small" variant="outlined" onClick={() => setSteal((s) => (s + 1) % 3)}>
+            steal: {["both", "one", "neither"][steal]}
           </Button>
         )}
 

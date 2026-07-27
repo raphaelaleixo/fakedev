@@ -7,7 +7,7 @@ import ControllerShell from "../components/controller/ControllerShell";
 import Composer from "../components/controller/Composer";
 import { StealPicker, VotePicker } from "../components/controller/VoteControls";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
-import { getSecret } from "../game/content/deck";
+import { getComponent, getStyle } from "../game/content/deck";
 import { seatColorFor } from "../game/match";
 import { activePlayerId } from "../game/round";
 import type { Edit } from "../game/types";
@@ -56,7 +56,8 @@ export default function PlayerPage() {
   if (!round) return <Bare>{t("controller.waitingForStart")}</Bare>;
 
   const isChameleon = round.chameleonId === seat;
-  const secret = getSecret(round.secretId);
+  const style = getStyle(round.styleId);
+  const component = getComponent(round.componentId);
   const active = activePlayerId(round);
 
   const seats: SeatInfo[] = roomState.players
@@ -75,7 +76,11 @@ export default function PlayerPage() {
   return (
     <ControllerShell
       isChameleon={isChameleon}
-      secretLabel={secret ? t(secret.labelKey) : undefined}
+      secret={
+        style && component
+          ? { style: t(style.labelKey), component: t(component.labelKey) }
+          : undefined
+      }
       seatName={slot.name ?? `#${seat}`}
       seatColor={slot.data?.color ?? seatColorFor(seat)}
       roomState={roomState}

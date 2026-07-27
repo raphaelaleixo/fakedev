@@ -1,12 +1,19 @@
-# A Fake Dev Goes to Amsterdam — Card Deck
+# The two decks
 
-**4 Categories × 15 Secrets = 60 cards.**
+**15 styles × 15 components = 225 Secrets, from 30 authored items.**
 
-## Screening rules
+A round draws one of each. Both are hidden from the Chameleon. Neither repeats
+within a match.
 
-Every card in this deck must pass both tests. Apply them to anything added later.
+---
 
-**1. The structure test.** A Secret must be expressible as `outer → {label} + inner → {text}` — two elements and **two** text slots:
+## Four screening rules
+
+Every entry must pass all four. Apply them to anything added later.
+
+### 1. Structure
+
+Expressible as **a container plus one child**, with optional text in each:
 
 ```html
 <ComponentA id="outer">
@@ -17,106 +24,109 @@ Every card in this deck must pass both tests. Apply them to anything added later
 </ComponentA>
 ```
 
-Nothing with three or more meaningful children survives — no nav bars, card grids, data tables, star ratings, or multi-item menus. What works is *container plus one significant child*, optionally with copy alongside it: a track and a fill, a bar and a button, a checkbox and its label, body text and a CTA. The second text slot is what makes the "control plus label" shape — most of real UI — reachable at all; see `structure-audit.md` for why one slot wasn't enough.
+Nothing with three or more meaningful children survives — no nav bars, card
+grids, data tables, star ratings, multi-item menus.
 
-**2. Shared silhouette, divergent detail.** Cards within a category should look alike at a glance and differ in color, text, or one telling attribute. This is the balancing lever for the whole game: it keeps the Chameleon's steal genuinely uncertain, and it lets them produce plausible edits while bluffing. A category whose cards render wildly differently makes the steal nearly free.
+### 2. The lorem ipsum test
 
-Each card below carries a one-line render sketch — roughly what the canvas should read as. These are guidance for screening and for authoring the key schema, not rules imposed on players.
+**Could a Dev signal this meaningfully while writing lorem ipsum in every text
+slot?** If not, it's a copy card, not a component card.
 
----
+The game's medium is structure and style. Copy is not part of the medium, so a
+card whose identity lives in its words has exactly two states: you type the words
+and hand the Chameleon the answer, or you can't signal it at all.
 
-## Form States
+This rule is why the original *Web Annoyances* category was cut. An
+Age Verification Gate, an Ad Blocker Wall and an Exit-Intent Modal are all "a
+panel with copy and a button" — they are *rhetorical acts*, and rhetoric is copy.
 
-*Silhouette: a single form control. Divergence: what state it's in.* The tightest category in the deck — nearly every card is a wrapper around an `input` or `button`, so the steal stays hard.
+### 3. Depth
 
-1. **Disabled Button** — greyed `button`, reduced opacity, `disabled`, text "Submit"
-2. **Validation Error** — `input` with red border, red helper text below
-3. **Loading Button** — `button` with a spinner, text "Loading…"
-4. **Focused Input** — `input` with a blue focus ring / outline
-5. **Required Field** — `label` with a red asterisk beside the control
-6. **Checked Checkbox** — `input type=checkbox`, `checked`, text label
-7. **Placeholder Text** — empty `input`, grey italic `placeholder`
-8. **Success Confirmation** — green border, checkmark, text "Saved"
-9. **Read-only Input** — muted background, no border, `readonly`
-10. **Character Counter** — `input` with "0/280" beneath, right-aligned
-11. **Password Field** — `input type=password`, dots, monospace
-12. **File Upload Field** — `button` "Choose File" beside muted "No file chosen"
-13. **Autofilled Input** — the unmistakable Chrome autofill yellow background
-14. **Search Input** — `input` with a magnifier, `placeholder` "Search"
-15. **Toggle Switch (Off)** — pill track, knob left, muted grey
+**A card must need several distinct moves.** If one declaration expresses it, it
+isn't a card — it's a move.
 
-## Design Eras
+Pairing a style with a component guarantees this at the Secret level, but each
+half must carry its own weight: a style that's one shadow, or a component that's
+one border-radius, leaves the round with nothing to do.
 
-*Silhouette: varies by card — each names its own component. Divergence: era aesthetic.* Deliberately the loosest category. Divergent silhouettes make narrowing easier for a caught Chameleon, but 15 cards absorbs most of that.
+### 4. Distinct siblings
 
-1. **Windows 95 Dialog** — grey box, hard black/white bevel edges, title bar
-2. **Web 2.0 Glossy Button** — rounded, gradient, top highlight, drop shadow
-3. **Brutalist Button** — raw black border, no radius, system font, harsh
-4. **Skeuomorphic Toggle** — leather/metal texture, inset shadow, real switch
-5. **Material FAB** — circular, bold accent color, elevation shadow, centered icon
-6. **Neumorphic Button** — soft dual shadows, background-matched, barely there
-7. **Glassmorphism Card** — translucent, `backdrop-filter: blur`, thin light border
-8. **Bootstrap Alert** — pale blue box, subtle border radius, muted dark blue text
-9. **DOS Terminal** — black background, green monospace, blocky cursor
-10. **GeoCities Marquee** — clashing colors, scrolling text, tiled background
-11. **Flat Design Badge** — solid fill, zero shadow, no gradient, sharp corners
-12. **Metro Tile** — square, flat saturated color, white text bottom-left
-13. **Y2K Chrome Button** — silver gradient, bevel, blue glow
-14. **Vaporwave Banner** — magenta/cyan gradient, wide-spaced text
-15. **Claymorphic Button** — puffy, high radius, pastel, soft inner shadow
+**No two entries in a list are built from the same moves.** This replaces the old
+"shared silhouette, divergent detail" rule, which protected the steal by making
+cards resemble each other.
 
-## Web Annoyances
-
-*Silhouette: an interrupt or overlay. Divergence: which dark pattern.* The funniest category, and the one most likely to produce recognizable renders from few edits.
-
-1. **Cookie Consent Banner** — bottom bar, dense text, "Accept All" button
-2. **Paywall Fade** — text with a gradient mask fading to white, button below
-3. **CAPTCHA Box** — bordered box, checkbox, "I'm not a robot"
-4. **Newsletter Signup Popup** — centered modal, email input, dim backdrop
-5. **Push Notification Prompt** — small top-left card, "Allow" / "Block"
-6. **"Open in App" Interstitial** — full-cover panel, app icon, big CTA
-7. **Age Verification Gate** — dark full-screen block, "Are you 18 or older?"
-8. **Live Chat Bubble** — bottom-right circle, avatar, "Hi! Need help?"
-9. **Exit-Intent Modal** — "Wait! Don't go!", oversized close button
-10. **Autoplay Video Player** — black rect, play overlay, mute icon
-11. **Survey Invitation** — slide-in corner card, "Got 2 minutes?"
-12. **Ad Blocker Detected Wall** — blocking panel, guilt copy, no dismiss
-13. **Location Permission Prompt** — pin icon, "Know your location?"
-14. **Fake Urgency Timer** — red countdown, "Only 2 left at this price!"
-15. **Unsubscribe Guilt Trip** — tiny "No thanks, I hate saving money" link
-
-## Everyday Components
-
-*Silhouette: a bread-and-butter UI primitive. Divergence: which one.* The most familiar category, so Devs can signal fast — which makes the Chameleon's job hardest here.
-
-1. **Progress Bar** — grey track, colored fill at ~60% width
-2. **Tooltip** — small dark rounded box with a pointer arrow
-3. **Notification Badge** — red circle, white number, top-right overlap
-4. **Avatar** — circle, cropped image or initials, centered
-5. **Keyboard Shortcut Hint** — muted "Press" beside a bordered `kbd` "⌘K"
-6. **Range Slider** — thin track, round thumb, filled left portion
-7. **Alert Banner** — full-width tinted strip, icon, message
-8. **Skeleton Loader** — grey rounded bars, shimmer, no content
-9. **Tag / Chip** — small pill, soft background, tiny text, optional ×
-10. **Modal Dialog** — centered white panel, shadow, dimmed backdrop
-11. **Accordion Header** — full-width row, label left, chevron right
-12. **Search Bar** — rounded input, magnifier, wide
-13. **Empty State** — centered illustration slot, muted "Nothing here yet"
-14. **Dropdown Trigger** — bordered box, label left, caret right
-15. **Breadcrumb Trail** — small muted text with a `/` separator
+It's no longer needed. **The steal is protected by the board being incomplete**,
+not by the cards being similar — a round produces five or six declarations, so
+nothing is ever fully expressed. That frees both lists to be genuinely varied.
 
 ---
 
-## Steal odds
+## Styles
 
-**Resolved: the caught Chameleon sees a 5-card slate** — the true Secret plus 4 decoys drawn from the round's Category — not all 15. This decouples deck depth from steal difficulty: the deck can grow to any size while the blind floor stays at the 20% the scoring was balanced around, and the phone UI stays a single tappable screen. Paper had no way to do this.
+*What it looks like. Each is a distinct combination of surface moves — fill,
+border, radius, shadow, type.*
 
-For reference, the paper game requires *free recall* of the exact title with no options at all, so any multiple choice remains substantially more generous than the source.
+| Style | Reads as |
+|---|---|
+| **Windows 95** | grey fill, hard outset bevel, black title strip, system font |
+| **Web 2.0 Glossy** | rounded, vertical gradient, top highlight, drop shadow |
+| **Brutalist** | thick black border, zero radius, system font, hard offset shadow |
+| **Skeuomorphic** | textured gradient, inset shadow, bevelled edge |
+| **Material** | bold accent fill, elevation shadow, uppercase medium type |
+| **Neumorphic** | fill matching the background, dual light and dark shadows, soft radius |
+| **Glassmorphism** | translucent fill, `backdrop-filter: blur`, thin light border |
+| **Bootstrap** | pale tinted fill, thin border, small radius, muted darker text |
+| **DOS Terminal** | black fill, green monospace, zero radius |
+| **Flat Design** | solid saturated fill, no shadow, no gradient, small radius |
+| **Metro Tile** | perfect square, flat saturated fill, white type bottom-left |
+| **Y2K Chrome** | silver gradient, bevel, blue glow, heavy weight |
+| **Vaporwave** | magenta-to-cyan gradient, wide letter-spacing, glow |
+| **Claymorphic** | puffy, very high radius, pastel, soft inner and outer shadow |
+| **Wireframe** | no fill, grey dashed border, monospace, low contrast |
 
-## Open design decisions
+Two known compromises: **Glassmorphism** needs the stage's non-flat background to
+read at all, which it has. **Skeuomorphic** loses real texture without an image,
+and leans on gradient plus inset shadow.
 
-- **Decoy selection.** Drawing 4 decoys uniformly at random will sometimes produce obviously-wrong options — Secret `Progress Bar` against a decoy `Empty State` is eliminated on sight, pushing effective odds well above 20%. Similarity-group tags would hold the floor but mean hand-tagging all 60 cards.
-- **Style references.** Confirmed for `Design Eras`, and written into `rules.md` as **Devs-phone-only** rather than big-screen — a TV-side reference would leak either the era itself or the full candidate list to the Chameleon. Still open: whether the other three categories need thumbnails at all, given their labels are largely self-explanatory and 60 thumbnails is a real content cost.
-- **Cross-category near-duplicates.** "Toggle Switch (Off)" (Form States) and "Skeuomorphic Toggle" (Eras) overlap, as do "Alert Banner" (Everyday) and "Bootstrap Alert" (Eras). Category is public so there's no in-round confusion, but it's repetitive across a match.
-- **Render feasibility — audited, 55 ✅ / 5 ⚠️ / 0 ❌.** See `structure-audit.md`. All 60 cards now render; the 5 partial ones lose a cosmetic detail and each has a known whitelist fix. Four whitelist items were surfaced by that audit and still need a call: `mask-image`, `backdrop-filter`, `<marquee>`, and a non-flat canvas background for `backdrop-filter` to act on.
-- **i18n.** Card *labels* need translating; the render sketches don't. Text-node suggestions like "Accept All" are English UI conventions and probably shouldn't be translated at all.
+---
+
+## Components
+
+*What it is. Each is a distinct silhouette built from container plus child.*
+
+| Component | Reads as |
+|---|---|
+| **Progress Bar** | wide track, colored fill at part width |
+| **Range Slider** | thin track, round thumb |
+| **Toggle Switch** | pill track, circular knob at one end |
+| **Avatar** | circle, centred initials |
+| **Notification Badge** | small circle, number, offset to a corner |
+| **Tag / Chip** | small pill, soft fill, tiny text |
+| **Tooltip** | small dark rounded box, small text |
+| **Search Bar** | wide rounded input, placeholder |
+| **Alert Banner** | full-width strip, tinted, glyph beside text |
+| **Modal Dialog** | centred panel, shadow, a button inside |
+| **Icon Button** | square, one glyph centred, no label |
+| **Segmented Control** | wide bordered track, one filled active segment |
+| **Checkbox** | small square, check glyph, label beside |
+| **Skeleton Loader** | grey rounded bars, deliberately no content |
+| **Keyboard Key** | small bordered `kbd`, monospace glyph, subtle depth |
+
+**Skeleton Loader** is the one that only works because the canvas is code: its
+whole identity is *having no content*, which was unplayable when a live render
+made an empty screen indistinguishable from a broken turn.
+
+---
+
+## Why the combination works
+
+A Secret is a style *and* a component, so:
+
+- **Depth is structural.** *Wireframe Toggle Switch* needs the pill track and the
+  knob **and** the dashed grey outline and the mono type. No single declaration
+  gets close.
+- **The Chameleon can be half right.** They guess both halves at the steal and
+  score one point per axis, so a good read on one is worth something.
+- **Nothing repeats.** Fifteen of each, tracked separately across a match.
+- **Two Devs can converge without either finishing.** One plays the shape, one
+  plays the surface, and neither has said the answer out loud.

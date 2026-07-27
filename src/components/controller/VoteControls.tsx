@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SEAT_COLORS } from "../../game/constants";
-import { getSecret } from "../../game/content/deck";
+import { getComponent, getStyle } from "../../game/content/deck";
 import { foldEdits } from "../../game/fold";
 import RenderWindow from "../canvas/RenderWindow";
-import type { Edit } from "../../game/types";
+import type { Card, Edit, StealGuess } from "../../game/types";
 import { color, font } from "../../theme/tokens";
 import type { SeatInfo } from "../canvas/LiveInspector";
 
@@ -85,19 +85,17 @@ export function VotePicker({
 }
 
 /**
- * The caught Chameleon's one guess: the Secret plus its four nearest
- * neighbours, shuffled. One answer, no second attempt.
+ * The caught Chameleon's guess: one answer per axis, from five of each.
+ *
+ * Splitting it is what keeps catching them worth doing. With both halves hidden
+ * a single all-or-nothing guess would be 4% blind, so being caught would cost
+ * the Chameleon almost nothing to recover from. Per-axis, each half is a real
+ * 20% gamble and a good read on one is worth a point.
  *
  * **This is the one place a controller shows the render**, which `rules.md`
- * otherwise forbids outright. The exception is what keeps the steal as fair as
- * the paper game's: there, the fake artist guesses while looking at the
- * finished drawing, sitting on the table in front of everyone. The render is
- * that drawing. Withholding it until after the guess would make our steal
- * strictly harder than the source, and the 20% floor and the +3 payout were
- * balanced around a real chance.
- *
- * The Devs still don't see it — the TV holds the render for resolution, so the
- * reveal beat survives intact.
+ * otherwise forbids. The exception keeps the steal as fair as the paper game's,
+ * where the fake guesses while looking at the finished drawing. The Devs still
+ * don't see it — the TV holds the render for resolution.
  */
 export function StealPicker({
   slate,
@@ -105,46 +103,84 @@ export function StealPicker({
   onSteal,
   busy,
 }: {
-  slate: string[];
+  slate: { styles: string[]; components: string[] };
   /** The round's log, so the Chameleon can see what the table built. */
   edits: Edit[];
-  onSteal: (secretId: string) => void;
+  onSteal: (guess: StealGuess) => void;
   busy?: boolean;
 }) {
   const { t } = useTranslation();
-  const [picked, setPicked] = useState<string | null>(null);
+  const [styleId, setStyleId] = useState<string | null>(null);
+  const [componentId, setComponentId] = useState<string | null>(null);
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4">{t("steal.heading")}</Typography>
       <Box sx={{ height: 240 }}>
         <RenderWindow tree={foldEdits(edits)} title={t("canvas.renderWindow")} />
       </Box>
       <Typography sx={{ color: color.muted }}>{t("steal.oneShot")}</Typography>
-      <Stack spacing={1}>
-        {slate.map((secretId) => {
-          const secret = getSecret(secretId);
-          return (
-            <Button
-              key={secretId}
-              onClick={() => setPicked(secretId)}
-              variant={picked === secretId ? "contained" : "outlined"}
-              size="large"
-              sx={{ justifyContent: "flex-start", fontSize: "1.05rem" }}
-            >
-              {secret ? t(secret.labelKey) : secretId}
-            </Button>
-          );
-        })}
-      </Stack>
+
+      <Slate
+        heading={t("steal.headingStyle")}
+        ids={slate.styles}
+        resolve={getStyle}
+        picked={styleId}
+        onPick={setStyleId}
+      />
+      <Slate
+        heading={t("steal.headingComponent")}
+        ids={slate.components}
+        resolve={getComponent}
+        picked={componentId}
+        onPick={setComponentId}
+      />
+
       <Button
         variant="contained"
         size="large"
-        disabled={picked === null || busy}
-        onClick={() => picked && onSteal(picked)}
+        disabled={!styleId || !componentId || busy}
+        onClick={() => styleId && componentId && onSteal({ styleId, componentId })}
       >
         {t("steal.confirm")}
       </Button>
     </Stack>
+  );
+}
+
+function Slate({
+  heading,
+  ids,
+  resolve,
+  picked,
+  onPick,
+}: {
+  heading: string;
+  ids: string[];
+  resolve: (id: string) => Card | undefined;
+  picked: string | null;
+  onPick: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Typography variant="h4" sx={{ mb: 1 }}>
+        {heading}
+      </Typography>
+      <Stack spacing={0.5}>
+        {ids.map((id) => {
+          const card = resolve(id);
+          return (
+            <Button
+              key={id}
+              onClick={() => onPick(id)}
+              variant={picked === id ? "contained" : "outlined"}
+              sx={{ justifyContent: "flex-start", fontSize: "1.05rem" }}
+            >
+              {card ? t(card.labelKey) : id}
+            </Button>
+          );
+        })}
+      </Stack>
+    </Box>
   );
 }

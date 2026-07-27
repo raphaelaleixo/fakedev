@@ -10,12 +10,17 @@ export const TURNS_PER_PLAYER = 2;
 /** A match ends the instant any player reaches this, evaluated at end of round. */
 export const TARGET_SCORE = 5;
 
-/** Chameleon escapes, or steals correctly. Nobody else scores. */
-export const CHAMELEON_POINTS = 3;
-/** Each player who voted for a caught Chameleon who then failed the steal. */
+/**
+ * Chameleon escapes, or names both halves. The two pay the same, as they do in
+ * the paper game — both are simply "the Chameleon won this round".
+ */
+export const CHAMELEON_POINTS = 2;
+/** Caught, and named exactly one of the two halves. */
+export const PARTIAL_STEAL_POINTS = 1;
+/** Each player who caught a Chameleon that didn't fully recover. */
 export const CORRECT_VOTER_POINTS = 1;
 
-/** The caught Chameleon's slate is their Secret's similarity group, shuffled. */
+/** Five styles and five components, each slate including the true answer. */
 export const STEAL_SLATE_SIZE = 5;
 
 /**

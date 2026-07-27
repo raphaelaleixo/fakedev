@@ -1,14 +1,14 @@
 # A Fake Dev Goes to Amsterdam
 
 A hidden-role party game adapted from *A Fake Artist Goes to New York*. Players
-build one UI component together, one code edit per turn. The TV is the canvas —
-a live render beside a live inspector. Everyone knows which component they're
-building except the **Chameleon**, who bluffs through two turns without ever
-learning the answer.
+build one UI component together, one code edit per turn. The TV shows the DOM as
+it accumulates; laptops are private controllers. Everyone knows what's being
+built except the **Chameleon**, who bluffs through two turns without ever
+learning it.
 
-Full spec in `projectInfo/rules.md`, the 60-card deck in `projectInfo/cards.md`,
-and every decision that extends or overrides the spec in
-`projectInfo/decisions.md`. This file covers only what shapes day-to-day work.
+Full spec in `projectInfo/rules.md`, the two decks in `projectInfo/cards.md`, and
+every decision that extends or overrides the spec in `projectInfo/decisions.md`.
+This file covers only what shapes day-to-day work.
 
 ## The goal is not to finish the component
 
@@ -51,10 +51,10 @@ Consequences that are easy to get wrong:
 - **Fixtures and examples must model good play.** A mock whose label reads "We
   value your privacy" is a cartoon, not a game state, and it will teach you the
   wrong thing about whether the canvas works. Aim for a board that could
-  honestly be any card in its similarity group.
+  honestly be many Secrets at once.
 - **Never name a card in the UI.** Preset names, chip labels, placeholder copy —
-  a control called `neumorphic` hands over a Design Eras card. Describe shapes,
-  never eras or components.
+  a control called `neumorphic` hands over half the answer. Describe shapes,
+  never styles or components.
 - **Ambiguity is the feature, not a gap.** If a render looks under-specified,
   check whether that's actually a Dev playing well before "fixing" it.
 
@@ -63,20 +63,37 @@ copy of a certain length without committing to what the copy says — structural
 signal, no semantic leak.
 
 But it is a *bet*, not a hedge, and this is the part that's easy to get wrong:
-filling a text slot claims "this card has copy here," and for a good part of the
-deck that claim is false. Skeleton Loader's whole sketch is "grey rounded bars,
-**no content**". Progress Bar, Range Slider, Toggle Switch (Off), Focused Input,
-Autofilled Input and Read-only Input want no text either. Lorem ipsum on any of
-those is one of the loudest tells in the game.
+filling a text slot claims "this component has copy here," and for a good part of
+the deck that claim is false. Skeleton Loader's whole sketch is "grey rounded
+bars, **deliberately no content**". Progress Bar, Range Slider, Toggle Switch,
+Icon Button and Avatar want little or none either. Lorem ipsum on any of those is
+one of the loudest tells in the game.
 
-So it cuts both ways. For a Dev it's a weak but real proof — it narrows the
-category to cards that have copy. For a Chameleon it's a gamble on the Secret's
-shape that can expose them outright.
+So it cuts both ways. For a Dev it's a weak but real proof — it narrows the deck
+to components that have copy. For a Chameleon it's a gamble on the Secret's shape
+that can expose them outright.
 
 The general form: **an empty slot is information too.** Ten turns of nobody
 touching `{label}` says something specific about the Secret, and Dev restraint
 is as much a signal as Dev action. Don't build anything that nudges players to
 fill every slot.
+
+## A Secret is two things
+
+**A style and a component** — *Neumorphic · Toggle Switch*. Fifteen of each, so
+225 Secrets from thirty authored items, and **nothing about the answer is
+public**. The big screen names only the shape of it, `style × component`.
+
+That pairing is load-bearing three times over. It guarantees **depth**, since
+each half needs its own moves and no Secret is one declaration. It gives
+**variety**, since the same component plays nothing alike in two styles. And it
+makes the steal splittable, so a caught Chameleon can be **half right**.
+
+Neither half repeats within a match — the two used pools are tracked separately.
+
+The four screening rules any new card must pass are in `projectInfo/cards.md`.
+The one that cut a whole category is the **lorem ipsum test**: if you can't
+signal it without typing the answer, it isn't a card.
 
 ## Domain model
 
@@ -92,14 +109,12 @@ style edit, a tag on a text slot — are unrepresentable.
 
 **Players never see four targets.** The canvas has two *things*, and each owns a
 text slot, so the composer asks for an element (`outer` / `inner`) and then a
-kind (`element` / `attribute` / `css` / `text`). `draftToEdit` maps that onto the
-log: **outer's text is `{label}`, inner's text is `{text}`.**
+move. `draftToEdit` maps that onto the log: **outer's text is `{label}`, inner's
+text is `{text}`.**
 
-The inspector presents the same model — **two groups, one per element** — split
-the way DevTools splits. The **markup line** is the element as it stands, tag,
-attributes and text written as real HTML; the **box beneath** holds the CSS.
-That mirrors the composer exactly: element, attribute and text edits all change
-the markup, a declaration doesn't.
+The inspector draws **the actual DOM**, nested and indented — a blank round is
+two empty divs, a played one is a component you can read top to bottom. Nesting
+is real information and no list of edits shows it.
 
 **Every edit is written in its author's colour.** That makes who-wrote-what the
 thing you read first, which is the game-relevant question — only the punctuation
@@ -107,9 +122,10 @@ stays muted, so `property: value;` survives as a shape. Seat colours are tuned
 to carry text against `ink`, which is possible because the app is dark
 throughout and they never appear on a light surface.
 
-Nothing is ever removed. An overridden edit drops out of the markup line and
-reappears in the box struck through, so the box is the live CSS plus the history
-of everything superseded.
+**A declaration is one line carrying two people** — the name in the colour of
+whoever opened it, the value in the colour of whoever answered. Nothing is ever
+removed: an overridden value trails as a `/* comment */` in its own author's
+colour, which costs no line and reads better than a strikethrough.
 
 So `{label}` and `{text}` are *structure* names, used in `rules.md`, the types
 and the log. They are not player-facing vocabulary and shouldn't leak into UI.
@@ -125,7 +141,8 @@ Layout:
   - `render.ts` — render tree → HTML for the sandboxed stage
   - `round.ts` — setup, turn loop, vote, steal, scoring
   - `match.ts` — match lifecycle and seat colors
-  - `content/` — the deck and the key schema, authored content
+  - `content/deck.ts` — the two decks: fifteen styles, fifteen components
+  - `content/keySchema.ts` — composer suggestions, not a whitelist
 - `src/components/canvas/` — the big screen during a round
 - `src/mocks/fixtures.ts` — the board the canvas is developed against
 

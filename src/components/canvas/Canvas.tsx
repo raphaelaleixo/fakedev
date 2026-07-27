@@ -5,15 +5,19 @@ import { activePlayerId, totalTurns } from "../../game/round";
 import type { Round } from "../../game/types";
 import { color, font } from "../../theme/tokens";
 import LiveInspector, { type SeatInfo } from "./LiveInspector";
-import RenderWindow from "./RenderWindow";
 import TurnRail from "./TurnRail";
 
 /**
  * The big screen during a round.
  *
- * The Category is always up; the Secret never is, until resolution. The split
- * canvas is the heart of the screen — the Render Window is what the component
- * looks like, the Live Inspector is how it got that way.
+ * The Category is always up; the Secret never is, until resolution.
+ *
+ * **The canvas shows code, not the render.** Finishing the component was never
+ * the goal — the table is watching who is working toward it — and half the
+ * moves under the split (naming a property) change nothing visually at all. A
+ * live render would show the least interesting thing on screen while making
+ * every other turn look like a no-op. The render is the payoff instead, and it
+ * lands at resolution beside the Chameleon and the Secret.
  */
 export default function Canvas({ round, seats }: { round: Round; seats: SeatInfo[] }) {
   const { t } = useTranslation();
@@ -75,15 +79,7 @@ export default function Canvas({ round, seats }: { round: Round; seats: SeatInfo
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          minHeight: 0,
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "1.35fr 1fr" },
-          gap: 2,
-        }}
-      >
-        <RenderWindow tree={tree} title={t("canvas.renderWindow")} />
+      <Box sx={{ minHeight: 0 }}>
         <LiveInspector edits={round.edits} tree={tree} seats={seats} />
       </Box>
     </Box>

@@ -48,13 +48,67 @@ export function foldEdits(edits: Edit[]): RenderTree {
       case "tag":
         tree[edit.target].tag = edit.value;
         break;
+      // An opened-but-unvalued declaration is intent, not output — it belongs
+      // on the inspector and nowhere near the render.
       case "attribute":
-        tree[edit.target].attributes[edit.key] = edit.value;
+        if (edit.value !== undefined) tree[edit.target].attributes[edit.key] = edit.value;
         break;
       case "style":
-        tree[edit.target].styles[edit.key] = edit.value;
+        if (edit.value !== undefined) tree[edit.target].styles[edit.key] = edit.value;
         break;
     }
   }
   return tree;
+}
+
+/**
+ * One declaration's whole story: who named it, who answered, and what got
+ * overridden along the way.
+ *
+ * The inspector draws a line per declaration rather than per edit — the name in
+ * the colour of whoever opened it, the value in the colour of whoever answered,
+ * anything overridden trailing as a comment. That reads as one thought, shows
+ * both people, and costs a line instead of three.
+ */
+export interface SlotHistory {
+  slot: EditSlot;
+  target: Edit["target"];
+  kind: Edit["kind"];
+  /** Absent for tags and text, which have no name of their own. */
+  key?: string;
+  /** The first edit for this slot — whoever named it. */
+  opened: Edit;
+  /** The winning valued edit, if anybody has answered yet. */
+  current?: Edit;
+  /** Earlier valued edits, oldest first. Never dropped. */
+  overridden: Edit[];
+}
+
+/** Groups the log by slot, in the order the slots first appeared. */
+export function slotHistories(edits: Edit[]): SlotHistory[] {
+  const order: EditSlot[] = [];
+  const bySlot = new Map<EditSlot, Edit[]>();
+
+  for (const edit of edits) {
+    const slot = editSlot(edit);
+    if (!bySlot.has(slot)) {
+      bySlot.set(slot, []);
+      order.push(slot);
+    }
+    bySlot.get(slot)!.push(edit);
+  }
+
+  return order.map((slot) => {
+    const history = bySlot.get(slot)!;
+    const valued = history.filter((edit) => edit.value !== undefined);
+    return {
+      slot,
+      target: history[0].target,
+      kind: history[0].kind,
+      key: "key" in history[0] ? history[0].key : undefined,
+      opened: history[0],
+      current: valued.at(-1),
+      overridden: valued.slice(0, -1),
+    };
+  });
 }

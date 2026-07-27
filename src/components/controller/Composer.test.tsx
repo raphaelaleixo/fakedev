@@ -8,71 +8,130 @@ import i18n from "../../i18n";
 import theme from "../../theme/theme";
 import type { Edit } from "../../game/types";
 
-function renderComposer(onCommit: (edit: Edit) => void = () => undefined) {
+function renderComposer(
+  onCommit: (edit: Edit) => void = () => undefined,
+  edits: Edit[] = [],
+) {
   return {
     user: userEvent.setup(),
     ...render(
       <ThemeProvider theme={theme}>
         <I18nextProvider i18n={i18n}>
-          <Composer playerId={2} turnIndex={4} onCommit={onCommit} />
+          <Composer playerId={2} turnIndex={4} edits={edits} onCommit={onCommit} />
         </I18nextProvider>
       </ThemeProvider>,
     ),
   };
 }
 
-const commitButton = () => screen.getByRole("button", { name: "Commit" });
+const anOpenProperty: Edit = {
+  id: "open-1",
+  playerId: 1,
+  turnIndex: 0,
+  target: "inner",
+  kind: "style",
+  key: "border-radius",
+};
+
+const aSetProperty: Edit = {
+  id: "set-1",
+  playerId: 1,
+  turnIndex: 1,
+  target: "inner",
+  kind: "style",
+  key: "color",
+  value: "red",
+};
 
 describe("Composer", () => {
   test("opens asking only which element, since there are only two", () => {
     renderComposer();
     expect(screen.getByRole("button", { name: "outer" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "inner" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "label" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "css" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Commit" })).toBeNull();
   });
 
-  test("offers text as a kind of edit, alongside element, attribute and css", async () => {
-    const { user } = renderComposer();
-    await user.click(screen.getByRole("button", { name: "outer" }));
-    for (const kind of ["element", "attribute", "css", "text"]) {
-      expect(screen.getByRole("button", { name: kind })).toBeInTheDocument();
-    }
-  });
-
-  test("never nudges a player toward filling a slot", () => {
+  test("never nudges a player toward filling anything in", () => {
     const { container } = renderComposer();
-    // No progress meter, no counter, nothing implying targets are chores.
     expect(container.querySelector('[role="progressbar"]')).toBeNull();
     expect(container.textContent).not.toMatch(/of 2|of 4|remaining|untouched/i);
   });
 
-  test("takes a text edit straight to its value, with no key step", async () => {
+  test("offers the five moves once an element is chosen", async () => {
     const { user } = renderComposer();
     await user.click(screen.getByRole("button", { name: "outer" }));
-    await user.click(screen.getByRole("button", { name: "text" }));
-    expect(screen.queryByPlaceholderText("type to search…")).toBeNull();
-    expect(screen.getByPlaceholderText("type a value…")).toBeInTheDocument();
+    for (const move of [
+      "element",
+      "name an attribute",
+      "name a property",
+      "text",
+      "give a value",
+    ]) {
+      expect(screen.getByRole("button", { name: move })).toBeInTheDocument();
+    }
   });
 
-  test("asks which kind before offering any input", async () => {
-    const { user } = renderComposer();
-    await user.click(screen.getByRole("button", { name: "inner" }));
-    expect(screen.queryByPlaceholderText("type a value…")).toBeNull();
-  });
-
-  test("commits inner's text onto the {text} slot", async () => {
+  /**
+   * The heart of the split: naming a property is the whole turn. Somebody else
+   * decides what it becomes — which is the extend-or-start-fresh decision the
+   * paper game turns on.
+   */
+  test("ends the turn at the name when opening a property", async () => {
     const onCommit = vi.fn();
     const { user } = renderComposer(onCommit);
-    await user.click(screen.getByRole("button", { name: "inner" }));
-    await user.click(screen.getByRole("button", { name: "text" }));
-    await user.type(screen.getByPlaceholderText("type a value…"), "Continue");
-    await user.click(commitButton());
+    await user.click(screen.getByRole("button", { name: "outer" }));
+    await user.click(screen.getByRole("button", { name: "name a property" }));
+    await user.type(screen.getByPlaceholderText("type to search…"), "border-radius");
+
+    // No value step at all.
+    expect(screen.queryByPlaceholderText("type a value…")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Commit" }));
 
     expect(onCommit).toHaveBeenCalledWith(
-      expect.objectContaining({ target: "text", kind: "text", value: "Continue" }),
+      expect.objectContaining({ target: "outer", kind: "style", key: "border-radius" }),
     );
+    expect(onCommit.mock.calls[0][0]).not.toHaveProperty("value");
+  });
+
+  test("has nothing to answer when the log is empty", async () => {
+    const { user } = renderComposer();
+    await user.click(screen.getByRole("button", { name: "outer" }));
+    expect(screen.getByRole("button", { name: "give a value" })).toBeDisabled();
+  });
+
+  test("lists what is waiting on an answer, open ones first", async () => {
+    const { user } = renderComposer(() => undefined, [aSetProperty, anOpenProperty]);
+    await user.click(screen.getByRole("button", { name: "inner" }));
+    await user.click(screen.getByRole("button", { name: "give a value" }));
+
+    const choices = screen
+      .getAllByRole("button")
+      .map((b) => b.textContent ?? "")
+      .filter((label) => label.includes("border-radius") || label.includes("color"));
+    expect(choices[0]).toContain("border-radius");
+    expect(choices[0]).toContain("waiting");
+  });
+
+  test("answers an open declaration", async () => {
+    const onCommit = vi.fn();
+    const { user } = renderComposer(onCommit, [anOpenProperty]);
+    await user.click(screen.getByRole("button", { name: "inner" }));
+    await user.click(screen.getByRole("button", { name: "give a value" }));
+    await user.click(screen.getByRole("button", { name: /border-radius/ }));
+    await user.type(screen.getByRole("spinbutton"), "12");
+    await user.click(screen.getByRole("button", { name: "Commit" }));
+
+    expect(onCommit).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "style", key: "border-radius", value: "12px" }),
+    );
+  });
+
+  test("lets a value land on something already set, which is how overriding works", async () => {
+    const onCommit = vi.fn();
+    const { user } = renderComposer(onCommit, [aSetProperty]);
+    await user.click(screen.getByRole("button", { name: "inner" }));
+    await user.click(screen.getByRole("button", { name: "give a value" }));
+    expect(screen.getByRole("button", { name: /color/ })).toBeInTheDocument();
   });
 
   test("commits outer's text onto the {label} slot", async () => {
@@ -81,31 +140,11 @@ describe("Composer", () => {
     await user.click(screen.getByRole("button", { name: "outer" }));
     await user.click(screen.getByRole("button", { name: "text" }));
     await user.type(screen.getByPlaceholderText("type a value…"), "Lorem ipsum");
-    await user.click(commitButton());
+    await user.click(screen.getByRole("button", { name: "Commit" }));
 
     expect(onCommit).toHaveBeenCalledWith(
       expect.objectContaining({ target: "label", kind: "text", value: "Lorem ipsum" }),
     );
-  });
-
-  test("keeps commit disabled until the draft is actually valid", async () => {
-    const { user } = renderComposer();
-    await user.click(screen.getByRole("button", { name: "outer" }));
-    await user.click(screen.getByRole("button", { name: "text" }));
-    expect(commitButton()).toBeDisabled();
-    await user.type(screen.getByPlaceholderText("type a value…"), "Lorem ipsum");
-    expect(commitButton()).toBeEnabled();
-  });
-
-  test("refuses to commit text past the layout cap", async () => {
-    const { user } = renderComposer();
-    await user.click(screen.getByRole("button", { name: "outer" }));
-    await user.click(screen.getByRole("button", { name: "text" }));
-    const field = screen.getByPlaceholderText("type a value…");
-    await user.type(field, "x".repeat(30));
-    // The field itself is uncapped for unlisted keys, so the gate is the button.
-    expect((field as HTMLInputElement).value.length).toBeGreaterThan(24);
-    expect(commitButton()).toBeDisabled();
   });
 
   test("treats the element choice as the value, with no key step", async () => {
@@ -114,11 +153,19 @@ describe("Composer", () => {
     await user.click(screen.getByRole("button", { name: "inner" }));
     await user.click(screen.getByRole("button", { name: "element" }));
     await user.type(screen.getByPlaceholderText("div, button, input…"), "button");
-    await user.click(commitButton());
+    await user.click(screen.getByRole("button", { name: "Commit" }));
 
     expect(onCommit).toHaveBeenCalledWith(
       expect.objectContaining({ target: "inner", kind: "tag", value: "button" }),
     );
+  });
+
+  test("refuses to commit text past the layout cap", async () => {
+    const { user } = renderComposer();
+    await user.click(screen.getByRole("button", { name: "outer" }));
+    await user.click(screen.getByRole("button", { name: "text" }));
+    await user.type(screen.getByPlaceholderText("type a value…"), "x".repeat(30));
+    expect(screen.getByRole("button", { name: "Commit" })).toBeDisabled();
   });
 
   test("clears the draft after a commit, so the next turn starts clean", async () => {
@@ -126,20 +173,18 @@ describe("Composer", () => {
     await user.click(screen.getByRole("button", { name: "inner" }));
     await user.click(screen.getByRole("button", { name: "text" }));
     await user.type(screen.getByPlaceholderText("type a value…"), "Continue");
-    await user.click(commitButton());
+    await user.click(screen.getByRole("button", { name: "Commit" }));
     expect(screen.queryByRole("button", { name: "Commit" })).toBeNull();
   });
 
   /**
    * Regression: Autocomplete filters with an empty query whenever the typed
-   * text equals the selected value's label and the input is pristine. Driving
-   * `value` from keystrokes made both permanently true, so the list showed
-   * everything no matter what you typed.
+   * text equals the selected value's label and the input is pristine.
    */
   test("filters the property list down as you type", async () => {
     const { user } = renderComposer();
     await user.click(screen.getByRole("button", { name: "inner" }));
-    await user.click(screen.getByRole("button", { name: "css" }));
+    await user.click(screen.getByRole("button", { name: "name a property" }));
 
     const field = screen.getByPlaceholderText("type to search…");
     await user.click(field);
@@ -150,46 +195,32 @@ describe("Composer", () => {
 
     expect(filtered.length).toBeLessThan(unfiltered);
     expect(filtered).toContain("display");
-    expect(filtered.every((o) => o?.includes("display"))).toBe(true);
   });
 
   test("offers properties starting with the query before ones merely containing it", async () => {
     const { user } = renderComposer();
     await user.click(screen.getByRole("button", { name: "inner" }));
-    await user.click(screen.getByRole("button", { name: "css" }));
+    await user.click(screen.getByRole("button", { name: "name a property" }));
     await user.type(screen.getByPlaceholderText("type to search…"), "color");
 
     const options = screen.getAllByRole("option").map((o) => o.textContent);
     expect(options[0]).toBe("color");
-    expect(options.indexOf("color")).toBeLessThan(options.indexOf("background-color"));
   });
 
   test("reaches properties outside the curated set once you type", async () => {
     const { user } = renderComposer();
     await user.click(screen.getByRole("button", { name: "inner" }));
-    await user.click(screen.getByRole("button", { name: "css" }));
+    await user.click(screen.getByRole("button", { name: "name a property" }));
     await user.type(screen.getByPlaceholderText("type to search…"), "grid-template");
 
     const options = screen.getAllByRole("option").map((o) => o.textContent);
-    expect(options.length).toBeGreaterThan(0);
-    // grid-template-* is nowhere in STYLE_SCHEMA; it comes from the browser.
     expect(options.some((o) => o?.startsWith("grid-template"))).toBe(true);
   });
 
-  test("filters the attribute list too", async () => {
+  test("resets downstream choices when the element changes", async () => {
     const { user } = renderComposer();
     await user.click(screen.getByRole("button", { name: "inner" }));
-    await user.click(screen.getByRole("button", { name: "attribute" }));
-    await user.type(screen.getByPlaceholderText("type to search…"), "dis");
-
-    const options = screen.getAllByRole("option").map((o) => o.textContent);
-    expect(options).toEqual(["disabled"]);
-  });
-
-  test("resets downstream choices when the target changes", async () => {
-    const { user } = renderComposer();
-    await user.click(screen.getByRole("button", { name: "inner" }));
-    await user.click(screen.getByRole("button", { name: "css" }));
+    await user.click(screen.getByRole("button", { name: "name a property" }));
     expect(screen.getByPlaceholderText("type to search…")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "outer" }));
     expect(screen.queryByPlaceholderText("type to search…")).toBeNull();

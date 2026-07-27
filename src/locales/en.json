@@ -80,18 +80,22 @@
   },
   "composer": {
     "element": "Which element",
-    "kind": "What kind of edit",
+    "move": "Your move",
+    "moves": {
+      "tag": "element",
+      "attribute": "name an attribute",
+      "style": "name a property",
+      "text": "text",
+      "value": "give a value"
+    },
     "tagName": "Element",
+    "slot": "Which one",
+    "open": "waiting",
+    "openHint": "Naming it is your whole turn. Someone else gives it a value.",
     "value": "Value",
     "commit": "Commit",
     "on": "on",
     "off": "off",
-    "kinds": {
-      "tag": "element",
-      "attribute": "attribute",
-      "style": "css",
-      "text": "text"
-    },
     "key": {
       "attribute": "Attribute",
       "style": "Property"

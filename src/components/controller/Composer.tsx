@@ -13,37 +13,57 @@ import {
 import { draftToEdit, isDraftSubmittable } from "../../game/composer";
 import { supportedCssProperties } from "../../game/css";
 import { rankSuggestions } from "../../game/suggest";
-import { ATTRIBUTE_SCHEMA, STYLE_SCHEMA, TAG_SUGGESTIONS, getKeySchema } from "../../game/content/keySchema";
-import type { ComposerDraft, Edit, EditKind, ElementTarget } from "../../game/types";
+import {
+  ATTRIBUTE_SCHEMA,
+  STYLE_SCHEMA,
+  TAG_SUGGESTIONS,
+  getKeySchema,
+} from "../../game/content/keySchema";
+import type { ComposerDraft, ComposerMove, Edit, ElementTarget } from "../../game/types";
 import { color, font } from "../../theme/tokens";
 import ValueEditor from "./ValueEditor";
 
 /** Two things on the canvas. Each owns a text slot. */
 const ELEMENTS: ElementTarget[] = ["outer", "inner"];
-const KINDS: EditKind[] = ["tag", "attribute", "style", "text"];
+const MOVES: ComposerMove[] = ["tag", "attribute", "style", "text", "value"];
+
+/** A declaration a value move can answer: open, or already set. */
+interface Slot {
+  kind: "attribute" | "style";
+  key: string;
+  /** Undefined while nobody has answered it. */
+  value?: string;
+}
 
 /**
- * The turn composer: target, type, key, value.
+ * The turn composer.
  *
- * Keyboard-first — everyone plays this on a laptop, so the key step is a
- * type-to-filter autocomplete with the curated set pre-listed. That's both
- * affordances at once: the chips are browsable for a player who doesn't know a
- * property exists, and typing falls through to every property the browser
- * supports for one who does.
+ * A turn plays a single token (the element's tag or its text), **opens** a
+ * declaration by naming it, or **answers** one with a value. Opening is intent
+ * without execution; answering commits to somebody's intent — maybe yours,
+ * maybe not. Choosing between those is the game, so the moves sit side by side
+ * as equals rather than as stages of one flow.
  *
- * Note what this deliberately does *not* do: it shows no progress meter, no
- * "3 of 4 slots untouched", nothing that nudges a player toward filling a slot.
- * Leaving `{label}` empty for a whole round is a legitimate and informative
- * play, and the UI must not argue with it.
+ * Keyboard-first: everyone plays this on a laptop, so every list is a
+ * type-to-filter autocomplete with the curated set pre-listed. Chips are
+ * browsable for a player who doesn't know a property exists; typing falls
+ * through to every property the browser supports for one who does.
+ *
+ * Note what this deliberately does *not* do: no progress meter, no "3 of 4
+ * slots untouched", nothing nudging a player toward filling anything in.
+ * Finishing the component was never the goal.
  */
 export default function Composer({
   playerId,
   turnIndex,
+  edits,
   onCommit,
   busy,
 }: {
   playerId: number;
   turnIndex: number;
+  /** The log so far, so a value move can list what there is to answer. */
+  edits: Edit[];
   onCommit: (edit: Edit) => void;
   busy?: boolean;
 }) {
@@ -54,11 +74,18 @@ export default function Composer({
   const curatedStyleKeys = useMemo(() => STYLE_SCHEMA.map((entry) => entry.key), []);
   const attributeKeys = useMemo(() => ATTRIBUTE_SCHEMA.map((entry) => entry.key), []);
 
-  const schema = draft.kind === "style" || draft.kind === "attribute"
-    ? draft.key
-      ? getKeySchema(draft.kind, draft.key)
-      : undefined
-    : undefined;
+  const slots = useMemo(() => slotsFor(edits, draft.element), [edits, draft.element]);
+  // Naming something that already exists would blank its value — that isn't a
+  // move, it's an accident. Answer it instead.
+  const taken = useMemo(
+    () => new Set(slots.map((slot) => `${slot.kind}:${slot.key}`)),
+    [slots],
+  );
+  const openable = (kind: "attribute" | "style", keys: string[]) =>
+    keys.filter((key) => !taken.has(`${kind}:${key}`));
+
+  const schema =
+    draft.slotKind && draft.key ? getKeySchema(draft.slotKind, draft.key) : undefined;
 
   const submittable = isDraftSubmittable(draft);
   const valueTouched = Boolean(draft.value?.trim());
@@ -67,16 +94,11 @@ export default function Composer({
     setDraft((current) => ({ ...current, ...patch }));
   }
 
-  function chooseElement(element: ElementTarget) {
-    // Changing the element invalidates everything downstream.
-    setDraft({ element });
-  }
-
   function commit() {
     if (!submittable) return;
     onCommit(
       draftToEdit(draft, {
-        id: `${playerId}-${turnIndex}-${draft.element}-${draft.kind}`,
+        id: `${playerId}-${turnIndex}-${draft.element}-${draft.move}-${draft.key ?? ""}`,
         playerId,
         turnIndex,
       }),
@@ -90,7 +112,8 @@ export default function Composer({
         <ToggleButtonGroup
           exclusive
           value={draft.element ?? null}
-          onChange={(_, next) => next && chooseElement(next as ElementTarget)}
+          // Changing the element invalidates everything downstream.
+          onChange={(_, next) => next && setDraft({ element: next as ElementTarget })}
           sx={{ flexWrap: "wrap", gap: 0.5 }}
         >
           {ELEMENTS.map((element) => (
@@ -102,26 +125,31 @@ export default function Composer({
       </Step>
 
       {draft.element && (
-        <Step index={2} label={t("composer.kind")}>
+        <Step index={2} label={t("composer.move")}>
           <ToggleButtonGroup
             exclusive
-            value={draft.kind ?? null}
+            value={draft.move ?? null}
             onChange={(_, next) =>
-              next && setDraft({ element: draft.element, kind: next as EditKind })
+              next && setDraft({ element: draft.element, move: next as ComposerMove })
             }
             sx={{ flexWrap: "wrap", gap: 0.5 }}
           >
-            {KINDS.map((kind) => (
-              <ToggleButton key={kind} value={kind} sx={{ fontFamily: font.mono }}>
-                {t(`composer.kinds.${kind}`)}
+            {MOVES.map((move) => (
+              <ToggleButton
+                key={move}
+                value={move}
+                // Nothing to answer yet is a fact worth showing, not hiding.
+                disabled={move === "value" && slots.length === 0}
+                sx={{ fontFamily: font.mono }}
+              >
+                {t(`composer.moves.${move}`)}
               </ToggleButton>
             ))}
           </ToggleButtonGroup>
         </Step>
       )}
 
-      {/* A tag edit's choice is its value — there is no key step. */}
-      {draft.kind === "tag" && (
+      {draft.move === "tag" && (
         <Step index={3} label={t("composer.tagName")}>
           <SearchField
             options={TAG_SUGGESTIONS}
@@ -132,24 +160,50 @@ export default function Composer({
         </Step>
       )}
 
-      {(draft.kind === "attribute" || draft.kind === "style") && (
-        <Step index={3} label={t(`composer.key.${draft.kind}`)}>
+      {(draft.move === "attribute" || draft.move === "style") && (
+        <Step index={3} label={t(`composer.key.${draft.move}`)}>
           <SearchField
-            // Chips are browsable for discovery; typing falls through to every
-            // property the browser knows, for recall.
-            options={draft.kind === "attribute" ? attributeKeys : curatedStyleKeys}
-            searchPool={draft.kind === "style" ? allProperties : undefined}
+            options={
+              draft.move === "attribute"
+                ? openable("attribute", attributeKeys)
+                : openable("style", curatedStyleKeys)
+            }
+            searchPool={draft.move === "style" ? openable("style", allProperties) : undefined}
             inputValue={draft.key ?? ""}
-            onInputValueChange={(next) => set({ key: next, value: "" })}
+            onInputValueChange={(next) => set({ key: next })}
             placeholder={t("composer.keyPlaceholder")}
           />
+          <Typography variant="caption" sx={{ display: "block", mt: 1, color: color.muted }}>
+            {t("composer.openHint")}
+          </Typography>
         </Step>
       )}
 
-      {(draft.kind === "text" ||
-        (draft.kind === "attribute" && draft.key) ||
-        (draft.kind === "style" && draft.key)) && (
-        <Step index={draft.kind === "text" ? 3 : 4} label={t("composer.value")}>
+      {draft.move === "value" && (
+        <Step index={3} label={t("composer.slot")}>
+          <Stack spacing={0.5}>
+            {slots.map((slot) => {
+              const chosen = draft.key === slot.key && draft.slotKind === slot.kind;
+              return (
+                <Button
+                  key={`${slot.kind}:${slot.key}`}
+                  onClick={() => set({ key: slot.key, slotKind: slot.kind, value: "" })}
+                  variant={chosen ? "contained" : "outlined"}
+                  sx={{ justifyContent: "space-between", fontFamily: font.mono }}
+                >
+                  <Box component="span">{slot.key}</Box>
+                  <Box component="span" sx={{ opacity: 0.7, fontSize: "0.85em" }}>
+                    {slot.value === undefined ? t("composer.open") : slot.value}
+                  </Box>
+                </Button>
+              );
+            })}
+          </Stack>
+        </Step>
+      )}
+
+      {(draft.move === "text" || (draft.move === "value" && draft.key)) && (
+        <Step index={draft.move === "text" ? 3 : 4} label={t("composer.value")}>
           <ValueEditor
             schema={schema}
             value={draft.value ?? ""}
@@ -179,6 +233,31 @@ export default function Composer({
 }
 
 /**
+ * Every declaration on an element, folded to its current value, open ones
+ * first — those are the ones somebody is waiting on.
+ */
+function slotsFor(edits: Edit[], element?: ElementTarget): Slot[] {
+  if (!element) return [];
+  const byKey = new Map<string, Slot>();
+
+  for (const edit of edits) {
+    if (edit.target !== element) continue;
+    if (edit.kind !== "attribute" && edit.kind !== "style") continue;
+    byKey.set(`${edit.kind}:${edit.key}`, {
+      kind: edit.kind,
+      key: edit.key,
+      value: edit.value,
+    });
+  }
+
+  const slots = [...byKey.values()];
+  return [
+    ...slots.filter((slot) => slot.value === undefined),
+    ...slots.filter((slot) => slot.value !== undefined),
+  ];
+}
+
+/**
  * Type-to-filter field.
  *
  * Controls `inputValue`, never `value`. MUI's Autocomplete keeps those as two
@@ -186,8 +265,7 @@ export default function Composer({
  * *text* — and it filters with an empty query whenever the typed text equals
  * the selected value's label and the input is "pristine". Driving `value` from
  * keystrokes makes both conditions permanently true, so the list stops
- * filtering entirely. Here the text *is* the state, so `inputValue` is the only
- * thing to control.
+ * filtering entirely. Here the text *is* the state.
  */
 function SearchField({
   options,
@@ -214,13 +292,14 @@ function SearchField({
       inputValue={inputValue}
       onInputChange={(_, next) => onInputValueChange(next)}
       filterOptions={(available, state) =>
-        rankSuggestions(state.inputValue, state.inputValue.trim() ? (searchPool ?? available) : available)
+        rankSuggestions(
+          state.inputValue,
+          state.inputValue.trim() ? (searchPool ?? available) : available,
+        )
       }
       // params carries Autocomplete's input ref and handlers — spread it as-is.
       // Overriding slotProps.htmlInput here detaches the ref and the field dies.
-      renderInput={(params) => (
-        <TextField {...params} size="small" placeholder={placeholder} />
-      )}
+      renderInput={(params) => <TextField {...params} size="small" placeholder={placeholder} />}
     />
   );
 }
@@ -250,24 +329,46 @@ function Step({
 /** What will land on the inspector, in the inspector's own vernacular. */
 function Preview({ draft }: { draft: ComposerDraft }) {
   const value = draft.value?.trim() ?? "";
-  if (!value) return null;
+  const punct = { color: color.inkPunct };
 
   let body: React.ReactNode = null;
-  if (draft.kind === "text") {
-    body = <Box component="span" sx={{ color: color.inkValue }}>&quot;{value}&quot;</Box>;
-  } else if (draft.kind === "tag") {
-    body = <Box component="span" sx={{ color: color.inkTag }}>&lt;{value}&gt;</Box>;
-  } else if (draft.key) {
+  if (draft.move === "text" && value) {
+    body = <>&quot;{value}&quot;</>;
+  } else if (draft.move === "tag" && value) {
     body = (
       <>
-        <Box component="span" sx={{ color: color.inkAttr }}>{draft.key}</Box>
-        <Box component="span" sx={{ color: color.inkPunct }}>
-          {draft.kind === "style" ? ": " : "="}
+        <Box component="span" sx={punct}>
+          &lt;
         </Box>
-        <Box component="span" sx={{ color: color.inkValue }}>
-          {draft.kind === "style" ? value : `"${value}"`}
+        {value}
+        <Box component="span" sx={punct}>
+          &gt;
         </Box>
-        {draft.kind === "style" && <Box component="span" sx={{ color: color.inkPunct }}>;</Box>}
+      </>
+    );
+  } else if ((draft.move === "attribute" || draft.move === "style") && draft.key) {
+    // An opening, drawn with the gap it leaves behind for somebody else.
+    body = (
+      <>
+        {draft.key}
+        <Box component="span" sx={punct}>
+          {draft.move === "style" ? ": …;" : '="…"'}
+        </Box>
+      </>
+    );
+  } else if (draft.move === "value" && draft.key && value) {
+    body = (
+      <>
+        {draft.key}
+        <Box component="span" sx={punct}>
+          {draft.slotKind === "style" ? ": " : "="}
+        </Box>
+        {draft.slotKind === "style" ? value : `"${value}"`}
+        {draft.slotKind === "style" && (
+          <Box component="span" sx={punct}>
+            ;
+          </Box>
+        )}
       </>
     );
   }
@@ -280,13 +381,16 @@ function Preview({ draft }: { draft: ComposerDraft }) {
         p: 1,
         fontFamily: font.mono,
         fontSize: "0.9rem",
+        color: color.flame,
         backgroundColor: color.ink,
         border: `1px solid ${color.inkRule}`,
         overflowX: "auto",
         whiteSpace: "pre",
       }}
     >
-      <Box component="span" sx={{ color: color.inkPunct }}>{draft.element} </Box>
+      <Box component="span" sx={punct}>
+        {draft.element}{" "}
+      </Box>
       {body}
     </Box>
   );

@@ -10,6 +10,32 @@ Full spec in `projectInfo/rules.md`, the 60-card deck in `projectInfo/cards.md`,
 and every decision that extends or overrides the spec in
 `projectInfo/decisions.md`. This file covers only what shapes day-to-day work.
 
+## The goal is not to finish the component
+
+**It's to see who is working toward it.** Everything else follows from this, and
+it is easy to reason your way past — I did, and built an argument for scaling
+turns to table size before being corrected.
+
+The paper game's drawing is usually a mess. Nobody is trying to complete a
+picture; you're watching whether each stroke belongs. So the number that matters
+is *turns per player* — two, always, unchanged by table size — not declarations
+per component. A round that ends with a half-built thing and one unanswered
+question is a round that worked.
+
+Consequences:
+
+- **A turn opens a declaration or answers one, never both.** Naming
+  `border-radius` is intent with no execution and ends your turn; somebody else
+  decides what it becomes. The interesting choice each turn is whether to answer
+  another player's opening or start your own — the paper game's
+  extend-a-stroke-or-start-fresh tension.
+- **The canvas shows code, not the render.** Half the moves change nothing
+  visually, and a live render would make them look like no-ops while displaying
+  the least interesting thing on screen. The render is the payoff and lands at
+  resolution, beside the Chameleon and the Secret.
+- **Don't add anything that measures completion.** No progress meters, no
+  "unset" counts, no nudges toward filling things in.
+
 ## The central design tension
 
 **A good board makes sense but is not immediately recognizable.**

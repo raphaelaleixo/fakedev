@@ -37,6 +37,7 @@ export default function MockController() {
         <Composer
           playerId={seat}
           turnIndex={round.turnIndex}
+          edits={[...round.edits, ...committed]}
           onCommit={(edit) => setCommitted((prev) => [...prev, edit])}
         />
 

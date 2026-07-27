@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { SEAT_COLORS } from "../../game/constants";
 import { tallyVotes } from "../../game/round";
 import { getSecret } from "../../game/content/deck";
+import { foldEdits } from "../../game/fold";
+import RenderWindow from "./RenderWindow";
 import type { Round } from "../../game/types";
 import { color, font } from "../../theme/tokens";
 import type { SeatInfo } from "./LiveInspector";
@@ -181,7 +183,14 @@ export function StealScreen({ round, seats }: { round: Round; seats: SeatInfo[] 
   );
 }
 
-/** Chameleon revealed — always — the Secret revealed, points, scoreboard. */
+/**
+ * Chameleon revealed — always — the Secret revealed, points, scoreboard, and
+ * the render.
+ *
+ * The render lives here rather than on the canvas: the round is spent reading
+ * code, and this is the first time anyone sees what they actually built. It's
+ * the payoff, so it gets the reveal rather than a corner of the working screen.
+ */
 export function ResultScreen({
   round,
   seats,
@@ -214,13 +223,28 @@ export function ResultScreen({
 
   return (
     <Stage>
-      <Box>
-        <Typography variant="caption" sx={{ color: color.muted, display: "block" }}>
-          {t("result.theSecretWas")}
-        </Typography>
-        <Typography variant="h1" sx={{ fontSize: "clamp(2rem, 6vw, 4.5rem)", color: color.flame }}>
-          {secret ? t(secret.labelKey) : round.secretId}
-        </Typography>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "auto 1fr" },
+          alignItems: "center",
+          gap: { xs: 3, md: 5 },
+        }}
+      >
+        <Box sx={{ width: { xs: "100%", md: 420 }, height: { xs: 220, md: 260 } }}>
+          <RenderWindow tree={foldEdits(round.edits)} title={t("canvas.renderWindow")} />
+        </Box>
+        <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
+          <Typography variant="caption" sx={{ color: color.muted, display: "block" }}>
+            {t("result.theSecretWas")}
+          </Typography>
+          <Typography
+            variant="h1"
+            sx={{ fontSize: "clamp(2rem, 5vw, 4rem)", color: color.flame }}
+          >
+            {secret ? t(secret.labelKey) : round.secretId}
+          </Typography>
+        </Box>
       </Box>
 
       <Typography sx={{ fontFamily: font.mono, fontSize: "clamp(1.1rem, 2.4vw, 1.8rem)" }}>

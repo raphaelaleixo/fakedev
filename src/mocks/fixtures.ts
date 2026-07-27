@@ -22,8 +22,10 @@ import { seatColorFor } from "../game/match";
  * length without committing to what the copy says. Structural signal, zero
  * semantic leak.
  *
- * Turn 6 sets the button green and turn 9 overrides it to blue, so the
- * inspector has a real superseded line rather than a staged one.
+ * It also models the split: a turn either *opens* a declaration by naming it or
+ * *answers* one with a value. Turn 8 opens `role` and nobody ever answers it —
+ * that dangling question is a legitimate end state and worth seeing on screen.
+ * Turn 7 answers the button green; turn 9 overrides it to blue.
  */
 
 const NAMES = ["Rafa", "Ana", "Tom", "Ines", "Joost"];
@@ -45,28 +47,24 @@ const edit = (turnIndex: number, playerId: number, body: EditBody): Edit =>
   ({ id: `mock-${turnIndex}`, playerId, turnIndex, ...body }) as Edit;
 
 export const MOCK_EDITS: Edit[] = [
-  edit(0, 1, { target: "outer", kind: "style", key: "display", value: "flex" }),
-  edit(1, 2, { target: "outer", kind: "style", key: "padding", value: "20px" }),
-  edit(2, 3, { target: "outer", kind: "style", key: "background-color", value: "#ffffff" }),
-  // Choosing the component is a whole turn, same as any other edit.
-  edit(3, 4, { target: "inner", kind: "tag", value: "button" }),
-  edit(4, 5, {
-    target: "outer",
-    kind: "style",
-    key: "box-shadow",
-    value: "0 8px 24px rgba(32, 33, 36, 0.2)",
-  }),
+  // Rafa names a property. That's the whole turn — somebody else decides what
+  // it becomes.
+  edit(0, 1, { target: "outer", kind: "style", key: "display" }),
+  edit(1, 2, { target: "outer", kind: "style", key: "display", value: "flex" }),
+  edit(2, 3, { target: "outer", kind: "style", key: "padding" }),
+  edit(3, 4, { target: "outer", kind: "style", key: "padding", value: "20px" }),
+  // Choosing the component is a whole turn, same as any other move.
+  edit(4, 5, { target: "inner", kind: "tag", value: "button" }),
   // Signals the *shape* — body copy lives here, about this long — without
   // leaking what it says. Safe on this card and a real bet on others: half the
   // deck wants these slots empty, and lorem ipsum on a Skeleton Loader would
   // give the player away instantly.
   edit(5, 1, { target: "label", kind: "text", value: "Lorem ipsum dolor sit" }),
-  // Superseded by turn 9 — this is the strikethrough case.
-  edit(6, 2, { target: "inner", kind: "style", key: "background-color", value: "#34a853" }),
-  edit(7, 3, { target: "text", kind: "text", value: "Continue" }),
-  // An attribute edit — invisible in the render, loud on the inspector, and
-  // ambiguous across the whole consent-prompt group.
-  edit(8, 4, { target: "outer", kind: "attribute", key: "role", value: "dialog" }),
+  edit(6, 2, { target: "inner", kind: "style", key: "background-color" }),
+  // Answered green, then overridden blue on turn 9 — the strikethrough case.
+  edit(7, 3, { target: "inner", kind: "style", key: "background-color", value: "#34a853" }),
+  // Opened and never answered. A dangling question is a fine way to end.
+  edit(8, 4, { target: "outer", kind: "attribute", key: "role" }),
   edit(9, 5, { target: "inner", kind: "style", key: "background-color", value: "#1a73e8" }),
 ];
 

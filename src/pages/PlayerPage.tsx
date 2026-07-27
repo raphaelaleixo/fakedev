@@ -105,7 +105,13 @@ export default function PlayerPage() {
           <Typography variant="h4" sx={{ mb: 2 }}>
             {t("controller.yourTurn")}
           </Typography>
-          <Composer playerId={seat} turnIndex={round.turnIndex} onCommit={handleCommit} busy={busy} />
+          <Composer
+            playerId={seat}
+            turnIndex={round.turnIndex}
+            edits={round.edits}
+            onCommit={handleCommit}
+            busy={busy}
+          />
           {error && (
             <Typography sx={{ mt: 2, color: color.flame }}>
               {t("controller.commitFailed")}

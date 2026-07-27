@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { editSlot, foldEdits, inspectorLines } from "./fold";
+import { editSlot, foldEdits, inspectorLines, slotHistories } from "./fold";
 import type { Edit } from "./types";
 
 /** Terse builders — the log is long in most of these tests. */
@@ -171,5 +171,125 @@ describe("inspectorLines", () => {
     const lines = inspectorLines([mine, theirs]);
     expect(lines[0].superseded).toBe(true);
     expect(lines[1].superseded).toBe(false);
+  });
+});
+
+/**
+ * A turn either *opens* a declaration by naming it, or *supplies a value*. An
+ * open declaration is a statement of intent with no execution — it says "this
+ * thing is rounded" without saying how much — so it must not reach the render.
+ */
+const open = (target: "outer" | "inner", kind: "attribute" | "style", key: string): Edit => ({
+  id: `e${seq++}`,
+  playerId: 1,
+  turnIndex: seq,
+  target,
+  kind,
+  key,
+});
+
+describe("open declarations", () => {
+  test("keeps an unvalued property out of the render", () => {
+    const tree = foldEdits([open("outer", "style", "border-radius")]);
+    // toEqual ignores undefined values, so check the key is truly absent.
+    expect(Object.keys(tree.outer.styles)).toEqual([]);
+  });
+
+  test("keeps an unvalued attribute out of the render", () => {
+    const tree = foldEdits([open("inner", "attribute", "role")]);
+    expect(Object.keys(tree.inner.attributes)).toEqual([]);
+  });
+
+  test("renders it once someone supplies the value", () => {
+    const tree = foldEdits([
+      open("outer", "style", "border-radius"),
+      style("outer", "border-radius", "12px"),
+    ]);
+    expect(tree.outer.styles).toEqual({ "border-radius": "12px" });
+  });
+
+  test("leaves other declarations alone", () => {
+    const tree = foldEdits([
+      style("outer", "display", "flex"),
+      open("outer", "style", "border-radius"),
+    ]);
+    expect(Object.keys(tree.outer.styles)).toEqual(["display"]);
+  });
+
+  test("shares a slot with its value, so the value supersedes the opening", () => {
+    const opened = open("outer", "style", "border-radius");
+    const valued = style("outer", "border-radius", "12px");
+    const lines = inspectorLines([opened, valued]);
+    expect(lines.map((l) => l.superseded)).toEqual([true, false]);
+  });
+
+  test("stays visible on the inspector while nobody has answered it", () => {
+    const opened = open("outer", "style", "border-radius");
+    expect(inspectorLines([opened])[0].superseded).toBe(false);
+  });
+});
+
+describe("slotHistories", () => {
+  /**
+   * The inspector draws one line per declaration, not one per edit: the name in
+   * the colour of whoever opened it, the value in the colour of whoever
+   * answered, and anything overridden trailing as a comment. That needs the log
+   * grouped by slot, in the order the slots first appeared.
+   */
+  test("reports a declaration nobody has answered", () => {
+    const opened = open("outer", "style", "border-radius");
+    const [history] = slotHistories([opened]);
+    expect(history.opened).toBe(opened);
+    expect(history.current).toBeUndefined();
+    expect(history.overridden).toEqual([]);
+  });
+
+  test("keeps the opener and the answerer apart", () => {
+    const opened = open("outer", "style", "border-radius");
+    const answer = style("outer", "border-radius", "12px");
+    const [history] = slotHistories([opened, answer]);
+    expect(history.opened).toBe(opened);
+    expect(history.current).toBe(answer);
+    expect(history.overridden).toEqual([]);
+  });
+
+  test("collects overridden values oldest first, keeping the newest current", () => {
+    const opened = open("inner", "style", "background-color");
+    const green = style("inner", "background-color", "#34a853");
+    const blue = style("inner", "background-color", "#1a73e8");
+    const [history] = slotHistories([opened, green, blue]);
+    expect(history.current).toBe(blue);
+    expect(history.overridden).toEqual([green]);
+  });
+
+  test("treats a tag as opened and answered in one move", () => {
+    const chosen = tag("inner", "button");
+    const [history] = slotHistories([chosen]);
+    expect(history.opened).toBe(chosen);
+    expect(history.current).toBe(chosen);
+  });
+
+  test("comments an overridden tag rather than losing it", () => {
+    const first = tag("inner", "div");
+    const second = tag("inner", "button");
+    const [history] = slotHistories([first, second]);
+    expect(history.current).toBe(second);
+    expect(history.overridden).toEqual([first]);
+  });
+
+  test("orders slots by when they first appeared", () => {
+    const histories = slotHistories([
+      style("outer", "display", "flex"),
+      open("outer", "style", "padding"),
+      tag("outer", "section"),
+      style("outer", "display", "grid"),
+    ]);
+    expect(histories.map((h) => h.key ?? h.kind)).toEqual(["display", "padding", "tag"]);
+  });
+
+  test("separates the two text slots", () => {
+    const histories = slotHistories([text("label", "a"), text("text", "b")]);
+    expect(histories).toHaveLength(2);
+    expect(histories.map((h) => h.target)).toEqual(["label", "text"]);
   });
 });

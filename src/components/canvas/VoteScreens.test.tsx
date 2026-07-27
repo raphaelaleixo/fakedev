@@ -72,6 +72,38 @@ describe("ResultScreen", () => {
     onNext: () => undefined,
   };
 
+  /**
+   * The round is spent reading code, so this is the first time anyone sees the
+   * thing they built. It's the payoff, which is why it lands here.
+   */
+  test("shows the render for the first time, in a fully sandboxed stage", () => {
+    const { container } = show(
+      <ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />,
+    );
+    const iframe = container.querySelector("iframe");
+    // An empty sandbox blocks scripts entirely — what makes free-form values
+    // safe without a blacklist.
+    expect(iframe?.getAttribute("sandbox")).toBe("");
+    expect(iframe?.getAttribute("srcdoc")).toContain("Lorem ipsum dolor sit");
+  });
+
+  test("renders the winning value, not the one it overrode", () => {
+    const { container } = show(
+      <ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />,
+    );
+    const srcdoc = container.querySelector("iframe")?.getAttribute("srcdoc") ?? "";
+    expect(srcdoc).toContain("#1a73e8");
+    expect(srcdoc).not.toContain("#34a853");
+  });
+
+  test("leaves a declaration nobody answered out of the render", () => {
+    const { container } = show(
+      <ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />,
+    );
+    // Turn 8 opened `role` and no one answered it.
+    expect(container.querySelector("iframe")?.getAttribute("srcdoc")).not.toContain("role");
+  });
+
   test("reveals the Secret", () => {
     show(<ResultScreen round={mockRoundAt("result", "web-annoyances/captcha-box")} {...props} />);
     expect(screen.getByText("Cookie Consent Banner")).toBeInTheDocument();

@@ -125,12 +125,20 @@ export interface TagEdit extends EditBase {
   value: string;
 }
 
-/** Sets one HTML attribute or one CSS declaration. */
+/**
+ * One HTML attribute or one CSS declaration.
+ *
+ * `value` is optional because a turn does one of two things: it **opens** a
+ * declaration by naming it, or it **supplies a value**. An open declaration is
+ * intent without execution — `border-radius` says "this thing is rounded" and
+ * commits to nothing else — so it shows on the inspector and stays out of the
+ * render until somebody answers it.
+ */
 export interface KeyedEdit extends EditBase {
   target: ElementTarget;
   kind: "attribute" | "style";
   key: string;
-  value: string;
+  value?: string;
 }
 
 /** Sets one of the two text slots. No key. Capped at TEXT_MAX_LENGTH. */
@@ -306,10 +314,23 @@ export interface MatchState {
  * is one of those kinds. `draftToEdit` maps that onto the log's four targets:
  * outer's text is `{label}`, inner's text is `{text}`.
  */
+/**
+ * What a turn does. A turn either **opens** a declaration by naming it
+ * (`attribute` / `style`), **answers** one with a value (`value`), or plays a
+ * single-token move that has no name/value split at all (`tag` / `text`).
+ *
+ * Opening is intent without execution; answering is committing to somebody's
+ * intent — possibly your own, possibly not. That choice is the game.
+ */
+export type ComposerMove = "tag" | "text" | "attribute" | "style" | "value";
+
 export interface ComposerDraft {
   element?: ElementTarget;
-  kind?: EditKind;
+  move?: ComposerMove;
+  /** The declaration being opened, or the one a value answers. */
   key?: string;
+  /** For a `value` move: which kind of declaration is being answered. */
+  slotKind?: "attribute" | "style";
   value?: string;
 }
 

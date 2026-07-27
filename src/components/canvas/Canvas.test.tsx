@@ -59,51 +59,72 @@ describe("Canvas", () => {
     expect(screen.getAllByText("Joost").length).toBeGreaterThan(0);
   });
 
-  test("renders the component into a fully sandboxed stage", () => {
+  /**
+   * The round is spent reading code. Showing the render here would display the
+   * least interesting thing on screen, and would make every opening move look
+   * like a no-op.
+   */
+  test("shows no render during turns — the code is the canvas", () => {
     const { container } = renderCanvas();
-    const iframe = container.querySelector("iframe");
-    // An empty sandbox blocks scripts entirely — this is what makes the
-    // free-form value field safe without a blacklist.
-    expect(iframe?.getAttribute("sandbox")).toBe("");
-    expect(iframe?.getAttribute("srcdoc")).toContain("Continue");
+    expect(container.querySelector("iframe")).toBeNull();
   });
 
-  test("applies the winning value, not the superseded one, to the render", () => {
-    const { container } = renderCanvas();
-    const srcdoc = container.querySelector("iframe")?.getAttribute("srcdoc") ?? "";
-    expect(srcdoc).toContain("#1a73e8");
-    expect(srcdoc).not.toContain("#34a853");
+  test("draws the blank round as two empty divs", () => {
+    const { container } = renderCanvas(0);
+    expect(container.textContent).toContain("<div><div></div></div>");
   });
 
-  test("groups by element, the way the composer asks for an edit", () => {
-    renderCanvas();
-    expect(screen.getByText("outer")).toBeInTheDocument();
-    expect(screen.getByText("inner")).toBeInTheDocument();
-    // No group of its own for a text slot, and the log's slot names never show.
-    expect(screen.queryByText(/^label$/)).toBeNull();
-    expect(screen.queryByText("outer text")).toBeNull();
-    expect(screen.queryByText("inner text")).toBeNull();
+  test("draws the DOM itself, nested, not a list of edits about it", () => {
+    const { container } = renderCanvas();
+    const text = container.textContent ?? "";
+    expect(text).toContain("<div");
+    expect(text).toContain("Lorem ipsum dolor sit");
+    expect(text).toContain("<button");
+    expect(text).toContain("</button>");
+    expect(text).toContain("</div>");
   });
 
-  test("writes tag, attributes and text as one line of real markup", () => {
-    // Turn 3 chose <button>, turn 8 set role, turns 5 and 7 set the text.
+  test("keeps the whole opening tag on one line", () => {
     const { container } = renderCanvas();
-    expect(container.textContent).toContain('role="dialog"');
-    expect(container.textContent).toContain("<button>Continue");
-    expect(container.textContent).toContain("Lorem ipsum dolor sit");
+    expect(container.textContent).toContain("style={ display: flex; padding: 20px }");
   });
 
-  test("keeps CSS in the box below the markup, not in the line", () => {
+  test("shows a declaration nobody has answered, with the gap left in it", () => {
     const { container } = renderCanvas();
-    expect(container.textContent).toContain("display: flex;");
-    expect(container.textContent).toContain("padding: 20px;");
-    // The declaration never leaks into the markup line.
-    expect(container.textContent).not.toContain("display: flex;>");
+    // Turn 8 opened `role` and no one ever answered it.
+    expect(container.textContent).toContain('role="…"');
+  });
+
+  /**
+   * One line per declaration: the name in the opener's colour, the value in the
+   * answerer's, and anything overridden trailing as a comment. Three turns of
+   * history, one line, no strikethrough.
+   */
+  test("comments an overridden value instead of striking it out", () => {
+    const { container } = renderCanvas();
+    expect(container.textContent).toContain("background-color: #1a73e8 /* #34a853 */");
+  });
+
+  test("collapses an opening and its answer into a single line", () => {
+    const { container } = renderCanvas();
+    const text = container.textContent ?? "";
+    expect(text).toContain("display: flex");
+    // The opening no longer occupies a line of its own.
+    expect(text).not.toContain("display: …");
+  });
+
+  /**
+   * The round is spent reading code. A render here would show the least
+   * interesting thing on screen, and would make every opening look like a no-op.
+   */
+  test("shows no render during turns — the code is the canvas", () => {
+    const { container } = renderCanvas();
+    expect(container.querySelector("iframe")).toBeNull();
   });
 
   test("renders an untouched round without falling over", () => {
     const { container } = renderCanvas(0);
-    expect(container.querySelector("iframe")).toBeTruthy();
-    expect(screen.getAllByText("nothing yet")).toHaveLength(2);
+    expect(container.textContent).toContain("<div>");
+    expect(container.querySelector("iframe")).toBeNull();
   });
 });

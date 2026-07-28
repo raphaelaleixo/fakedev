@@ -56,7 +56,7 @@ export default function MockBigScreen() {
 
   // Cycles the three steal outcomes: both, one, neither.
   const guess = [
-    { styleId: "material", componentId: "progress-bar" },
+    { styleId: "material", componentId: "primary-button" },
     { styleId: "material", componentId: "avatar" },
     { styleId: "wireframe", componentId: "avatar" },
   ][steal];

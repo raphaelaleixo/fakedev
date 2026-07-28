@@ -12,15 +12,20 @@ import { seatColorFor } from "../game/match";
  * lost — so a fixture that looks like that would teach us the wrong thing about
  * whether the canvas works.
  *
- * The Secret here is *Material · Progress Bar*, but what the board shows is a
- * padded white box with a blue child. That is honestly any number of components
- * in any number of styles at this stage. It makes sense; it does not announce
- * itself.
+ * The Secret here is *Material · Primary Button*, but what the board shows is a
+ * roomy wrapper holding a blue box with white copy in it. That is honestly a
+ * button, a tooltip, a header, a badge or a backdrop's panel at this stage. It
+ * makes sense; it does not announce itself.
  *
  * It models the split: a turn either *opens* a declaration by naming it or
- * *answers* one with a value. Turn 8 opens `role` and nobody ever answers it —
- * that dangling question is a legitimate end state and worth seeing on screen.
- * Turn 7 answers the button green; turn 9 overrides it to blue.
+ * *answers* one with a value. Turn 8 opens `border-radius` and nobody ever
+ * answers it — that dangling question is a legitimate end state and worth
+ * seeing on screen. Turn 6 answers the fill green; turn 9 overrides it to blue.
+ *
+ * The text move on turn 4 is a real bet, not free. It claims the component has
+ * copy in its child, which is true of a button and false of Progress Bar, Range
+ * Slider and Toggle Switch — three of fourteen. A Dev is spending a turn to
+ * narrow the deck; a Chameleon playing this move is gambling.
  */
 
 const NAMES = ["Rafa", "Ana", "Tom", "Ines", "Joost"];
@@ -55,8 +60,9 @@ export const MOCK_EDITS: Edit[] = [
   edit(6, 2, { target: "inner", kind: "style", key: "background-color", value: "#34a853" }),
   // Styling the span, which only became possible on turn 4.
   edit(7, 3, { target: "inner-text", kind: "style", key: "color", value: "#ffffff" }),
-  // Opened and never answered. A dangling question is a fine way to end.
-  edit(8, 4, { target: "outer", kind: "style", key: "border-radius" }),
+  // Opened and never answered. A dangling question is a fine way to end — and
+  // on the filled box it fits a button, a chip, a tooltip or a badge equally.
+  edit(8, 4, { target: "inner", kind: "style", key: "border-radius" }),
   edit(9, 5, { target: "inner", kind: "style", key: "background-color", value: "#1a73e8" }),
 ];
 
@@ -64,7 +70,7 @@ export function mockRound(turnsPlayed = MOCK_EDITS.length): Round {
   return {
     index: 0,
     styleId: "material",
-    componentId: "progress-bar",
+    componentId: "primary-button",
     chameleonId: 4,
     phase: "turns",
     turnOrder: [1, 2, 3, 4, 5],
@@ -79,7 +85,7 @@ export const MOCK_VOTES: Record<number, number> = { 1: 4, 2: 4, 3: 2, 4: 1, 5: 4
 
 export const MOCK_SLATE = {
   styles: ["wireframe", "newspaper", "brutalist", "material", "vaporwave"],
-  components: ["avatar", "toggle-switch", "progress-bar", "tooltip", "app-header"],
+  components: ["avatar", "toggle-switch", "primary-button", "tooltip", "app-header"],
 };
 
 /** The same round frozen at any later phase, for building those screens. */

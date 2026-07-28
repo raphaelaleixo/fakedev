@@ -26,9 +26,9 @@ describe("Canvas", () => {
 
   test("never puts either half of the Secret on the big screen", () => {
     const { container } = renderCanvas();
-    expect(screen.queryByText(/Progress Bar/)).toBeNull();
+    expect(screen.queryByText(/Primary Button/)).toBeNull();
     expect(screen.queryByText(/Material/)).toBeNull();
-    expect(container.innerHTML).not.toContain("progress-bar");
+    expect(container.innerHTML).not.toContain("primary-button");
     expect(container.innerHTML).not.toContain("material");
   });
 

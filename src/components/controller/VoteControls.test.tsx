@@ -68,7 +68,7 @@ describe("StealPicker", () => {
   test("offers both slates", () => {
     steal();
     expect(screen.getByRole("button", { name: "Wireframe" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Progress Bar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Primary Button" })).toBeInTheDocument();
   });
 
   /** Splitting the guess is what keeps catching the Chameleon worth doing. */

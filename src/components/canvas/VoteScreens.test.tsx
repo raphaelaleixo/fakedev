@@ -60,7 +60,7 @@ describe("StealScreen", () => {
     for (const id of [...MOCK_SLATE.styles, ...MOCK_SLATE.components]) {
       expect(container.innerHTML).not.toContain(id);
     }
-    expect(container.textContent).not.toContain("Progress Bar");
+    expect(container.textContent).not.toContain("Primary Button");
   });
 });
 
@@ -107,7 +107,7 @@ describe("ResultScreen", () => {
   test("reveals both halves of the Secret", () => {
     show(<ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />);
     expect(screen.getByText("Material")).toBeInTheDocument();
-    expect(screen.getByText("Progress Bar")).toBeInTheDocument();
+    expect(screen.getByText("Primary Button")).toBeInTheDocument();
   });
 
   test("names the Chameleon even when they were caught and lost", () => {
@@ -118,7 +118,7 @@ describe("ResultScreen", () => {
   test("credits naming both halves", () => {
     show(
       <ResultScreen
-        round={mockRoundAt("result", { styleId: "material", componentId: "progress-bar" })}
+        round={mockRoundAt("result", { styleId: "material", componentId: "primary-button" })}
         {...props}
       />,
     );

@@ -74,7 +74,7 @@ export default function MockBigScreen() {
       case "lobby":
         return <Lobby roomState={roomWith(count)} onStart={() => setView("turns")} />;
       case "turns":
-        return <Canvas round={mockRound(turns)} seats={MOCK_SEATS} />;
+        return <Canvas round={mockRound(turns)} seats={MOCK_SEATS} scores={SCORES} />;
       case "countdown":
         return <CountdownScreen onDone={() => setView("voting")} />;
       case "voting":

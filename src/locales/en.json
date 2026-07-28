@@ -25,7 +25,7 @@
   "howToPlay": {
     "title": "How to play",
     "goal": "A group of players must work together to find the one Chameleon among them, while that player tries to avoid detection.",
-    "secret": "Each round, players see the round's Secret — a style and a component, e.g. “Neumorphic · Toggle Switch”. But the Chameleon only sees “style × component”, and never learns either half.",
+    "secret": "Each round, players see the round's Secret — a style and a component, e.g. “Neumorphic · Toggle Switch”. The Chameleon is only told that a style and a component were drawn, and never learns which.",
     "aim": "Nobody is trying to finish it. You are making the code look like the Secret, not build one — enough that the others can see you know it, and not so much that the Chameleon works it out.",
     "turns": "Players take turns making one CSS edit each — name a property, give a value to one somebody else named, or add text. After everyone has had two turns, everyone votes on who they think the Chameleon is.",
     "board": "The screen shows the code as it grows, not the component it would render, and every edit is in its author's colour.",
@@ -73,10 +73,15 @@
     "notFound": "No room with code {{code}}."
   },
   "canvas": {
-    "brief": "Style × Component",
+    "round": "Round {{number}}",
+    "contributors": "Contributors",
+    "points_one": "{{count}} point",
+    "points_other": "{{count}} points",
+    "fileName": "untitled-component.html",
     "renderWindow": "Render window",
     "playerTurn": "{{name}} is editing",
-    "turnsDone": "Turns are up",
+    "finishTurn": "{{name}}, please finish your turn",
+    "turnsDone": "Every turn is in",
     "turnCount": "Turn {{turn}} of {{total}}"
   },
   "inspector": {

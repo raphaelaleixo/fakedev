@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { ThemeProvider } from "@mui/material/styles";
 import { I18nextProvider } from "react-i18next";
 import Canvas from "./Canvas";
@@ -11,17 +11,17 @@ function renderCanvas(turnsPlayed?: number) {
   return render(
     <ThemeProvider theme={theme}>
       <I18nextProvider i18n={i18n}>
-        <Canvas round={mockRound(turnsPlayed)} seats={MOCK_SEATS} />
+        <Canvas round={mockRound(turnsPlayed)} seats={MOCK_SEATS} scores={{ 1: 3, 2: 1 }} />
       </I18nextProvider>
     </ThemeProvider>,
   );
 }
 
 describe("Canvas", () => {
-  /** Nothing about the answer is public — only the shape of it. */
-  test("names the shape of the answer and nothing more", () => {
+  /** The heading says where you are in the match, never what is being built. */
+  test("names the round, not the thing being built", () => {
     renderCanvas();
-    expect(screen.getByText("Style × Component")).toBeInTheDocument();
+    expect(screen.getByText("Round 1")).toBeInTheDocument();
   });
 
   test("never puts either half of the Secret on the big screen", () => {
@@ -37,6 +37,49 @@ describe("Canvas", () => {
     // Seat 4 is the Chameleon in the fixture; their name appears as a player,
     // but nothing may mark them out.
     expect(container.innerHTML).not.toContain("chameleon");
+  });
+
+  /**
+   * The brief is what this view is — nothing else on the big screen names it —
+   * so it is the heading, not a subtitle under one that does not exist. Before
+   * this the page opened at h2 with no h1 above it, which is also why focus
+   * routing had nothing to land on when you arrived mid-round.
+   */
+  test("makes the brief the view's one heading", () => {
+    const { container } = renderCanvas();
+    const h1s = container.querySelectorAll("h1");
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0]).toHaveTextContent("Round 1");
+  });
+
+  /** Turn order is an ordered list of people, so it is an ordered list. */
+  test("lists the contributors in turn order, marking whose turn it is", () => {
+    // Mid-round: the default fixture is a finished one, where nobody is up.
+    renderCanvas(3);
+    const contributors = screen.getByRole("list", { name: /contributors/i });
+    // Per item rather than on textContent: each row carries an avatar whose
+    // initial would otherwise read as part of the name.
+    const rows = within(contributors).getAllByRole("listitem");
+    ["Rafa", "Ana", "Tom", "Ines", "Joost"].forEach((name, i) => {
+      expect(within(rows[i]).getByText(name)).toBeInTheDocument();
+    });
+
+    expect(rows.filter((row) => row.getAttribute("aria-current") === "true")).toHaveLength(1);
+  });
+
+  /**
+   * Points are match totals, not round scores, so the sidebar doubles as the
+   * standings. A player with none shows a zero rather than a blank — a gap
+   * where a number should be reads as broken, not as nothing yet.
+   */
+  test("shows every contributor's running points, zero included", () => {
+    renderCanvas(3);
+    const rows = within(screen.getByRole("list", { name: /contributors/i })).getAllByRole(
+      "listitem",
+    );
+    expect(within(rows[0]).getByText("3 points")).toBeInTheDocument();
+    expect(within(rows[1]).getByText("1 point")).toBeInTheDocument();
+    expect(within(rows[2]).getByText("0 points")).toBeInTheDocument();
   });
 
   test("names the player whose turn it is", () => {

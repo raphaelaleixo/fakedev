@@ -113,7 +113,7 @@ export default function RoomPage() {
 
     switch (round.phase) {
       case "turns":
-        return <Canvas round={round} seats={seats(roomState)} />;
+        return <Canvas round={round} seats={seats(roomState)} scores={matchState?.scores ?? {}} />;
       case "countdown":
         return <CountdownScreen onDone={() => id && openVoting(id)} />;
       case "voting":

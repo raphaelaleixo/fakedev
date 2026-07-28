@@ -10,6 +10,10 @@ export default function AppGlobalStyles() {
   return (
     <GlobalStyles
       styles={{
+        // The page surfaces set their own colour; this is only what shows
+        // through an overscroll bounce, and white there is jarring.
+        body: { backgroundColor: color.ink },
+
         ".fullscreen-toggle": {
           fontFamily: font.mono,
           fontSize: "0.8rem",

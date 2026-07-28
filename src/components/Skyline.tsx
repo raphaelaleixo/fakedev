@@ -16,13 +16,16 @@ import { Box } from "@mui/material";
  * The page already says Amsterdam in its heading, so the drawing is decorative
  * and hidden from assistive tech rather than given a redundant label.
  *
- * It is 808 × 499, so it is an illustration rather than a thin band. It keeps
- * its aspect ratio at every size — cropping to fill a wide screen would cut the
- * gables, which are the whole point of the drawing — and it flows left, so the
- * cover has one axis rather than a centred illustration fighting a hard-left
- * title.
+ * It is 808 × 499, so it is an illustration rather than a thin band. Sizing is
+ * width-driven with `height: auto`, which keeps the aspect ratio true at every
+ * size with nothing to hold in sync — cropping to fill a wide screen would cut
+ * the gables, which are the whole point of the drawing. On a phone it fills the
+ * column; past `maxWidth` it stops rather than growing to fill the page.
+ *
+ * It flows left, so the cover has one axis rather than a centred illustration
+ * fighting a hard-left title.
  */
-export function Skyline({ height = "clamp(150px, 30vh, 340px)" }: { height?: number | string }) {
+export function Skyline({ maxWidth = "34rem" }: { maxWidth?: string }) {
   return (
     <Box
       component="svg"
@@ -31,9 +34,11 @@ export function Skyline({ height = "clamp(150px, 30vh, 340px)" }: { height?: num
       aria-hidden
       sx={{
         display: "block",
-        height,
-        width: "auto",
-        maxWidth: "100%",
+        // Width-driven, height auto: the aspect ratio is then true at every
+        // size with no clamp to keep in sync. On a phone it fills the column;
+        // on a wide screen it stops, rather than growing to fill the page.
+        width: `min(100%, ${maxWidth})`,
+        height: "auto",
         mr: "auto",
         fill: "currentColor",
       }}

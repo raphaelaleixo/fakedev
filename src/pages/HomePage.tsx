@@ -15,26 +15,44 @@ import { color, font } from "../theme/tokens";
  * An homage to the game this adapts, not a reproduction of it: our own
  * silhouette, our own typeface, and the original credited below.
  *
- * The type scales on **container** query units, not viewport units: `cqi` is a
- * percentage of the text column, which is the thing the type actually has to
- * fit inside. On a wide screen the column stops growing at 1100px and so does
- * the headline, which `vw` could never express. Every `clamp` keeps its max
- * under 2.5× its min so the page still reflows under browser zoom.
+ * The type scales on **container** query units. `cqi` is a percentage of the
+ * container's *content* box, so with the `bleed` padding below it resolves
+ * against the text column rather than the window — and the column stops at
+ * 1100px where the viewport doesn't. Every `clamp` keeps its max under 2.5× its
+ * min so the page still reflows under browser zoom.
+ *
+ * The `min` of each clamp is doing real work, not just guarding: a single
+ * proportional ramp cannot both fill a 340px column and stop growing on a
+ * 1100px one, because small screens want type that is *relatively* larger. The
+ * floors are set so the two title lines come out near enough the same width on
+ * a phone — which is what makes them read as one block — and so that neither
+ * wraps at 320px, the narrowest width worth supporting.
  */
 
-/** The shared gutter and column, so the houses and the type share one edge. */
-const gutters = { px: { xs: 3, md: 8 } } as const;
-const column = { maxWidth: 1100, mx: "auto", width: "100%" } as const;
+/**
+ * Full-bleed background, centred column, one element.
+ *
+ * `max(gutter, (100% - column) / 2)` is the whole trick: below 1100px the
+ * gutter wins and the content is inset by it; above, the leftover space splits
+ * evenly and centres the column. That's what an outer padded box plus an inner
+ * `max-width: 1100; margin: auto` box did, minus the inner box.
+ */
+const bleed = {
+  paddingInline: {
+    xs: "max(1.5rem, (100% - 1100px) / 2)",
+    md: "max(4rem, (100% - 1100px) / 2)",
+  },
+} as const;
 
 /**
  * The flame band is drawn by two elements — `main` ends where `footer` begins —
- * and any two boxes that merely touch will show a subpixel seam at some zoom
- * levels. Everything painted flame therefore overlaps its neighbour by a hair.
- * The houses do the same thing for the same reason: their ground bar is flame,
- * so the overlap is invisible and the two read as one surface.
+ * and any two boxes that merely touch show a subpixel seam at some zoom levels.
+ * Everything painted flame therefore overlaps its neighbour by a hair. The
+ * houses do the same for the same reason: their ground bar is flame, so the
+ * overlap is invisible and the two read as one surface.
  */
 const SEAM_OVERLAP = "-2px";
-const flame = { backgroundColor: color.flame, color: color.ink, ...gutters } as const;
+const flame = { backgroundColor: color.flame, color: color.ink, ...bleed } as const;
 
 /** The small print, in one voice: mono, tight, and quiet against the flame. */
 const fine = {
@@ -44,6 +62,13 @@ const fine = {
   letterSpacing: "0.06em",
   color: color.onFlame,
   opacity: 0.75,
+} as const;
+
+/** Links have to be findable without colour, and inherit is all we give them. */
+const inherited = {
+  color: "inherit",
+  textDecoration: "underline",
+  textUnderlineOffset: "0.2em",
 } as const;
 
 export default function HomePage() {
@@ -75,177 +100,171 @@ export default function HomePage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: "100dvh",
-        backgroundColor: color.ink,
-        color: color.flame,
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Box component="main" sx={{ flex: "1 1 auto", display: "flex", flexDirection: "column" }}>
-        {/* The empty half. Nothing in it — that is the whole idea. */}
-        <Box sx={{ flex: "1 1 auto", minHeight: 120 }} />
-
-        {/* The houses overlap the band by a hair. Two adjacent boxes leave a
-            subpixel seam at most zoom levels, and since the drawing's ground
-            bar is flame and the band is flame, overlapping hides it and lets
-            the two read as one shape. */}
-        <Box sx={{ flex: "0 0 auto", ...gutters, mb: SEAM_OVERLAP }}>
-          <Box sx={column}>
-            <Skyline />
-          </Box>
+    <>
+      <Box
+        component="main"
+        sx={{
+          minHeight: "100dvh",
+          backgroundColor: color.ink,
+          color: color.flame,
+          display: "flex",
+          flexDirection: "column",
+          // Everything sits at the bottom; the space above is the empty half.
+          justifyContent: "flex-end",
+        }}
+      >
+        <Box sx={{ ...bleed, mb: SEAM_OVERLAP }}>
+          <Skyline />
         </Box>
 
-        <Box sx={{ flex: "0 0 auto", ...flame, pt: { xs: 3, md: 4 } }}>
-          <Box sx={{ ...column, containerType: "inline-size" }}>
-            <Typography
-              variant="h1"
+        <Box sx={{ ...flame, pt: { xs: 3, md: 4 }, containerType: "inline-size" }}>
+          <Typography
+            variant="h1"
+            sx={{ fontFamily: font.display, fontWeight: 800, textTransform: "uppercase", m: 0 }}
+          >
+            {/* Two lines for the look, one name for the meaning. The space
+                between the spans collapses visually — they are blocks — but
+                keeps the accessible name from running the words together. */}
+            <Box
+              component="span"
               sx={{
-                fontFamily: font.display,
-                fontWeight: 800,
-                textTransform: "uppercase",
-                m: 0,
+                display: "block",
+                fontSize: "clamp(2.75rem, 7.8cqi, 5.4rem)",
+                lineHeight: 0.86,
+                letterSpacing: "-0.035em",
               }}
             >
-              {/* Two lines for the look, one name for the meaning. The space
-                  between the spans collapses visually — they are blocks — but
-                  keeps the accessible name from running the words together. */}
-              <Box
-                component="span"
-                sx={{
-                  display: "block",
-                  fontSize: "clamp(2.2rem, 7.8cqi, 5.4rem)",
-                  lineHeight: 0.86,
-                  letterSpacing: "-0.035em",
-                }}
-              >
-                {t("home.titleMain")}
-              </Box>{" "}
-              <Box
-                component="span"
-                sx={{
-                  display: "block",
-                  fontSize: "clamp(0.95rem, 3cqi, 2.1rem)",
-                  lineHeight: 1,
-                  letterSpacing: "0.12em",
-                  mt: "-0.12em",
-                }}
-              >
-                {t("home.titleTail")}
-              </Box>
-            </Typography>
-
-            {/* Attribution sits with the title, not in the small print: it
-                names the work this game is an adaptation of, which is what
-                <cite> is for. */}
-            <Typography
+              {t("home.titleMain")}
+            </Box>{" "}
+            <Box
+              component="span"
               sx={{
-                ...fine,
-                // JetBrains Mono ships 400/500/700 here; 700 is a real face,
-                // not a synthesised one.
-                fontWeight: 700,
-                fontSize: "clamp(0.8rem, 1.45cqi, 1rem)",
-                opacity: 0.9,
-                mt: { xs: 2, md: 2.5 },
+                display: "block",
+                fontSize: "clamp(1.15rem, 3cqi, 2.1rem)",
+                lineHeight: 1,
+                letterSpacing: "0.12em",
+                mt: "-0.12em",
               }}
             >
-              {t("home.creditPrefix")}
-              <Box component="cite" sx={{ fontStyle: "normal" }}>
-                {t("home.creditWork")}
-              </Box>
-              {t("home.creditSuffix")}
-            </Typography>
+              {t("home.titleTail")}
+            </Box>
+          </Typography>
 
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1.5}
-              sx={{ mt: { xs: 3, md: 4 } }}
+          {/* Attribution sits with the title, not in the small print: it names
+              the work this game adapts, which is what <cite> is for. */}
+          <Typography
+            sx={{
+              ...fine,
+              // JetBrains Mono ships 400/500/700 here; 700 is a real face, not
+              // a synthesised one.
+              fontWeight: 700,
+              fontSize: "clamp(0.8rem, 1.45cqi, 1rem)",
+              // Progressive enhancement: evens the two wrapped lines where
+              // supported, ignored entirely where it isn't.
+              textWrap: "balance",
+              opacity: 0.9,
+              mt: { xs: 2, md: 2.5 },
+            }}
+          >
+            {t("home.creditPrefix")}
+            <Box component="cite" sx={{ fontStyle: "normal" }}>
+              {t("home.creditWork")}
+            </Box>
+            {t("home.creditSuffix")}
+          </Typography>
+
+          {/* Sized to their labels, not to the screen. Full-width buttons with
+              centred text fight the hard-left rhythm of everything above. */}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            sx={{ mt: { xs: 3, md: 4 }, alignItems: "flex-start" }}
+          >
+            <Button
+              onClick={openRoom}
+              aria-disabled={opening}
+              size="large"
+              sx={{
+                backgroundColor: color.ink,
+                color: color.flame,
+                "&:hover": { backgroundColor: "#000" },
+                '&[aria-disabled="true"]': { opacity: 0.6, cursor: "progress" },
+              }}
             >
-              <Button
-                onClick={openRoom}
-                aria-disabled={opening}
-                size="large"
-                sx={{
-                  backgroundColor: color.ink,
-                  color: color.flame,
-                  "&:hover": { backgroundColor: "#000" },
-                  '&[aria-disabled="true"]': { opacity: 0.6, cursor: "progress" },
-                }}
-              >
-                {opening ? t("home.newGamePending") : t("home.newGame")}
-              </Button>
-              <Button
-                component={RouterLink}
-                to="/join"
-                size="large"
-                sx={{
-                  border: `2px solid ${color.ink}`,
-                  color: color.ink,
-                  "&:hover": { backgroundColor: color.ink, color: color.flame },
-                }}
-              >
-                {t("home.resumeGame")}
-              </Button>
-              <Button
-                component={RouterLink}
-                to="/how-to-play"
-                size="large"
-                sx={{ color: color.ink, "&:hover": { textDecoration: "underline" } }}
-              >
-                {t("home.howToPlay")}
-              </Button>
-            </Stack>
+              {opening ? t("home.newGamePending") : t("home.newGame")}
+            </Button>
+            <Button
+              component={RouterLink}
+              to="/join"
+              size="large"
+              sx={{
+                border: `2px solid ${color.ink}`,
+                color: color.ink,
+                "&:hover": { backgroundColor: color.ink, color: color.flame },
+              }}
+            >
+              {t("home.resumeGame")}
+            </Button>
+            <Button
+              component={RouterLink}
+              to="/how-to-play"
+              size="large"
+              sx={{ color: color.ink, "&:hover": { textDecoration: "underline" } }}
+            >
+              {t("home.howToPlay")}
+            </Button>
+          </Stack>
 
-            {/* Losing the room is the kind of failure that stops you dead, so
-                it interrupts. The "Opening…" state deliberately does not — an
-                interstitial announcement is noise. */}
-            {failed && (
-              <Typography role="alert" sx={{ ...fine, fontWeight: 700, mt: 1.5 }}>
-                {t("home.newGameFailed")}
-              </Typography>
-            )}
-          </Box>
+          {/* Losing the room stops you dead, so it interrupts. The "Opening…"
+              state deliberately does not — interstitial announcements are noise. */}
+          {failed && (
+            <Typography role="alert" sx={{ ...fine, fontWeight: 700, mt: 1.5 }}>
+              {t("home.newGameFailed")}
+            </Typography>
+          )}
         </Box>
       </Box>
 
       {/* Outside <main> so it lands as a contentinfo landmark. It carries the
-          band's bottom padding, which keeps the flame continuous. */}
+          band's bottom padding, which keeps the flame continuous. The mark
+          spans both rows rather than sitting in a wrapper of its own. */}
       <Box
         component="footer"
-        sx={{ ...flame, mt: SEAM_OVERLAP, pt: { xs: 3, md: 4 }, pb: { xs: 7, md: 10 } }}
+        sx={{
+          ...flame,
+          mt: SEAM_OVERLAP,
+          pt: { xs: 3, md: 4 },
+          pb: { xs: 7, md: 10 },
+          display: "grid",
+          gridTemplateColumns: "auto 1fr",
+          alignItems: "center",
+          columnGap: 1.5,
+        }}
       >
-        <Stack direction="row" spacing={1.5} sx={{ ...column, alignItems: "center" }}>
-          <Ludoratory size={30} sx={{ flex: "none", color: color.onFlame, opacity: 0.75 }} />
-          <Box>
-            <Typography sx={fine}>
-              {t("footer.madeByPrefix")}
-              <Link
-                href="https://ludoratory.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ color: "inherit" }}
-              >
-                {t("footer.madeByLink")}
-              </Link>
-              {t("footer.madeBySuffix")}
-            </Typography>
-            <Typography sx={fine}>
-              {t("footer.licensePrefix")}
-              <Link
-                href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ color: "inherit" }}
-              >
-                {t("footer.licenseLink")}
-              </Link>
-              {t("footer.licenseSuffix")}
-            </Typography>
-          </Box>
-        </Stack>
+        <Ludoratory
+          size={30}
+          sx={{ gridRow: "1 / 3", color: color.onFlame, opacity: 0.75 }}
+        />
+        <Typography sx={fine}>
+          {t("footer.madeByPrefix")}
+          <Link href="https://ludoratory.com" target="_blank" rel="noopener noreferrer" sx={inherited}>
+            {t("footer.madeByLink")}
+          </Link>
+          {t("footer.madeBySuffix")}
+        </Typography>
+        <Typography sx={fine}>
+          {t("footer.licensePrefix")}
+          <Link
+            href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={inherited}
+          >
+            {t("footer.licenseLink")}
+          </Link>
+          {t("footer.licenseSuffix")}
+        </Typography>
       </Box>
-    </Box>
+    </>
   );
 }

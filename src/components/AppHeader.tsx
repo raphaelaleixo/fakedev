@@ -51,12 +51,8 @@ export default function AppHeader({
         borderBottom: `1px solid ${color.inkRule}`,
       }}
     >
-      <Box
-        component={RouterLink}
-        to="/"
-        aria-label={t("header.home")}
-        sx={{ display: "inline-flex", textDecoration: "none" }}
-      >
+      {/* The wordmark's own text names this link — see Wordmark. */}
+      <Box component={RouterLink} to="/" sx={{ display: "inline-flex", textDecoration: "none" }}>
         <Wordmark />
       </Box>
 

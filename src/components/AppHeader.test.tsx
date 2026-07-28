@@ -34,9 +34,15 @@ function show(ui: React.ReactElement) {
 }
 
 describe("AppHeader", () => {
-  test("always offers a way home", () => {
+  /**
+   * The wordmark is the way home, and it says the game's full name over two
+   * lines. Its own text names the link: an aria-label of "Home" over visible
+   * text nobody can speak back to it fails WCAG 2.5.3 (Label in Name).
+   */
+  test("offers a way home named by the game itself", () => {
     show(<AppHeader />);
-    expect(screen.getByLabelText("Home")).toHaveAttribute("href", "/");
+    const home = screen.getByRole("link", { name: "A Fake Dev Goes to Amsterdam" });
+    expect(home).toHaveAttribute("href", "/");
   });
 
   test("shows the room code when there's a room", () => {

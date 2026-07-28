@@ -14,7 +14,8 @@
     "creditSuffix": " by Jun Sasaki, Oink Games."
   },
   "header": {
-    "home": "Home",
+    "wordmarkTop": "A Fake Dev Goes",
+    "wordmarkBottom": "to Amsterdam",
     "fullscreen": "Fullscreen",
     "exitFullscreen": "Exit fullscreen",
     "close": "Close",

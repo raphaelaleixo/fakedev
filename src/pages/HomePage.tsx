@@ -48,8 +48,12 @@ export default function HomePage() {
         </Box>
       </Box>
 
-      <Box sx={{ flex: "0 0 auto" }}>
-        <Skyline height={200} />
+      {/* Same gutters and column as the title band, so the houses stand on the
+          same left edge as the "A" and their ground line meets the flame. */}
+      <Box sx={{ flex: "0 0 auto", px: { xs: 3, md: 8 } }}>
+        <Box sx={{ maxWidth: 1100, mx: "auto", width: "100%" }}>
+          <Skyline />
+        </Box>
       </Box>
 
       <Box

@@ -23,10 +23,13 @@ import { Box } from "@mui/material";
  * column; on a desktop it is bounded by the viewport's *height*, because the
  * cover has to fit on one screen and the houses are the part that can give.
  *
+ * Sized to run a little wider than the headline beneath it. Matching it exactly
+ * reads as a mistake, and much wider makes the title look stranded.
+ *
  * It flows left, so the cover has one axis rather than a centred illustration
  * fighting a hard-left title.
  */
-export function Skyline({ maxWidth = "min(32rem, 48dvh)" }: { maxWidth?: string }) {
+export function Skyline({ maxWidth = "min(38rem, 58dvh)" }: { maxWidth?: string }) {
   return (
     <Box
       component="svg"

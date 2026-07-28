@@ -13,6 +13,9 @@ import { Box } from "@mui/material";
  * what makes it a genuinely two-colour drawing — an earlier version faked the
  * windows with a hardcoded ink fill, which only ever worked on one background.
  *
+ * The page already says Amsterdam in its heading, so the drawing is decorative
+ * and hidden from assistive tech rather than given a redundant label.
+ *
  * It is 808 × 499, so it is an illustration rather than a thin band. It keeps
  * its aspect ratio at every size — cropping to fill a wide screen would cut the
  * gables, which are the whole point of the drawing — and it flows left, so the
@@ -24,8 +27,8 @@ export function Skyline({ height = "clamp(150px, 30vh, 340px)" }: { height?: num
     <Box
       component="svg"
       viewBox="0 0 808 499"
-      role="img"
-      aria-label="Amsterdam"
+      // Decoration: the title says Amsterdam, so announcing it again is noise.
+      aria-hidden
       sx={{
         display: "block",
         height,

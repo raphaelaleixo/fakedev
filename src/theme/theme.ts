@@ -70,6 +70,16 @@ const theme = createTheme({
             color: color.inkPunct,
             borderColor: color.inkRule,
           },
+          /**
+           * MUI suppresses the UA focus ring, so put a real one back. Drawing
+           * it in `currentColor` is what lets one rule work on both surfaces:
+           * ink type on the flame band, flame type on every dark page. The
+           * offset keeps it clear of the fill.
+           */
+          "&:focus-visible": {
+            outline: `2px solid currentColor`,
+            outlineOffset: 2,
+          },
         },
         contained: { "&:hover": { backgroundColor: color.paper, color: color.ink } },
         outlined: { borderColor: color.inkRule, color: color.paper },

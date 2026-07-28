@@ -16,8 +16,8 @@ export function Ludoratory({
   return (
     <Box
       component="svg"
-      role="img"
-      aria-label="Ludoratory"
+      // Sits beside a link that already reads "Ludoratory".
+      aria-hidden
       width={(size * 39) / 49}
       height={size}
       viewBox="0 0 39 49"

@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
@@ -22,6 +22,11 @@ vi.mock("../contexts/GameContext", () => ({
   useGame: () => ({ createRoom: () => createRoom() }),
 }));
 
+beforeEach(() => {
+  // Call counts leak between tests otherwise, and this suite asserts on them.
+  createRoom.mockReset();
+});
+
 function renderHome() {
   const router = createMemoryRouter(
     [
@@ -40,6 +45,32 @@ function renderHome() {
   );
   return { user: userEvent.setup(), router };
 }
+
+describe("HomePage markup", () => {
+  /**
+   * The title is split across two lines for the look, not for the meaning —
+   * the game is called "A Fake Dev Goes to Amsterdam", which is what <title>
+   * says and what the one h1 has to say too.
+   */
+  test("carries the whole title in a single h1", () => {
+    renderHome();
+    const headings = screen.getAllByRole("heading", { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveAccessibleName("A Fake Dev Goes to Amsterdam");
+  });
+
+  test("puts the page in a main landmark and the credits in contentinfo", () => {
+    renderHome();
+    expect(screen.getByRole("main")).toBeInTheDocument();
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+  });
+
+  /** Both drawings restate what the text already says, so they're decoration. */
+  test("hides the cover art and the logo from assistive tech", () => {
+    renderHome();
+    expect(screen.queryAllByRole("img")).toHaveLength(0);
+  });
+});
 
 describe("HomePage", () => {
   test("opens a room and lands on its lobby, with no code entry in between", async () => {
@@ -62,6 +93,31 @@ describe("HomePage", () => {
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     // The button has to come back, or the cover is a dead end.
     expect(screen.getByRole("button", { name: "New game" })).toBeEnabled();
+  });
+
+  /**
+   * A `disabled` button drops out of the tab order the moment it's pressed,
+   * taking the user's focus with it. `aria-disabled` says the same thing to
+   * assistive tech while leaving the button reachable, so the guard lives in
+   * the handler instead.
+   */
+  test("keeps the primary action focusable while the room is opening", async () => {
+    let release: (id: string) => void = () => undefined;
+    createRoom.mockReturnValue(new Promise<string>((resolve) => (release = resolve)));
+    const { user } = renderHome();
+
+    const button = screen.getByRole("button", { name: "New game" });
+    await user.click(button);
+
+    const pending = screen.getByRole("button", { name: "Opening…" });
+    expect(pending).toHaveAttribute("aria-disabled", "true");
+    expect(pending).toBeEnabled();
+    expect(pending).toHaveFocus();
+
+    // A second press while in flight must not open a second room.
+    await user.click(pending);
+    expect(createRoom).toHaveBeenCalledTimes(1);
+    release("7KQP2");
   });
 
   /** Joining still goes through the code screen — only creating skips it. */

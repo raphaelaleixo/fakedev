@@ -9,7 +9,9 @@
     "newGameFailed": "Couldn't open a room. Check your connection and try again.",
     "resumeGame": "Join a room",
     "howToPlay": "How to play",
-    "credit": "After A Fake Artist Goes to New York by Jun Sasaki, Oink Games."
+    "creditPrefix": "After ",
+    "creditWork": "A Fake Artist Goes to New York",
+    "creditSuffix": " by Jun Sasaki, Oink Games."
   },
   "header": {
     "home": "Home",

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import type { RoomState } from "react-gameroom";
 import { useGame } from "../contexts/GameContext";
+import { useViewTransition } from "../hooks/useViewTransition";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
@@ -35,6 +36,17 @@ export default function RoomPage() {
     nextRound,
   } = useGame();
   const [starting, setStarting] = useState(false);
+
+  /**
+   * The round starting is not a navigation — same URL, same page, a status
+   * arriving from Firebase — so React Router's `viewTransition` cannot see it.
+   * Holding the phase one commit behind the real one lets the browser own the
+   * swap. See useViewTransition.
+   */
+  const phase = useViewTransition(
+    roomState?.status === "lobby" ? "lobby" : "playing",
+    "round-start",
+  );
 
   useEffect(() => {
     if (id) loadRoom(id);
@@ -73,7 +85,7 @@ export default function RoomPage() {
       );
     }
 
-    if (roomState.status === "lobby") {
+    if (phase === "lobby" && roomState.status === "lobby") {
       return (
         <Lobby
           roomState={roomState}

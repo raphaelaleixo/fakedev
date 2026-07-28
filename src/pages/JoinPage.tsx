@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import AppHeader from "../components/AppHeader";
-import { useOpenRoom } from "../game/useOpenRoom";
+import { useOpenRoom } from "../hooks/useOpenRoom";
 import { color, font } from "../theme/tokens";
 
 /**

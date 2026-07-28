@@ -80,6 +80,31 @@ export default function AppGlobalStyles() {
           animation: "cover-rise 560ms 60ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
         },
 
+        /**
+         * Starting the round is not a navigation — same URL, same page — so
+         * the marker class scopes it. The lobby leaves to the left and the
+         * round arrives from the right, a whole surface each: it reads as
+         * moving forward through the game rather than as the screen being
+         * replaced.
+         *
+         * `root` carries both, because the masthead is the only named element
+         * in a room and named elements are lifted out of it. Which also means
+         * the masthead has to be told to sit still — it exists on both sides,
+         * so the route rules below would otherwise slide it in from the top
+         * while everything else moves sideways.
+         */
+        "@keyframes stage-out-left": { to: { transform: "translateX(-100%)" } },
+        "@keyframes stage-in-right": { from: { transform: "translateX(100%)" } },
+
+        "html.vt-round-start::view-transition-old(root)": {
+          animation: "stage-out-left 460ms cubic-bezier(0.65, 0, 0.35, 1) both",
+        },
+        "html.vt-round-start::view-transition-new(root)": {
+          animation: "stage-in-right 460ms cubic-bezier(0.65, 0, 0.35, 1) both",
+        },
+        "html.vt-round-start::view-transition-old(masthead), html.vt-round-start::view-transition-new(masthead)":
+          { animation: "none" },
+
         "::view-transition-new(masthead)": {
           animation: "masthead-drop 340ms 80ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
         },

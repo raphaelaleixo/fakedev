@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Box, Button, Link, Stack, Typography } from "@mui/material";
 import { Skyline } from "../components/Skyline";
 import { Ludoratory } from "../components/Ludoratory";
-import { useOpenRoom } from "../game/useOpenRoom";
+import { useOpenRoom } from "../hooks/useOpenRoom";
 import { color, font } from "../theme/tokens";
 
 /**

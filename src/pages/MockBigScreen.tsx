@@ -15,6 +15,7 @@ import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
 import { seatColorFor } from "../game/match";
 import type { FakeDevPlayerData, RoundPhase } from "../game/types";
 import { MOCK_EDITS, MOCK_SEATS, mockRound, mockRoundAt } from "../mocks/fixtures";
+import { useViewTransition } from "../hooks/useViewTransition";
 import { color } from "../theme/tokens";
 
 const NAMES = ["Rafa", "Ana", "Tom", "Ines", "Joost", "Mira", "Dev", "Sanne", "Kai", "Noor"];
@@ -50,6 +51,13 @@ const SCORES = { 1: 3, 2: 1, 4: 2, 5: 1 };
 
 export default function MockBigScreen() {
   const [view, setView] = useState<RoundPhase | "lobby">("turns");
+  /**
+   * Routed through the same hook the real screen uses, so every phase change
+   * here animates exactly as it will in a room — otherwise the one place these
+   * transitions can be exercised without four people and a TV is the one place
+   * they do not happen.
+   */
+  const shown = useViewTransition(view, "round-start");
   const [count, setCount] = useState(3);
   const [turns, setTurns] = useState(MOCK_EDITS.length);
   const [steal, setSteal] = useState(0);
@@ -62,7 +70,7 @@ export default function MockBigScreen() {
   ][steal];
 
   function screen() {
-    switch (view) {
+    switch (shown) {
       case "lobby":
         return <Lobby roomState={roomWith(count)} onStart={() => setView("turns")} />;
       case "turns":

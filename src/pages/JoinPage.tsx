@@ -42,7 +42,7 @@ export default function JoinPage() {
       <AppHeader />
       <Box sx={{ flex: 1, display: "flex", alignItems: "center", p: 3 }}>
       <Box sx={{ width: "100%", maxWidth: 460, mx: "auto", fontFamily: font.mono }}>
-        <Typography variant="h3" gutterBottom>
+        <Typography variant="h3" component="h1" gutterBottom>
           {t("join.heading")}
         </Typography>
 

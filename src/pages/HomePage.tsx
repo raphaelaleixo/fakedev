@@ -107,7 +107,14 @@ export default function HomePage() {
     setOpening(true);
     setFailed(false);
     try {
-      navigate(`/room/${await createRoom()}`);
+      // `flushSync` is not decoration. Every other way out of the cover is a
+      // <Link>, which navigates from inside a click handler; this one lands
+      // after an await, where React treats the update as non-urgent and can
+      // defer the render past the point the browser snapshots the new state —
+      // so the transition runs against a page that has not changed yet.
+      // flushSync commits it synchronously inside the transition callback,
+      // which is what the API expects.
+      navigate(`/room/${await createRoom()}`, { viewTransition: true, flushSync: true });
     } catch {
       setOpening(false);
       setFailed(true);
@@ -134,11 +141,25 @@ export default function HomePage() {
         {/* A container here too, so `cqi` inside it measures the same column
             the title does — that is what lets the houses be expressed as a
             fraction of the headline rather than as a guess in rems. */}
-        <Box sx={{ ...bleed, containerType: "inline-size", mb: SEAM_OVERLAP }}>
+        <Box
+          sx={{
+            ...bleed,
+            containerType: "inline-size",
+            mb: SEAM_OVERLAP,
+            viewTransitionName: "cover-art",
+          }}
+        >
           <Skyline maxWidth={HOUSES_WIDTH} />
         </Box>
 
-        <Box sx={{ ...flame, pt: { xs: 3, md: 4 }, containerType: "inline-size" }}>
+        <Box
+          sx={{
+            ...flame,
+            pt: { xs: 3, md: 4 },
+            containerType: "inline-size",
+            viewTransitionName: "cover-band",
+          }}
+        >
           <Typography
             variant="h1"
             sx={{ fontFamily: font.display, fontWeight: 800, textTransform: "uppercase", m: 0 }}
@@ -217,6 +238,7 @@ export default function HomePage() {
             <Button
               component={RouterLink}
               to="/join"
+              viewTransition
               size="large"
               sx={{
                 border: `2px solid ${color.ink}`,
@@ -229,6 +251,7 @@ export default function HomePage() {
             <Button
               component={RouterLink}
               to="/how-to-play"
+              viewTransition
               size="large"
               sx={{ color: color.ink, "&:hover": { textDecoration: "underline" } }}
             >
@@ -253,6 +276,7 @@ export default function HomePage() {
         component="footer"
         sx={{
           ...flame,
+          viewTransitionName: "cover-foot",
           mt: SEAM_OVERLAP,
           pt: { xs: 3, md: 4 },
           pb: { xs: 7, md: 10 },

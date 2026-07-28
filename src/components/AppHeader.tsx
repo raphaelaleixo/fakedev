@@ -49,10 +49,16 @@ export default function AppHeader({
         py: 1,
         backgroundColor: color.ink,
         borderBottom: `1px solid ${color.inkRule}`,
+        viewTransitionName: "masthead",
       }}
     >
       {/* The wordmark's own text names this link — see Wordmark. */}
-      <Box component={RouterLink} to="/" sx={{ display: "inline-flex", textDecoration: "none" }}>
+      <Box
+        component={RouterLink}
+        to="/"
+        viewTransition
+        sx={{ display: "inline-flex", textDecoration: "none" }}
+      >
         <Wordmark />
       </Box>
 

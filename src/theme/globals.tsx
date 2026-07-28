@@ -24,6 +24,87 @@ export default function AppGlobalStyles() {
          */
         "#root": { minHeight: "100dvh", display: "flex", flexDirection: "column" },
 
+        /**
+         * Leaving the cover.
+         *
+         * The flame block drops out of the bottom of the screen and the houses
+         * ride down with it, a beat behind — the band is what's moving and the
+         * drawing is being carried. Meanwhile the masthead drops in from the
+         * top and the new page's content fades up underneath it. Coming back,
+         * every one of those runs in reverse, which needs no extra rules: the
+         * pieces that exist only on the cover are `old` on the way out and
+         * `new` on the way in.
+         *
+         * Distances are viewport-relative rather than percentages of each
+         * element, so the band and the footer — two boxes making one visual
+         * surface — travel at exactly the same rate instead of desyncing on
+         * their different heights.
+         *
+         * The whole thing is progressive enhancement: a browser without the
+         * API just swaps the DOM, which is the behaviour we had.
+         */
+        "@keyframes cover-drop": { to: { transform: "translateY(100vh)" } },
+        "@keyframes cover-rise": { from: { transform: "translateY(100vh)" } },
+        "@keyframes masthead-drop": { from: { transform: "translateY(-100%)" } },
+        "@keyframes masthead-lift": { to: { transform: "translateY(-100%)" } },
+        "@keyframes content-in": { from: { opacity: 0, transform: "translateY(1.5rem)" } },
+        "@keyframes content-out": { to: { opacity: 0 } },
+
+        /**
+         * The cover's groups sit above `root`, which carries the whole
+         * incoming page as one opaque snapshot. The spec's default order
+         * already puts them there, but stating it costs one line and removes
+         * the possibility of the drop happening behind the page it is
+         * supposed to be uncovering.
+         */
+        "::view-transition-group(cover-band), ::view-transition-group(cover-foot), ::view-transition-group(cover-art), ::view-transition-group(masthead)":
+          { zIndex: 1 },
+
+        /**
+         * Leaving, the houses go first and the block follows a beat later, so
+         * the drawing falls into the flame and the flame takes it down. Coming
+         * back reverses the order — the block arrives, then the houses land on
+         * it — which is why the two directions stagger the opposite way rather
+         * than sharing one rule.
+         */
+        "::view-transition-old(cover-art)": {
+          animation: "cover-drop 460ms cubic-bezier(0.5, 0, 0.85, 0.3) both",
+        },
+        "::view-transition-old(cover-band), ::view-transition-old(cover-foot)": {
+          animation: "cover-drop 420ms 120ms cubic-bezier(0.5, 0, 0.85, 0.3) both",
+        },
+        "::view-transition-new(cover-band), ::view-transition-new(cover-foot)": {
+          animation: "cover-rise 460ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
+        },
+        "::view-transition-new(cover-art)": {
+          animation: "cover-rise 560ms 60ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
+        },
+
+        "::view-transition-new(masthead)": {
+          animation: "masthead-drop 340ms 80ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
+        },
+        "::view-transition-old(masthead)": {
+          animation: "masthead-lift 260ms cubic-bezier(0.4, 0, 1, 1) both",
+        },
+
+        // Everything unnamed rides in `root`: the cover's empty half on one
+        // side, the arriving page's content on the other.
+        "::view-transition-old(root)": { animation: "content-out 180ms ease-in both" },
+        "::view-transition-new(root)": {
+          animation: "content-in 360ms 140ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
+        },
+
+        /**
+         * Reduced motion takes the movement away, not the navigation. Old and
+         * new simply cross-fade at the browser's default, which is the
+         * quietest thing that still marks that the page changed.
+         */
+        "@media (prefers-reduced-motion: reduce)": {
+          "::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*)": {
+            animation: "none !important",
+          },
+        },
+
         ".fullscreen-toggle": {
           fontFamily: font.mono,
           fontSize: "0.8rem",

@@ -7,6 +7,7 @@ import { useGame } from "../contexts/GameContext";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
+import type { FakeDevPlayerData } from "../game/types";
 import {
   CountdownScreen,
   ResultScreen,
@@ -39,84 +40,103 @@ export default function RoomPage() {
     if (id) loadRoom(id);
   }, [id, loadRoom]);
 
-  if (notFound) return <Centered>{t("room.notFound", { code: id })}</Centered>;
-  if (loading || !roomState) {
-    return (
-      <Centered>
-        <CircularProgress />
-      </Centered>
-    );
-  }
-
-  if (roomState.status === "lobby") {
-    return (
-      <Shell roomState={roomState}>
-      <Lobby
-        roomState={roomState}
-        starting={starting}
-        onStart={async () => {
-          setStarting(true);
-          try {
-            await startTheMatch();
-          } finally {
-            setStarting(false);
-          }
-        }}
-      />
-      </Shell>
-    );
-  }
-
-  const round = matchState?.round;
-  if (!round) {
-    return (
-      <Centered>
-        <CircularProgress />
-      </Centered>
-    );
-  }
-
-  const seats: SeatInfo[] = roomState.players
-    .filter((p) => p.status === "ready")
-    .map((p) => ({
-      id: p.id,
-      name: p.name ?? `#${p.id}`,
-      color: p.data?.color ?? seatColorFor(p.id),
-    }));
+  /**
+   * One `Shell`, always, with only its contents swapping.
+   *
+   * This used to return `<Centered>` while loading and `<Shell>` once loaded.
+   * Those are different component types in the same position, so React tore the
+   * whole subtree down and built a new one the moment the room arrived —
+   * including the masthead. That is invisible in normal use and fatal to a view
+   * transition: the browser skips the whole thing when an element it captured
+   * is removed, so arriving here killed the animation a few hundred
+   * milliseconds in, while every other route was fine.
+   */
+  const seats = (room: RoomState<FakeDevPlayerData>): SeatInfo[] =>
+    room.players
+      .filter((p) => p.status === "ready")
+      .map((p) => ({
+        id: p.id,
+        name: p.name ?? `#${p.id}`,
+        color: p.data?.color ?? seatColorFor(p.id),
+      }));
 
   // The big screen drives every phase transition. The domain helpers throw when
   // the round isn't in the expected phase, so a second screen open on the same
   // room is harmless rather than a double advance.
-  const screen = () => {
+  const body = () => {
+    if (notFound) return <Centered>{t("room.notFound", { code: id })}</Centered>;
+    if (loading || !roomState) {
+      return (
+        <Centered>
+          <CircularProgress />
+        </Centered>
+      );
+    }
+
+    if (roomState.status === "lobby") {
+      return (
+        <Lobby
+          roomState={roomState}
+          starting={starting}
+          onStart={async () => {
+            setStarting(true);
+            try {
+              await startTheMatch();
+            } finally {
+              setStarting(false);
+            }
+          }}
+        />
+      );
+    }
+
+    const round = matchState?.round;
+    if (!round) {
+      return (
+        <Centered>
+          <CircularProgress />
+        </Centered>
+      );
+    }
+
     switch (round.phase) {
       case "turns":
-        return <Canvas round={round} seats={seats} />;
+        return <Canvas round={round} seats={seats(roomState)} />;
       case "countdown":
         return <CountdownScreen onDone={() => id && openVoting(id)} />;
       case "voting":
-        return <VotingScreen round={round} seats={seats} />;
+        return <VotingScreen round={round} seats={seats(roomState)} />;
       case "reveal":
-        return <RevealScreen round={round} seats={seats} onDone={() => id && closeVoting(id)} />;
+        return (
+          <RevealScreen
+            round={round}
+            seats={seats(roomState)}
+            onDone={() => id && closeVoting(id)}
+          />
+        );
       case "steal":
-        return <StealScreen round={round} seats={seats} />;
+        return <StealScreen round={round} seats={seats(roomState)} />;
       case "result":
         return (
           <ResultScreen
             round={round}
-            seats={seats}
-            scores={matchState.scores ?? {}}
-            finished={matchState.status === "finished"}
-            winnerIds={matchState.winnerIds}
+            seats={seats(roomState)}
+            scores={matchState?.scores ?? {}}
+            finished={matchState?.status === "finished"}
+            winnerIds={matchState?.winnerIds}
             onNext={() => id && nextRound(id)}
           />
         );
     }
   };
 
-  return <Shell roomState={roomState}>{screen()}</Shell>;
+  return <Shell roomState={roomState ?? undefined}>{body()}</Shell>;
 }
 
-/** Masthead plus whatever the phase is showing, filling the viewport. */
+/**
+ * Masthead plus whatever the phase is showing, filling the viewport. It must
+ * stay mounted across every phase change — see the note above `body`.
+ */
 function Shell({
   roomState,
   children,
@@ -139,20 +159,13 @@ function Shell({
   );
 }
 
+/** Just the centring; the shell is supplied by the caller, once. */
 function Centered({ children }: { children: ReactNode }) {
   return (
-    <Shell>
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          p: 4,
-        }}
-      >
-        <Typography sx={{ color: color.muted }}>{children}</Typography>
-      </Box>
-    </Shell>
+    <Box
+      sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", p: 4 }}
+    >
+      <Typography sx={{ color: color.muted }}>{children}</Typography>
+    </Box>
   );
 }

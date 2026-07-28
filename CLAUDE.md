@@ -58,31 +58,30 @@ Consequences that are easy to get wrong:
 - **Ambiguity is the feature, not a gap.** If a render looks under-specified,
   check whether that's actually a Dev playing well before "fixing" it.
 
-The sharpest example is a text slot set to **lorem ipsum**. It commits to body
-copy of a certain length without committing to what the copy says — structural
-signal, no semantic leak.
+The sharpest example is the **text move**. The copy is always the same lorem
+ipsum, so the move says nothing about *what* the component reads — only that it
+has copy at all, and where.
 
-But it is a *bet*, not a hedge, and this is the part that's easy to get wrong:
-filling a text slot claims "this component has copy here," and for a good part of
-the deck that claim is false. Skeleton Loader's whole sketch is "grey rounded
-bars, **deliberately no content**". Progress Bar, Range Slider, Toggle Switch,
-Icon Button and Avatar want little or none either. Lorem ipsum on any of those is
-one of the loudest tells in the game.
+That is a *bet*, not a hedge, and it's the part that's easy to get wrong.
+Claiming "this component has copy here" is false for a good part of the deck:
+Progress Bar's sketch ends "no copy at all", and Range Slider, Toggle Switch and
+Notification Badge want none either. A span on any of those is one of the
+loudest tells in the game.
 
 So it cuts both ways. For a Dev it's a weak but real proof — it narrows the deck
 to components that have copy. For a Chameleon it's a gamble on the Secret's shape
 that can expose them outright.
 
-The general form: **an empty slot is information too.** Ten turns of nobody
-touching `{label}` says something specific about the Secret, and Dev restraint
-is as much a signal as Dev action. Don't build anything that nudges players to
-fill every slot.
+The general form: **an absent span is information too.** Ten turns of nobody
+adding text says something specific about the Secret, and Dev restraint is as
+much a signal as Dev action. Don't build anything that nudges players to fill
+the board.
 
 ## A Secret is two things
 
-**A style and a component** — *Neumorphic · Toggle Switch*. Fifteen of each, so
-225 Secrets from thirty authored items, and **nothing about the answer is
-public**. The big screen names only the shape of it, `style × component`.
+**A style and a component** — *Neumorphic · Toggle Switch*. Thirteen styles and
+fourteen components, so 182 Secrets from twenty-seven authored items, and
+**nothing about the answer is public**. The big screen names only the shape of it, `style × component`.
 
 That pairing is load-bearing three times over. It guarantees **depth**, since
 each half needs its own moves and no Secret is one declaration. It gives
@@ -91,9 +90,10 @@ makes the steal splittable, so a caught Chameleon can be **half right**.
 
 Neither half repeats within a match — the two used pools are tracked separately.
 
-The four screening rules any new card must pass are in `projectInfo/cards.md`.
-The one that cut a whole category is the **lorem ipsum test**: if you can't
-signal it without typing the answer, it isn't a card.
+The six screening rules any new card must pass are in `projectInfo/cards.md`.
+The one that cut a whole category is the **lorem ipsum test**: if it doesn't read
+with meaningless copy in it, it isn't a card — and since the copy *is* fixed
+lorem, that's a constraint the engine enforces rather than a habit players keep.
 
 ## Domain model
 
@@ -102,15 +102,22 @@ inspector are both folds over it — last-write-wins per `(target, kind, key)`.
 Superseded edits are never deleted; the inspector's strikethroughs and a
 deferred replay feature both need the full history.
 
-Four edit targets on a fixed base structure: `outer` and `inner` (elements),
-`label` and `text` (text slots). Four edit kinds: `tag`, `attribute`, `style`,
-`text`. `Edit` is a discriminated union so invalid combinations — a keyless
-style edit, a tag on a text slot — are unrepresentable.
+**The moves are CSS and nothing else.** The base structure is two divs, fixed;
+there are no tags to choose and no attributes to set. That's a game decision
+before it's a technical one — the *correct* answer at work is the *worst* play
+here, since the right way to build a radio button is `<input type="radio">`,
+which names the component out loud. One vocabulary, no trap.
 
-**Players never see four targets.** The canvas has two *things*, and each owns a
-text slot, so the composer asks for an element (`outer` / `inner`) and then a
-move. `draftToEdit` maps that onto the log: **outer's text is `{label}`, inner's
-text is `{text}`.**
+Four edit targets: `outer` and `inner` (the boxes) and `outer-text` /
+`inner-text` (the spans). Two edit kinds: `style` and `text`. `Edit` is a
+discriminated union, so a keyless style edit or a text move on a span is
+unrepresentable.
+
+**A text move is a placement, not a sentence.** It drops a span holding the fixed
+`LOREM`, which is why it carries no value. The composer asks for a box and maps
+it through `TEXT_OF`; what the player buys is a *third element to style*, so a
+span only becomes a target once somebody has spent a turn on it —
+`availableTargets` is a fold over the log, not a constant.
 
 The inspector draws **the actual DOM**, nested and indented — a blank round is
 two empty divs, a played one is a component you can read top to bottom. Nesting
@@ -127,12 +134,9 @@ whoever opened it, the value in the colour of whoever answered. Nothing is ever
 removed: an overridden value trails as a `/* comment */` in its own author's
 colour, which costs no line and reads better than a strikethrough.
 
-So `{label}` and `{text}` are *structure* names, used in `rules.md`, the types
-and the log. They are not player-facing vocabulary and shouldn't leak into UI.
-
-**Choosing the component is a turn.** Setting `inner` to `<button>` is a `tag`
-edit that costs a player their whole turn, exactly like a CSS declaration.
-Nothing about the structure is free.
+`outer-text` and `inner-text` are named for *position*, deliberately — not
+`label` or `caption`. A semantic name would be a lie the engine can't back up,
+since the copy is the same lorem in both.
 
 Layout:
 
@@ -141,7 +145,7 @@ Layout:
   - `render.ts` — render tree → HTML for the sandboxed stage
   - `round.ts` — setup, turn loop, vote, steal, scoring
   - `match.ts` — match lifecycle and seat colors
-  - `content/deck.ts` — the two decks: fifteen styles, fifteen components
+  - `content/deck.ts` — the two decks: thirteen styles, fourteen components
   - `content/keySchema.ts` — composer suggestions, not a whitelist
 - `src/components/canvas/` — the big screen during a round
 - `src/mocks/fixtures.ts` — the board the canvas is developed against

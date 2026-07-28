@@ -31,7 +31,7 @@ export interface Card {
 }
 
 /** How a key's value is composed in the controller. Drives the editor widget. */
-export type ValueType = "enum" | "color" | "length" | "boolean" | "freetext";
+export type ValueType = "enum" | "color" | "length" | "freetext";
 
 /**
  * One chip in an enum editor. Label and value differ where the CSS is
@@ -52,16 +52,12 @@ export interface EnumOption {
  * That makes this file progressive polish rather than a gate — ten good entries
  * ship a playable game and the other ~600 properties already work.
  *
- * Tags are *not* in here: a tag edit has no key, only a value, so the tag
- * suggestions are a plain `string[]`.
+ * Every entry is a CSS property — there are no tags and no attributes.
  */
 export interface KeySchemaEntry {
   /** The attribute name or CSS property, e.g. "disabled", "background-color". */
   key: string;
-  kind: "attribute" | "style";
   valueType: ValueType;
-  /** Which of the two element targets this key may be applied to. */
-  appliesTo: ElementTarget[];
   /** valueType "enum": the chip set. */
   options?: EnumOption[];
   /** valueType "length": selectable units. `""` means unitless, e.g. opacity. */
@@ -74,24 +70,35 @@ export interface KeySchemaEntry {
   maxLength?: number;
 }
 
-/**
- * Boolean attributes (`disabled`, `checked`, `required`, `readonly`) still take
- * a value step, with two chips. An override can turn one back off — un-disabling
- * a button is a legitimate play, and last-write-wins stays meaningful for them.
- */
-export type BooleanValue = "true" | "false";
-
 // ---------------------------------------------------------------------------
 // The edit log
 // ---------------------------------------------------------------------------
 
-/** The two element slots in the base structure. */
-export type ElementTarget = "outer" | "inner";
-/** The two text slots. `label` sits in `outer` before `inner`; `text` inside `inner`. */
-export type TextTarget = "label" | "text";
-export type EditTarget = ElementTarget | TextTarget;
+/** The two boxes of the base structure. */
+export type BoxTarget = "outer" | "inner";
+/** The two spans. Neither exists until somebody plays the text move on its box. */
+export type TextTarget = "outer-text" | "inner-text";
+/**
+ * Everything styleable. Named for position rather than meaning — `label` and
+ * `text` carried HTML baggage the game doesn't want.
+ */
+export type EditTarget = BoxTarget | TextTarget;
 
-export type EditKind = "tag" | "attribute" | "style" | "text";
+/** The span a text move on this box creates. */
+export const TEXT_OF: Record<BoxTarget, TextTarget> = {
+  outer: "outer-text",
+  inner: "inner-text",
+};
+
+/**
+ * Two kinds of edit, and that's the whole game.
+ *
+ * There is no tag move and no attribute move. Both offered the same bad
+ * bargain: `<input type="radio">` and `role="radio"` are the *correct*
+ * engineering answers and also name the Secret outright, so the game would
+ * have punished knowing them. Everything is a div, and every shape is drawn.
+ */
+export type EditKind = "style" | "text";
 
 interface EditBase {
   id: string;
@@ -100,15 +107,8 @@ interface EditBase {
   turnIndex: number;
 }
 
-/** Sets the element's tag name. No key. */
-export interface TagEdit extends EditBase {
-  target: ElementTarget;
-  kind: "tag";
-  value: string;
-}
-
 /**
- * One HTML attribute or one CSS declaration.
+ * One CSS declaration.
  *
  * `value` is optional because a turn does one of two things: it **opens** a
  * declaration by naming it, or it **supplies a value**. An open declaration is
@@ -117,34 +117,34 @@ export interface TagEdit extends EditBase {
  * render until somebody answers it.
  */
 export interface KeyedEdit extends EditBase {
-  target: ElementTarget;
-  kind: "attribute" | "style";
+  target: EditTarget;
+  kind: "style";
   key: string;
   value?: string;
 }
 
-/** Sets one of the two text slots. No key. Capped at TEXT_MAX_LENGTH. */
+/**
+ * Puts text in a box, which creates its span.
+ *
+ * There is no content to choose — it is always the same lorem. What you pick is
+ * *where* copy goes, never what it says, so no move in the game can spell out
+ * the Secret. And the move pays forward: the span it creates is a new element
+ * for everybody else to style.
+ */
 export interface TextEdit extends EditBase {
   target: TextTarget;
   kind: "text";
-  value: string;
 }
 
 /**
  * A single commit. The log is append-only and ordered; superseded edits are
- * never removed — the inspector's strikethroughs and the deferred replay
- * feature both read the full history.
- *
- * Modelled as a union so an invalid combination (a keyless style edit, a tag on
- * a text slot) is unrepresentable. Serializes flat: absent fields are simply
- * absent, which is what Firebase stores anyway.
+ * never removed — the inspector needs the full history.
  */
-export type Edit = TagEdit | KeyedEdit | TextEdit;
+export type Edit = KeyedEdit | TextEdit;
 
 /**
  * The last-write-wins identity of an edit. Two edits collide iff they produce
- * the same slot string; the later one wins the render, the earlier one is drawn
- * struck through.
+ * the same slot string.
  */
 export type EditSlot = string;
 
@@ -153,23 +153,26 @@ export type EditSlot = string;
 // ---------------------------------------------------------------------------
 
 export interface RenderElement {
-  tag: string;
-  attributes: Record<string, string>;
   styles: Record<string, string>;
+}
+
+/** A span, which only renders once its text move has been played. */
+export interface RenderText extends RenderElement {
+  present: boolean;
 }
 
 /** The full render state. Rebuilt from the log on every change; never stored. */
 export interface RenderTree {
   outer: RenderElement;
+  "outer-text": RenderText;
   inner: RenderElement;
-  label: string;
-  text: string;
+  "inner-text": RenderText;
 }
 
 /** One line of the Live Inspector — an edit plus its display state. */
 export interface InspectorLine {
   edit: Edit;
-  /** True when a later edit owns the same slot. Drawn struck through. */
+  /** True when a later edit owns the same slot. */
   superseded: boolean;
 }
 
@@ -316,22 +319,17 @@ export interface MatchState {
  * outer's text is `{label}`, inner's text is `{text}`.
  */
 /**
- * What a turn does. A turn either **opens** a declaration by naming it
- * (`attribute` / `style`), **answers** one with a value (`value`), or plays a
- * single-token move that has no name/value split at all (`tag` / `text`).
- *
- * Opening is intent without execution; answering is committing to somebody's
- * intent — possibly your own, possibly not. That choice is the game.
+ * What a turn does. **Open** a declaration by naming it, **answer** one with a
+ * value, or **add text** to a box — which creates its span and hands everyone a
+ * new element to work on.
  */
-export type ComposerMove = "tag" | "text" | "attribute" | "style" | "value";
+export type ComposerMove = "style" | "value" | "text";
 
 export interface ComposerDraft {
-  element?: ElementTarget;
+  target?: EditTarget;
   move?: ComposerMove;
   /** The declaration being opened, or the one a value answers. */
   key?: string;
-  /** For a `value` move: which kind of declaration is being answered. */
-  slotKind?: "attribute" | "style";
   value?: string;
 }
 

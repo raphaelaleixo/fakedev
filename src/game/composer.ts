@@ -3,105 +3,74 @@
  *
  * A turn does exactly one of three things:
  *
- *  - **plays a single token** — the element's tag, or its text. Neither has a
- *    name/value split, so neither costs two turns.
- *  - **opens a declaration** by naming an attribute or a property. Intent with
- *    no execution: `border-radius` says "this thing is rounded" and commits to
- *    nothing else. It shows on the inspector and stays out of the render.
+ *  - **opens a declaration** by naming a property. Intent with no execution:
+ *    `border-radius` says "this thing is rounded" and commits to nothing else.
  *  - **answers a declaration** with a value — one that's open, or one already
  *    set, which makes overriding a one-turn move.
+ *  - **adds text** to a box, which creates its span. There is no content to
+ *    choose; what you pick is *where* copy goes. The move pays forward, since
+ *    the span it creates is a new element for everybody else to style.
  *
- * That split is the point of the whole thing: the interesting decision each
- * turn is whether to answer somebody else's opening or start your own, which is
- * the paper game's extend-a-stroke-or-start-fresh tension.
+ * That split is the point: the interesting decision each turn is whether to
+ * answer somebody else's opening or start your own, which is the paper game's
+ * extend-a-stroke-or-start-fresh tension.
  *
- * "Illegal moves are impossible by construction" is the design goal, and this
- * is where the construction lives: the UI can only offer what these accept, and
- * the commit control stays disabled until `isDraftSubmittable` is true. Not for
- * safety — the sandboxed stage handles that — but for signal. A typo renders
- * nothing, and nothing is indistinguishable from a deliberately vague play.
+ * There is no tag move and no attribute move — see `EditKind` for why.
  */
 
-import { getKeySchema } from "./content/keySchema";
 import { isValidDeclaration, nativeSupports, type SupportsFn } from "./css";
-import { TEXT_MAX_LENGTH } from "./constants";
-import type {
-  ComposerDraft,
-  ComposerMove,
-  Edit,
-  ElementTarget,
-  TextTarget,
-} from "./types";
+import { TEXT_OF, type BoxTarget, type ComposerDraft, type ComposerMove, type Edit, type EditTarget } from "./types";
 
-export type ComposerStep = "element" | "move" | "key" | "slot" | "value";
+export type ComposerStep = "target" | "move" | "key" | "slot" | "value";
 
-/** Tag and attribute names must be plain identifiers. */
+/** Property names must be plain identifiers. */
 const IDENTIFIER = /^[a-zA-Z][a-zA-Z0-9-]*$/;
 
+const BOXES: BoxTarget[] = ["outer", "inner"];
+
+const isBox = (target: EditTarget): target is BoxTarget =>
+  target === "outer" || target === "inner";
+
 /**
- * The log has four targets, but the canvas has two *things*. Each element owns
- * a text slot, so the composer asks for an element and then a move.
+ * Everything there is to play on, in document order.
+ *
+ * A span isn't a target until its text move has been played, so the board opens
+ * up as the round goes on rather than offering four empty things at turn one.
  */
-const TEXT_SLOT: Record<ElementTarget, TextTarget> = { outer: "label", inner: "text" };
+export function availableTargets(edits: Edit[]): EditTarget[] {
+  const spans = new Set(edits.filter((e) => e.kind === "text").map((e) => e.target));
+  return BOXES.flatMap((box) =>
+    spans.has(TEXT_OF[box]) ? [box, TEXT_OF[box] as EditTarget] : [box],
+  );
+}
 
 /** Which steps this move has to walk. */
 export function draftSteps(move?: ComposerMove): ComposerStep[] {
-  if (!move) return ["element", "move"];
-  if (move === "tag" || move === "text") return ["element", "move", "value"];
-  // Naming a declaration ends the turn. Answering it is somebody's next move.
-  if (move === "value") return ["element", "move", "slot", "value"];
-  return ["element", "move", "key"];
-}
-
-function isValidAttributeValue(
-  key: string,
-  value: string,
-  supports: SupportsFn | null,
-): boolean {
-  const schema = getKeySchema("attribute", key);
-  // Unlisted attributes fall through to the same free-text rules as the rest.
-  if (!schema) return value.length <= TEXT_MAX_LENGTH;
-
-  switch (schema.valueType) {
-    case "boolean":
-      return value === "true" || value === "false";
-    case "enum":
-      return (schema.options ?? []).some((option) => option.value === value);
-    case "freetext":
-      return value.length <= (schema.maxLength ?? TEXT_MAX_LENGTH);
-    default:
-      return isValidDeclaration(key, value, supports);
-  }
+  if (!move) return ["target", "move"];
+  // Nothing to choose: the copy is fixed and the span is implied by the box.
+  if (move === "text") return ["target", "move"];
+  if (move === "value") return ["target", "move", "slot", "value"];
+  return ["target", "move", "key"];
 }
 
 export function isDraftSubmittable(
   draft: ComposerDraft,
   supports: SupportsFn | null = nativeSupports(),
 ): boolean {
-  const { element, move, key, slotKind } = draft;
+  const { target, move, key } = draft;
   const value = draft.value?.trim() ?? "";
 
-  if (!element || !move) return false;
+  if (!target || !move) return false;
 
   switch (move) {
+    // A span already holds the only copy there is.
     case "text":
-      return value.length > 0 && value.length <= TEXT_MAX_LENGTH;
-
-    case "tag":
-      return IDENTIFIER.test(value);
-
-    // Opening: a name, and nothing else. It has to be a name somebody could
-    // actually answer, or the turn is spent on a dead end.
-    case "attribute":
-      return Boolean(key) && IDENTIFIER.test(key!);
+      return isBox(target);
+    // Opening: a name, and it has to be one somebody could actually answer.
     case "style":
       return Boolean(key) && IDENTIFIER.test(key!) && isValidDeclaration(key!, "initial", supports);
-
     case "value":
-      if (!key || !slotKind || !value) return false;
-      return slotKind === "attribute"
-        ? isValidAttributeValue(key, value, supports)
-        : isValidDeclaration(key, value, supports);
+      return Boolean(key) && Boolean(value) && isValidDeclaration(key!, value, supports);
   }
 }
 
@@ -119,28 +88,21 @@ export interface EditMeta {
  * An opening carries no `value` at all, which is what keeps it out of the fold.
  */
 export function draftToEdit(draft: ComposerDraft, meta: EditMeta): Edit {
-  const { element, move, key, slotKind } = draft;
+  const { target, move, key } = draft;
   const value = draft.value?.trim() ?? "";
   const incomplete = () => new Error("Draft is incomplete.");
 
-  if (!element || !move) throw incomplete();
+  if (!target || !move) throw incomplete();
 
   switch (move) {
     case "text":
-      if (!value) throw incomplete();
-      return { ...meta, target: TEXT_SLOT[element], kind: "text", value };
-
-    case "tag":
-      if (!value) throw incomplete();
-      return { ...meta, target: element, kind: "tag", value };
-
-    case "attribute":
+      if (!isBox(target)) throw incomplete();
+      return { ...meta, target: TEXT_OF[target], kind: "text" };
     case "style":
       if (!key) throw incomplete();
-      return { ...meta, target: element, kind: move, key };
-
+      return { ...meta, target, kind: "style", key };
     case "value":
-      if (!key || !slotKind || !value) throw incomplete();
-      return { ...meta, target: element, kind: slotKind, key, value };
+      if (!key || !value) throw incomplete();
+      return { ...meta, target, kind: "style", key, value };
   }
 }

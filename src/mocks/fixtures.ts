@@ -12,16 +12,12 @@ import { seatColorFor } from "../game/match";
  * lost — so a fixture that looks like that would teach us the wrong thing about
  * whether the canvas works.
  *
- * The Secret here is *Flat Design · Progress Bar*, but what the board shows is a
+ * The Secret here is *Material · Progress Bar*, but what the board shows is a
  * padded white box with a blue child. That is honestly any number of components
  * in any number of styles at this stage. It makes sense; it does not announce
  * itself.
  *
- * The label is lorem ipsum on purpose: it commits to body copy of a certain
- * length without committing to what the copy says. Structural signal, zero
- * semantic leak.
- *
- * It also models the split: a turn either *opens* a declaration by naming it or
+ * It models the split: a turn either *opens* a declaration by naming it or
  * *answers* one with a value. Turn 8 opens `role` and nobody ever answers it —
  * that dangling question is a legitimate end state and worth seeing on screen.
  * Turn 7 answers the button green; turn 9 overrides it to blue.
@@ -52,25 +48,22 @@ export const MOCK_EDITS: Edit[] = [
   edit(1, 2, { target: "outer", kind: "style", key: "display", value: "flex" }),
   edit(2, 3, { target: "outer", kind: "style", key: "padding" }),
   edit(3, 4, { target: "outer", kind: "style", key: "padding", value: "20px" }),
-  // Choosing the component is a whole turn, same as any other move.
-  edit(4, 5, { target: "inner", kind: "tag", value: "button" }),
-  // Signals the *shape* — body copy lives here, about this long — without
-  // leaking what it says. Safe on this card and a real bet on others: half the
-  // deck wants these slots empty, and lorem ipsum on a Skeleton Loader would
-  // give the player away instantly.
-  edit(5, 1, { target: "label", kind: "text", value: "Lorem ipsum dolor sit" }),
-  edit(6, 2, { target: "inner", kind: "style", key: "background-color" }),
+  // Adding text is a whole turn too, and it hands everyone a new element.
+  edit(4, 5, { target: "inner-text", kind: "text" }),
+  edit(5, 1, { target: "inner", kind: "style", key: "background-color" }),
   // Answered green, then overridden blue on turn 9 — the strikethrough case.
-  edit(7, 3, { target: "inner", kind: "style", key: "background-color", value: "#34a853" }),
+  edit(6, 2, { target: "inner", kind: "style", key: "background-color", value: "#34a853" }),
+  // Styling the span, which only became possible on turn 4.
+  edit(7, 3, { target: "inner-text", kind: "style", key: "color", value: "#ffffff" }),
   // Opened and never answered. A dangling question is a fine way to end.
-  edit(8, 4, { target: "outer", kind: "attribute", key: "role" }),
+  edit(8, 4, { target: "outer", kind: "style", key: "border-radius" }),
   edit(9, 5, { target: "inner", kind: "style", key: "background-color", value: "#1a73e8" }),
 ];
 
 export function mockRound(turnsPlayed = MOCK_EDITS.length): Round {
   return {
     index: 0,
-    styleId: "flat-design",
+    styleId: "material",
     componentId: "progress-bar",
     chameleonId: 4,
     phase: "turns",
@@ -85,8 +78,8 @@ export function mockRound(turnsPlayed = MOCK_EDITS.length): Round {
 export const MOCK_VOTES: Record<number, number> = { 1: 4, 2: 4, 3: 2, 4: 1, 5: 4 };
 
 export const MOCK_SLATE = {
-  styles: ["wireframe", "flat-design", "brutalist", "material", "vaporwave"],
-  components: ["avatar", "toggle-switch", "progress-bar", "tooltip", "tag-chip"],
+  styles: ["wireframe", "newspaper", "brutalist", "material", "vaporwave"],
+  components: ["avatar", "toggle-switch", "progress-bar", "tooltip", "app-header"],
 };
 
 /** The same round frozen at any later phase, for building those screens. */

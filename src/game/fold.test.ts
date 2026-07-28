@@ -1,295 +1,164 @@
 import { describe, expect, test } from "vitest";
 import { editSlot, foldEdits, inspectorLines, slotHistories } from "./fold";
-import type { Edit } from "./types";
+import type { Edit, EditTarget, TextTarget } from "./types";
 
-/** Terse builders — the log is long in most of these tests. */
 let seq = 0;
-const tag = (target: "outer" | "inner", value: string): Edit => ({
-  id: `e${seq++}`,
-  playerId: 1,
-  turnIndex: seq,
-  target,
-  kind: "tag",
-  value,
-});
-const attr = (target: "outer" | "inner", key: string, value: string): Edit => ({
-  id: `e${seq++}`,
-  playerId: 1,
-  turnIndex: seq,
-  target,
-  kind: "attribute",
-  key,
-  value,
-});
-const style = (target: "outer" | "inner", key: string, value: string): Edit => ({
+const decl = (target: EditTarget, key: string, value?: string): Edit => ({
   id: `e${seq++}`,
   playerId: 1,
   turnIndex: seq,
   target,
   kind: "style",
   key,
-  value,
+  ...(value === undefined ? {} : { value }),
 });
-const text = (target: "label" | "text", value: string): Edit => ({
+const open = (target: EditTarget, key: string): Edit => decl(target, key);
+const text = (target: TextTarget): Edit => ({
   id: `e${seq++}`,
   playerId: 1,
   turnIndex: seq,
   target,
   kind: "text",
-  value,
 });
 
 describe("foldEdits", () => {
-  test("folds an empty log to the blank base structure", () => {
-    expect(foldEdits([])).toEqual({
-      outer: { tag: "div", attributes: {}, styles: {} },
-      inner: { tag: "div", attributes: {}, styles: {} },
-      label: "",
-      text: "",
-    });
+  test("folds an empty log to two bare boxes and no spans", () => {
+    const tree = foldEdits([]);
+    expect(tree.outer.styles).toEqual({});
+    expect(tree.inner.styles).toEqual({});
+    expect(tree["outer-text"].present).toBe(false);
+    expect(tree["inner-text"].present).toBe(false);
   });
 
-  test("applies a tag edit to the targeted element", () => {
-    const tree = foldEdits([tag("inner", "button")]);
-    expect(tree.inner.tag).toBe("button");
-    expect(tree.outer.tag).toBe("div");
+  test("applies a declaration to the box it targets", () => {
+    const tree = foldEdits([decl("outer", "display", "flex")]);
+    expect(tree.outer.styles).toEqual({ display: "flex" });
+    expect(tree.inner.styles).toEqual({});
   });
 
-  test("applies an attribute edit to the targeted element", () => {
-    const tree = foldEdits([attr("inner", "disabled", "true")]);
-    expect(tree.inner.attributes).toEqual({ disabled: "true" });
+  /**
+   * The text move creates the span. That's what makes it worth a turn — it
+   * hands everyone a new element to work on rather than being a dead end.
+   */
+  test("brings a span into being", () => {
+    const tree = foldEdits([text("inner-text")]);
+    expect(tree["inner-text"].present).toBe(true);
+    expect(tree["outer-text"].present).toBe(false);
   });
 
-  test("applies a style edit to the targeted element", () => {
-    const tree = foldEdits([style("outer", "background-color", "#eee")]);
-    expect(tree.outer.styles).toEqual({ "background-color": "#eee" });
+  test("styles a span once it exists", () => {
+    const tree = foldEdits([text("outer-text"), decl("outer-text", "font-style", "italic")]);
+    expect(tree["outer-text"].present).toBe(true);
+    expect(tree["outer-text"].styles).toEqual({ "font-style": "italic" });
   });
 
-  test("applies each text edit to its own slot", () => {
-    const tree = foldEdits([text("label", "I'm not a robot"), text("text", "Submit")]);
-    expect(tree.label).toBe("I'm not a robot");
-    expect(tree.text).toBe("Submit");
-  });
-
-  test("keeps attributes and styles on the same element independent", () => {
-    const tree = foldEdits([
-      attr("inner", "type", "checkbox"),
-      style("inner", "type", "ignored-as-a-style"),
-    ]);
-    expect(tree.inner.attributes).toEqual({ type: "checkbox" });
-    expect(tree.inner.styles).toEqual({ type: "ignored-as-a-style" });
-  });
-
-  test("lets a later edit override the same key", () => {
-    const tree = foldEdits([
-      style("outer", "background-color", "#eee"),
-      style("outer", "background-color", "rebeccapurple"),
-    ]);
-    expect(tree.outer.styles["background-color"]).toBe("rebeccapurple");
-  });
-
-  test("does not disturb sibling keys when one is overridden", () => {
-    const tree = foldEdits([
-      style("outer", "background-color", "#eee"),
-      style("outer", "border-radius", "8px"),
-      style("outer", "background-color", "rebeccapurple"),
-    ]);
-    expect(tree.outer.styles).toEqual({
-      "background-color": "rebeccapurple",
-      "border-radius": "8px",
-    });
-  });
-
-  test("scopes the same key to each element separately", () => {
-    const tree = foldEdits([
-      style("outer", "color", "red"),
-      style("inner", "color", "blue"),
-    ]);
+  test("keeps each target's declarations to itself", () => {
+    const tree = foldEdits([decl("outer", "color", "red"), decl("inner", "color", "blue")]);
     expect(tree.outer.styles.color).toBe("red");
     expect(tree.inner.styles.color).toBe("blue");
   });
 
-  test("lets a text slot be overridden", () => {
-    const tree = foldEdits([text("text", "Submit"), text("text", "Loading…")]);
-    expect(tree.text).toBe("Loading…");
-  });
-});
-
-describe("editSlot", () => {
-  test("gives colliding edits the same slot", () => {
-    expect(editSlot(style("outer", "color", "red"))).toBe(
-      editSlot(style("outer", "color", "blue")),
-    );
+  test("lets a later value override an earlier one", () => {
+    const tree = foldEdits([decl("outer", "color", "red"), decl("outer", "color", "blue")]);
+    expect(tree.outer.styles.color).toBe("blue");
   });
 
-  test("separates the same key across kinds, targets and keys", () => {
-    const slots = new Set([
-      editSlot(style("outer", "color", "red")),
-      editSlot(attr("outer", "color", "red")),
-      editSlot(style("inner", "color", "red")),
-      editSlot(style("outer", "border-color", "red")),
-      editSlot(tag("outer", "button")),
-      editSlot(tag("inner", "button")),
-      editSlot(text("label", "hi")),
-      editSlot(text("text", "hi")),
+  test("does not disturb sibling declarations when one is overridden", () => {
+    const tree = foldEdits([
+      decl("outer", "color", "red"),
+      decl("outer", "padding", "8px"),
+      decl("outer", "color", "blue"),
     ]);
-    expect(slots.size).toBe(8);
-  });
-});
-
-describe("inspectorLines", () => {
-  test("keeps every edit in log order, superseded ones included", () => {
-    const edits = [
-      style("outer", "color", "red"),
-      style("outer", "border-radius", "8px"),
-      style("outer", "color", "blue"),
-    ];
-    const lines = inspectorLines(edits);
-    expect(lines.map((l) => l.edit.id)).toEqual(edits.map((e) => e.id));
+    expect(tree.outer.styles).toEqual({ color: "blue", padding: "8px" });
   });
 
-  test("marks an edit superseded only when a later edit takes its slot", () => {
-    const first = style("outer", "color", "red");
-    const other = style("outer", "border-radius", "8px");
-    const last = style("outer", "color", "blue");
-    const lines = inspectorLines([first, other, last]);
-    expect(lines.map((l) => l.superseded)).toEqual([true, false, false]);
-  });
-
-  test("marks every superseded edit, not just the most recent one", () => {
-    const lines = inspectorLines([
-      text("text", "a"),
-      text("text", "b"),
-      text("text", "c"),
-    ]);
-    expect(lines.map((l) => l.superseded)).toEqual([true, true, false]);
-  });
-
-  test("supersedes across players, since overrides are unrestricted", () => {
-    const mine = { ...style("outer", "color", "red"), playerId: 3 };
-    const theirs = { ...style("outer", "color", "blue"), playerId: 7 };
-    const lines = inspectorLines([mine, theirs]);
-    expect(lines[0].superseded).toBe(true);
-    expect(lines[1].superseded).toBe(false);
-  });
-});
-
-/**
- * A turn either *opens* a declaration by naming it, or *supplies a value*. An
- * open declaration is a statement of intent with no execution — it says "this
- * thing is rounded" without saying how much — so it must not reach the render.
- */
-const open = (target: "outer" | "inner", kind: "attribute" | "style", key: string): Edit => ({
-  id: `e${seq++}`,
-  playerId: 1,
-  turnIndex: seq,
-  target,
-  kind,
-  key,
-});
-
-describe("open declarations", () => {
-  test("keeps an unvalued property out of the render", () => {
-    const tree = foldEdits([open("outer", "style", "border-radius")]);
+  test("keeps an unanswered declaration out of the render", () => {
+    const tree = foldEdits([open("outer", "border-radius")]);
     // toEqual ignores undefined values, so check the key is truly absent.
     expect(Object.keys(tree.outer.styles)).toEqual([]);
   });
 
-  test("keeps an unvalued attribute out of the render", () => {
-    const tree = foldEdits([open("inner", "attribute", "role")]);
-    expect(Object.keys(tree.inner.attributes)).toEqual([]);
-  });
-
-  test("renders it once someone supplies the value", () => {
-    const tree = foldEdits([
-      open("outer", "style", "border-radius"),
-      style("outer", "border-radius", "12px"),
-    ]);
+  test("renders it once somebody answers", () => {
+    const tree = foldEdits([open("outer", "border-radius"), decl("outer", "border-radius", "12px")]);
     expect(tree.outer.styles).toEqual({ "border-radius": "12px" });
   });
+});
 
-  test("leaves other declarations alone", () => {
-    const tree = foldEdits([
-      style("outer", "display", "flex"),
-      open("outer", "style", "border-radius"),
+describe("editSlot", () => {
+  test("gives colliding declarations the same slot", () => {
+    expect(editSlot(decl("outer", "color", "red"))).toBe(editSlot(decl("outer", "color", "blue")));
+  });
+
+  test("separates targets, keys and kinds", () => {
+    const slots = new Set([
+      editSlot(decl("outer", "color", "red")),
+      editSlot(decl("inner", "color", "red")),
+      editSlot(decl("outer-text", "color", "red")),
+      editSlot(decl("outer", "border-color", "red")),
+      editSlot(text("outer-text")),
+      editSlot(text("inner-text")),
     ]);
-    expect(Object.keys(tree.outer.styles)).toEqual(["display"]);
+    expect(slots.size).toBe(6);
+  });
+});
+
+describe("inspectorLines", () => {
+  test("keeps every edit in log order", () => {
+    const edits = [decl("outer", "color", "red"), decl("outer", "color", "blue")];
+    expect(inspectorLines(edits).map((l) => l.edit.id)).toEqual(edits.map((e) => e.id));
   });
 
-  test("shares a slot with its value, so the value supersedes the opening", () => {
-    const opened = open("outer", "style", "border-radius");
-    const valued = style("outer", "border-radius", "12px");
-    const lines = inspectorLines([opened, valued]);
-    expect(lines.map((l) => l.superseded)).toEqual([true, false]);
+  test("marks an edit superseded only when a later one takes its slot", () => {
+    const lines = inspectorLines([
+      decl("outer", "color", "red"),
+      decl("outer", "padding", "8px"),
+      decl("outer", "color", "blue"),
+    ]);
+    expect(lines.map((l) => l.superseded)).toEqual([true, false, false]);
   });
 
-  test("stays visible on the inspector while nobody has answered it", () => {
-    const opened = open("outer", "style", "border-radius");
-    expect(inspectorLines([opened])[0].superseded).toBe(false);
+  test("supersedes across players, since overrides are unrestricted", () => {
+    const mine = { ...decl("outer", "color", "red"), playerId: 3 };
+    const theirs = { ...decl("outer", "color", "blue"), playerId: 7 };
+    expect(inspectorLines([mine, theirs]).map((l) => l.superseded)).toEqual([true, false]);
   });
 });
 
 describe("slotHistories", () => {
-  /**
-   * The inspector draws one line per declaration, not one per edit: the name in
-   * the colour of whoever opened it, the value in the colour of whoever
-   * answered, and anything overridden trailing as a comment. That needs the log
-   * grouped by slot, in the order the slots first appeared.
-   */
-  test("reports a declaration nobody has answered", () => {
-    const opened = open("outer", "style", "border-radius");
-    const [history] = slotHistories([opened]);
-    expect(history.opened).toBe(opened);
-    expect(history.current).toBeUndefined();
-    expect(history.overridden).toEqual([]);
-  });
-
   test("keeps the opener and the answerer apart", () => {
-    const opened = open("outer", "style", "border-radius");
-    const answer = style("outer", "border-radius", "12px");
+    const opened = open("outer", "border-radius");
+    const answer = decl("outer", "border-radius", "12px");
     const [history] = slotHistories([opened, answer]);
     expect(history.opened).toBe(opened);
     expect(history.current).toBe(answer);
     expect(history.overridden).toEqual([]);
   });
 
+  test("reports a declaration nobody has answered", () => {
+    const [history] = slotHistories([open("outer", "border-radius")]);
+    expect(history.current).toBeUndefined();
+  });
+
   test("collects overridden values oldest first, keeping the newest current", () => {
-    const opened = open("inner", "style", "background-color");
-    const green = style("inner", "background-color", "#34a853");
-    const blue = style("inner", "background-color", "#1a73e8");
-    const [history] = slotHistories([opened, green, blue]);
+    const green = decl("inner", "background-color", "#34a853");
+    const blue = decl("inner", "background-color", "#1a73e8");
+    const [history] = slotHistories([open("inner", "background-color"), green, blue]);
     expect(history.current).toBe(blue);
     expect(history.overridden).toEqual([green]);
   });
 
-  test("treats a tag as opened and answered in one move", () => {
-    const chosen = tag("inner", "button");
-    const [history] = slotHistories([chosen]);
-    expect(history.opened).toBe(chosen);
-    expect(history.current).toBe(chosen);
-  });
-
-  test("comments an overridden tag rather than losing it", () => {
-    const first = tag("inner", "div");
-    const second = tag("inner", "button");
-    const [history] = slotHistories([first, second]);
-    expect(history.current).toBe(second);
-    expect(history.overridden).toEqual([first]);
-  });
-
   test("orders slots by when they first appeared", () => {
     const histories = slotHistories([
-      style("outer", "display", "flex"),
-      open("outer", "style", "padding"),
-      tag("outer", "section"),
-      style("outer", "display", "grid"),
+      decl("outer", "display", "flex"),
+      open("outer", "padding"),
+      decl("outer", "display", "grid"),
     ]);
-    expect(histories.map((h) => h.key ?? h.kind)).toEqual(["display", "padding", "tag"]);
+    expect(histories.map((h) => h.key)).toEqual(["display", "padding"]);
   });
 
-  test("separates the two text slots", () => {
-    const histories = slotHistories([text("label", "a"), text("text", "b")]);
+  test("separates the two spans", () => {
+    const histories = slotHistories([text("outer-text"), text("inner-text")]);
     expect(histories).toHaveLength(2);
-    expect(histories.map((h) => h.target)).toEqual(["label", "text"]);
+    expect(histories.map((h) => h.target)).toEqual(["outer-text", "inner-text"]);
   });
 });

@@ -1,19 +1,52 @@
-import type { Edit, EditSlot, InspectorLine, RenderTree } from "./types";
+import type { Edit, EditSlot, EditTarget, InspectorLine, RenderTree } from "./types";
 
 /**
- * The last-write-wins identity of an edit. Two edits collide iff they produce
- * the same slot. Tag and text edits have no key, so their slot is just
- * target + kind.
+ * The blank slate every round starts from: two bare boxes, no spans.
+ *
+ * A span only exists once somebody spends a turn putting text in its box, so
+ * "nobody has added text" is a visible fact about the round rather than an
+ * absence you have to infer.
  */
-export function editSlot(edit: Edit): EditSlot {
-  const key = edit.kind === "attribute" || edit.kind === "style" ? edit.key : "";
-  return `${edit.target}|${edit.kind}|${key}`;
+function baseTree(): RenderTree {
+  return {
+    outer: { styles: {} },
+    "outer-text": { styles: {}, present: false },
+    inner: { styles: {} },
+    "inner-text": { styles: {}, present: false },
+  };
 }
 
 /**
- * Projects the log into inspector lines. Every edit survives in order — an
- * edit is marked superseded when a later one takes its slot, and gets drawn
- * struck through rather than removed.
+ * Left fold over the append-only edit log. Later edits win; nothing is removed
+ * from the log itself — see `slotHistories` for the full story of a slot.
+ */
+export function foldEdits(edits: Edit[]): RenderTree {
+  const tree = baseTree();
+
+  for (const edit of edits) {
+    if (edit.kind === "text") {
+      tree[edit.target].present = true;
+      continue;
+    }
+    // An opened-but-unanswered declaration is intent, not output — it belongs
+    // on the inspector and nowhere near the render.
+    if (edit.value !== undefined) tree[edit.target].styles[edit.key] = edit.value;
+  }
+
+  return tree;
+}
+
+/**
+ * The last-write-wins identity of an edit. Two edits collide iff they produce
+ * the same slot. A text move has no key, so its slot is target plus kind.
+ */
+export function editSlot(edit: Edit): EditSlot {
+  return `${edit.target}|${edit.kind}|${edit.kind === "style" ? edit.key : ""}`;
+}
+
+/**
+ * Projects the log into inspector lines, in order. An edit is marked superseded
+ * when a later one takes its slot.
  */
 export function inspectorLines(edits: Edit[]): InspectorLine[] {
   const winners = new Map<EditSlot, string>();
@@ -22,43 +55,6 @@ export function inspectorLines(edits: Edit[]): InspectorLine[] {
     edit,
     superseded: winners.get(editSlot(edit)) !== edit.id,
   }));
-}
-
-/** The blank slate every round starts from. */
-function baseTree(): RenderTree {
-  return {
-    outer: { tag: "div", attributes: {}, styles: {} },
-    inner: { tag: "div", attributes: {}, styles: {} },
-    label: "",
-    text: "",
-  };
-}
-
-/**
- * Left fold over the append-only edit log. Later edits win; nothing is removed
- * from the log itself — see `inspectorLines` for the superseded history.
- */
-export function foldEdits(edits: Edit[]): RenderTree {
-  const tree = baseTree();
-  for (const edit of edits) {
-    switch (edit.kind) {
-      case "text":
-        tree[edit.target] = edit.value;
-        break;
-      case "tag":
-        tree[edit.target].tag = edit.value;
-        break;
-      // An opened-but-unvalued declaration is intent, not output — it belongs
-      // on the inspector and nowhere near the render.
-      case "attribute":
-        if (edit.value !== undefined) tree[edit.target].attributes[edit.key] = edit.value;
-        break;
-      case "style":
-        if (edit.value !== undefined) tree[edit.target].styles[edit.key] = edit.value;
-        break;
-    }
-  }
-  return tree;
 }
 
 /**
@@ -72,9 +68,9 @@ export function foldEdits(edits: Edit[]): RenderTree {
  */
 export interface SlotHistory {
   slot: EditSlot;
-  target: Edit["target"];
+  target: EditTarget;
   kind: Edit["kind"];
-  /** Absent for tags and text, which have no name of their own. */
+  /** Absent on a text move, which has no name of its own. */
   key?: string;
   /** The first edit for this slot — whoever named it. */
   opened: Edit;
@@ -83,6 +79,9 @@ export interface SlotHistory {
   /** Earlier valued edits, oldest first. Never dropped. */
   overridden: Edit[];
 }
+
+const valueOf = (edit: Edit): string | undefined =>
+  edit.kind === "style" ? edit.value : undefined;
 
 /** Groups the log by slot, in the order the slots first appeared. */
 export function slotHistories(edits: Edit[]): SlotHistory[] {
@@ -100,12 +99,12 @@ export function slotHistories(edits: Edit[]): SlotHistory[] {
 
   return order.map((slot) => {
     const history = bySlot.get(slot)!;
-    const valued = history.filter((edit) => edit.value !== undefined);
+    const valued = history.filter((edit) => valueOf(edit) !== undefined);
     return {
       slot,
       target: history[0].target,
       kind: history[0].kind,
-      key: "key" in history[0] ? history[0].key : undefined,
+      key: history[0].kind === "style" ? history[0].key : undefined,
       opened: history[0],
       current: valued.at(-1),
       overridden: valued.slice(0, -1),

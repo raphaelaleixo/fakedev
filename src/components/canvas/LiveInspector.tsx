@@ -2,14 +2,8 @@ import { Box } from "@mui/material";
 import { slotHistories, type SlotHistory } from "../../game/fold";
 import ColorSwatch from "../ColorSwatch";
 import { SEAT_COLORS } from "../../game/constants";
-import type {
-  Edit,
-  EditKind,
-  ElementTarget,
-  RenderTree,
-  SeatColor,
-  TextTarget,
-} from "../../game/types";
+import { LOREM } from "../../game/constants";
+import type { Edit, EditTarget, RenderTree, SeatColor } from "../../game/types";
 import { color, font } from "../../theme/tokens";
 
 export interface SeatInfo {
@@ -24,6 +18,10 @@ export interface SeatInfo {
  * It draws the actual DOM, nested and indented, rather than a list of edits
  * about it. A blank round is two empty divs; by the end it's a component you
  * can read top to bottom. Nesting is real information and no list shows it.
+ *
+ * Everything is a div or a span — no tags to choose, no attributes to set — so
+ * every shape on screen was drawn by somebody with CSS. A span appears only
+ * once its text move has been played.
  *
  * **A declaration is one line carrying two people.** The name is the colour of
  * whoever opened it, the value the colour of whoever answered — so
@@ -56,9 +54,8 @@ export default function LiveInspector({
     const seat = seatById.get(playerId);
     return seat ? SEAT_COLORS[seat.color] : color.muted;
   };
-  const forElement = (element: ElementTarget, kind: EditKind) =>
-    histories.filter((h) => h.target === element && h.kind === kind);
-  const forText = (slot: TextTarget) => histories.filter((h) => h.target === slot);
+  const forTarget = (target: EditTarget) =>
+    histories.filter((h) => h.target === target && h.kind === "style");
 
   return (
     <Box
@@ -74,120 +71,94 @@ export default function LiveInspector({
         lineHeight: 1.8,
       }}
     >
-      <OpenTag element="outer" tree={tree} tint={tint} forElement={forElement} />
-
-      {forText("label").map((history) => (
-        <Line key={history.slot} indent={1}>
-          <Value history={history} tint={tint} />
-          <Overrides history={history} tint={tint} />
-        </Line>
-      ))}
-
-      <OpenTag
-        element="inner"
-        tree={tree}
-        tint={tint}
-        forElement={forElement}
-        indent={1}
-        // Inner's text and closing tag share its line, the way a short element
-        // gets written by hand.
-        trailing={
-          <>
-            {forText("text").map((history) => (
-              <Box component="span" key={history.slot}>
-                <Value history={history} tint={tint} />
-                <Overrides history={history} tint={tint} />
-              </Box>
-            ))}
-            <Punct>{`</${tree.inner.tag}>`}</Punct>
-          </>
-        }
-      />
-
+      <OpenTag tag="div" declarations={forTarget("outer")} tint={tint} />
+      <Span present={tree["outer-text"].present} declarations={forTarget("outer-text")} tint={tint} indent={1} />
+      <OpenTag tag="div" declarations={forTarget("inner")} tint={tint} indent={1} />
+      <Span present={tree["inner-text"].present} declarations={forTarget("inner-text")} tint={tint} indent={2} />
+      <Line indent={1}>
+        <Punct>&lt;/div&gt;</Punct>
+      </Line>
       <Line>
-        <Punct>{`</${tree.outer.tag}>`}</Punct>
+        <Punct>&lt;/div&gt;</Punct>
       </Line>
     </Box>
   );
 }
 
-/**
- * The element's opening tag, on one line.
- *
- * It fits now: each declaration collapsed from three lines to one when the
- * opener and the answerer started sharing a line, so `style={ … }` stays short
- * enough to read across.
- */
+/** A box's opening tag, on one line. */
 function OpenTag({
-  element,
-  tree,
+  tag,
+  declarations,
   tint,
-  forElement,
   indent = 0,
-  trailing,
 }: {
-  element: ElementTarget;
-  tree: RenderTree;
+  tag: string;
+  declarations: SlotHistory[];
   tint: (playerId: number) => string;
-  forElement: (element: ElementTarget, kind: EditKind) => SlotHistory[];
   indent?: number;
-  trailing?: React.ReactNode;
 }) {
-  const tags = forElement(element, "tag");
-  const attributes = forElement(element, "attribute");
-  const styles = forElement(element, "style");
-  const named = tags[0];
-
   return (
     <Line indent={indent}>
-      <Punct>&lt;</Punct>
+      <Punct>&lt;{tag}</Punct>
+      <StyleBlock declarations={declarations} tint={tint} />
+      <Punct>&gt;</Punct>
+    </Line>
+  );
+}
 
-      {/* Until someone spends a turn naming it, the div is nobody's choice. */}
-      {named ? (
-        <>
-          <Value history={named} tint={tint} />
-          <Overrides history={named} tint={tint} />
-        </>
-      ) : (
-        <Box component="span" sx={{ color: color.inkPunct, opacity: 0.7 }}>
-          {tree[element].tag}
-        </Box>
-      )}
+/**
+ * A span, which only exists once somebody has played the text move on its box.
+ * Until then the slot is genuinely empty — and that emptiness is information.
+ */
+function Span({
+  present,
+  declarations,
+  tint,
+  indent,
+}: {
+  present: boolean;
+  declarations: SlotHistory[];
+  tint: (playerId: number) => string;
+  indent: number;
+}) {
+  if (!present) return null;
+  return (
+    <Line indent={indent}>
+      <Punct>&lt;span</Punct>
+      <StyleBlock declarations={declarations} tint={tint} />
+      <Punct>&gt;</Punct>
+      <Box component="span" sx={{ color: color.muted }}>
+        {LOREM}
+      </Box>
+      <Punct>&lt;/span&gt;</Punct>
+    </Line>
+  );
+}
 
-      {styles.length > 0 && (
-        <>
-          <Punct> style={"{ "}</Punct>
-          {styles.map((history, i) => (
-            <Box component="span" key={history.slot}>
-              <Box component="span" sx={{ color: tint(history.opened.playerId) }}>
-                {history.key}
-              </Box>
-              <Punct>: </Punct>
-              <Value history={history} tint={tint} />
-              <Overrides history={history} tint={tint} />
-              {i < styles.length - 1 && <Punct>; </Punct>}
-            </Box>
-          ))}
-          <Punct>{" }"}</Punct>
-        </>
-      )}
-
-      {attributes.map((history) => (
+function StyleBlock({
+  declarations,
+  tint,
+}: {
+  declarations: SlotHistory[];
+  tint: (playerId: number) => string;
+}) {
+  if (declarations.length === 0) return null;
+  return (
+    <>
+      <Punct> style={"{ "}</Punct>
+      {declarations.map((history, i) => (
         <Box component="span" key={history.slot}>
-          {" "}
           <Box component="span" sx={{ color: tint(history.opened.playerId) }}>
             {history.key}
           </Box>
-          <Punct>=&quot;</Punct>
+          <Punct>: </Punct>
           <Value history={history} tint={tint} />
-          <Punct>&quot;</Punct>
           <Overrides history={history} tint={tint} />
+          {i < declarations.length - 1 && <Punct>; </Punct>}
         </Box>
       ))}
-
-      <Punct>&gt;</Punct>
-      {trailing}
-    </Line>
+      <Punct>{" }"}</Punct>
+    </>
   );
 }
 
@@ -201,7 +172,7 @@ function Value({
 }) {
   // Nobody has answered yet. The gap is the move, so it gets drawn.
   if (!history.current) return <Punct>…</Punct>;
-  const value = history.current.value ?? "";
+  const value = (history.current.kind === "style" && history.current.value) || "";
   return (
     <Box component="span" sx={{ color: tint(history.current.playerId) }}>
       <ColorSwatch value={value} />
@@ -227,8 +198,8 @@ function Overrides({
       <Punct> /* </Punct>
       {history.overridden.map((edit, i) => (
         <Box component="span" key={edit.id} sx={{ color: tint(edit.playerId) }}>
-          <ColorSwatch value={edit.value ?? ""} />
-          {edit.value}
+          <ColorSwatch value={(edit.kind === "style" && edit.value) || ""} />
+          {edit.kind === "style" && edit.value}
           {i < history.overridden.length - 1 && <Punct>, </Punct>}
         </Box>
       ))}

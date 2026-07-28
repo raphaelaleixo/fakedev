@@ -188,7 +188,7 @@ describe("createRound", () => {
   });
 
   test("never redraws a style already played this match", () => {
-    const used = STYLES.slice(0, 14).map((c) => c.id);
+    const used = STYLES.slice(0, -1).map((c) => c.id);
     const round = createRound({
       index: 1,
       seats,
@@ -200,7 +200,7 @@ describe("createRound", () => {
   });
 
   test("never redraws a component already played this match", () => {
-    const used = COMPONENTS.slice(0, 14).map((c) => c.id);
+    const used = COMPONENTS.slice(0, -1).map((c) => c.id);
     const round = createRound({
       index: 1,
       seats,
@@ -273,8 +273,9 @@ const anEdit = (playerId: number): Edit => ({
   playerId,
   turnIndex: -1,
   target: "inner",
-  kind: "tag",
-  value: "button",
+  kind: "style",
+  key: "display",
+  value: "flex",
 });
 
 describe("the turn loop", () => {

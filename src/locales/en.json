@@ -82,29 +82,21 @@
     "decksHint": "Everything it could be"
   },
   "composer": {
-    "element": "Which element",
+    "target": "Where",
     "move": "Your move",
     "moves": {
-      "tag": "element",
-      "attribute": "name an attribute",
       "style": "name a property",
-      "text": "text",
-      "value": "give a value"
+      "value": "give a value",
+      "text": "add text"
     },
-    "tagName": "Element",
+    "property": "Property",
     "slot": "Which one",
     "open": "waiting",
     "openHint": "Naming it is your whole turn. Someone else gives it a value.",
+    "textHint": "Adds lorem ipsum, and creates a span everyone can style.",
     "value": "Value",
     "commit": "Commit",
-    "on": "on",
-    "off": "off",
-    "key": {
-      "attribute": "Attribute",
-      "style": "Property"
-    },
     "keyPlaceholder": "type to search…",
-    "elementPlaceholder": "div, button, input…",
     "valuePlaceholder": "type a value…",
     "colorPlaceholder": "or any CSS color",
     "invalidValue": "The browser can't parse that."
@@ -152,12 +144,10 @@
       "glassmorphism": "Glassmorphism",
       "bootstrap": "Bootstrap",
       "dos-terminal": "DOS Terminal",
-      "flat-design": "Flat Design",
-      "metro-tile": "Metro Tile",
-      "y2k-chrome": "Y2K Chrome",
       "vaporwave": "Vaporwave",
       "claymorphic": "Claymorphic",
-      "wireframe": "Wireframe"
+      "wireframe": "Wireframe",
+      "newspaper": "Newspaper"
     },
     "component": {
       "progress-bar": "Progress Bar",
@@ -165,16 +155,15 @@
       "toggle-switch": "Toggle Switch",
       "avatar": "Avatar",
       "notification-badge": "Notification Badge",
-      "tag-chip": "Tag / Chip",
       "tooltip": "Tooltip",
       "search-bar": "Search Bar",
-      "alert-banner": "Alert Banner",
-      "modal-dialog": "Modal Dialog",
-      "icon-button": "Icon Button",
-      "segmented-control": "Segmented Control",
+      "backdrop": "Backdrop",
+      "primary-button": "Primary Button",
+      "blockquote": "Blockquote",
       "checkbox": "Checkbox",
-      "skeleton-loader": "Skeleton Loader",
-      "keyboard-key": "Keyboard Key"
+      "radio-selected": "Radio (Selected)",
+      "app-header": "App Header",
+      "hero-banner": "Hero Banner"
     }
   }
 }

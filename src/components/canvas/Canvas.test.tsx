@@ -27,9 +27,9 @@ describe("Canvas", () => {
   test("never puts either half of the Secret on the big screen", () => {
     const { container } = renderCanvas();
     expect(screen.queryByText(/Progress Bar/)).toBeNull();
-    expect(screen.queryByText(/Flat Design/)).toBeNull();
+    expect(screen.queryByText(/Material/)).toBeNull();
     expect(container.innerHTML).not.toContain("progress-bar");
-    expect(container.innerHTML).not.toContain("flat-design");
+    expect(container.innerHTML).not.toContain("material");
   });
 
   test("never puts the Chameleon's identity on the big screen", () => {
@@ -81,21 +81,39 @@ describe("Canvas", () => {
     const { container } = renderCanvas();
     const text = container.textContent ?? "";
     expect(text).toContain("<div");
+    expect(text).toContain("<span");
     expect(text).toContain("Lorem ipsum dolor sit");
-    expect(text).toContain("<button");
-    expect(text).toContain("</button>");
+    expect(text).toContain("</span>");
     expect(text).toContain("</div>");
   });
 
-  test("keeps the whole opening tag on one line", () => {
+  /** Everything is a div or a span — every shape was drawn with CSS. */
+  test("never invents a tag or an attribute, because neither is a move", () => {
     const { container } = renderCanvas();
-    expect(container.textContent).toContain("style={ display: flex; padding: 20px }");
+    const text = container.textContent ?? "";
+    expect(text).not.toContain("<button");
+    expect(text).not.toContain("role=");
+  });
+
+  test("keeps a whole opening tag on one line", () => {
+    const { container } = renderCanvas();
+    expect(container.textContent).toContain("style={ background-color: #1a73e8");
   });
 
   test("shows a declaration nobody has answered, with the gap left in it", () => {
     const { container } = renderCanvas();
-    // Turn 8 opened `role` and no one ever answered it.
-    expect(container.textContent).toContain('role="…"');
+    // Turn 8 opened `border-radius` and no one ever answered it.
+    expect(container.textContent).toContain("border-radius: …");
+  });
+
+  /**
+   * The text move creates the span, so a round where nobody played it has no
+   * span at all — and that emptiness is information about the Secret.
+   */
+  test("shows no span until somebody adds text", () => {
+    const { container } = renderCanvas(4);
+    expect(container.textContent).not.toContain("<span");
+    expect(renderCanvas(5).container.textContent).toContain("<span");
   });
 
   /**

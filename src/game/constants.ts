@@ -24,11 +24,13 @@ export const CORRECT_VOTER_POINTS = 1;
 export const STEAL_SLATE_SIZE = 5;
 
 /**
- * A layout constraint, not an anti-cheat measure — a long string blows up the
- * render. Applies to `{label}`, `{text}`, and `aria-label`, which is invisible
- * on the render but every bit as loud on the inspector.
+ * The only copy in the game, and it is never chosen.
+ *
+ * A turn picks *where* text goes, never what it says, so no move can spell out
+ * the Secret — which retires the whole "spelling it out is self-defeating"
+ * argument by making it impossible rather than merely unwise.
  */
-export const TEXT_MAX_LENGTH = 24;
+export const LOREM = "Lorem ipsum dolor sit";
 
 /** Pure social pressure. Nothing happens when it expires — no auto-play, no forfeit. */
 export const SOFT_TIMER_SECONDS = 30;

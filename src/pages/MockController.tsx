@@ -54,11 +54,11 @@ export default function MockController() {
                 </Typography>
                 {committed.map((edit) => (
                   <Box
-                    key={edit.id + (edit.value ?? "")}
+                    key={edit.id}
                     sx={{ fontFamily: font.mono, fontSize: "0.85rem" }}
                   >
-                    {edit.target} · {edit.kind} · {"key" in edit ? edit.key : ""}
-                    {edit.value ? `: ${edit.value}` : ""}
+                    {edit.target} · {edit.kind === "style" ? edit.key : "text"}
+                    {edit.kind === "style" && edit.value ? `: ${edit.value}` : ""}
                   </Box>
                 ))}
               </Box>

@@ -32,8 +32,9 @@ A Secret is a **style** and a **component**:
 
 > *Neumorphic* · *Toggle Switch*
 
-Fifteen of each, so **225 Secrets from thirty authored items**. Both halves are
-hidden from the Chameleon; both are known to every Dev.
+Thirteen styles and fourteen components, so **182 Secrets from twenty-seven
+authored items**. Both halves are hidden from the Chameleon; both are known to
+every Dev.
 
 This is the spine of the design and it earns three things at once:
 
@@ -50,29 +51,43 @@ nothing more. This departs from the original draft, where a public Category
 framed every round.
 
 **No repeats within a match.** Styles and components are tracked separately, so
-neither half ever recurs. Fifteen rounds are available before either pool is
-exhausted, which no match reaches.
+neither half ever recurs. Thirteen rounds are available before the styles run
+out, which no match reaches.
 
 ## The base structure
 
 Every round starts from the same blank slate:
 
 ```html
-<ComponentA id="outer">
-  {label}
-  <ComponentB id="inner">
-    {text}
-  </ComponentB>
-</ComponentA>
+<div id="outer">
+  <div id="inner"></div>
+</div>
 ```
 
-Two elements and two text slots — `{label}` sits in `outer` before `inner`,
-`{text}` inside `inner`. Slot order is fixed, though a `flex-direction` edit on
-`outer` inverts it, which is a deliberately discoverable trick.
+**Two divs, and nothing else is given.** No tags to pick, no attributes to set.
+Everything on screen at the end was drawn with CSS.
 
-Players never see four targets. The canvas has two *things*, each owning a text
-slot, so a turn picks an element and then a move. Outer's text is `{label}`,
-inner's text is `{text}`.
+That's deliberate. The moment a tag is a move, the *correct* answer at work
+becomes the *worst* play here — the right way to build a radio button is
+`<input type="radio">`, which would name the component out loud. Removing tags
+removes the trap, and it leaves one vocabulary to think in.
+
+**Text is a placement, not a sentence.** A text move drops a `<span>` holding a
+fixed lorem ipsum — the same copy every time, so nobody can ever write their way
+to a point or a giveaway. What the move buys is a *third element to style*:
+
+```html
+<div id="outer">
+  <span id="outer-text">Lorem ipsum dolor sit</span>
+  <div id="inner">
+    <span id="inner-text">Lorem ipsum dolor sit</span>
+  </div>
+</div>
+```
+
+A span appears only once somebody has spent a turn on it, and from then on it's
+a target like any other. Slot order is fixed, though a `flex-direction` edit
+inverts it, which is a deliberately discoverable trick.
 
 ## A turn
 
@@ -82,11 +97,9 @@ Each turn does **one** of these, and never two:
 
 | Move | |
 |---|---|
-| **element** | set the tag — `<button>` |
-| **text** | set this element's text |
-| **name an attribute** | open it. Your turn ends here. |
 | **name a property** | open it. Your turn ends here. |
 | **give a value** | answer something open, or override something set |
+| **add text** | bring this box's span into being |
 
 **Naming a declaration is the whole turn.** `border-radius` says "this thing is
 rounded" and commits to nothing else; somebody else decides what it becomes. So
@@ -110,9 +123,10 @@ The big screen shows the **DOM**, nested and indented. A blank round is two empt
 divs; a played one is a component you can read.
 
 ```html
-<div style={ display: flex; padding: 20px } role="…">
-  Lorem ipsum dolor sit
-  <button style={ background-color: #1a73e8 /* #34a853 */ }></button>
+<div style={ display: flex; padding: 20px; border-radius: … }>
+  <div style={ background-color: #1a73e8 /* #34a853 */ }>
+    <span style={ color: #ffffff }>Lorem ipsum dolor sit</span>
+  </div>
 </div>
 ```
 
@@ -209,7 +223,7 @@ revealed, the render shown for the first time, points and the scoreboard.
 
 - **Persistent header** — the Secret's two halves, or `FAKE DEV` for the
   Chameleon. The only surface in the game where the Secret appears.
-- **The Chameleon also sees both decks** — all fifteen styles and all fifteen
+- **The Chameleon also sees both decks** — all thirteen styles and all fourteen
   components. That leaks nothing (the decks are public knowledge in any game
   you've played twice) and lets them pick a private hypothesis and play toward
   it consistently, instead of flailing.
@@ -226,12 +240,11 @@ revealed, the render shown for the first time, points and the scoreboard.
   waits; the turn never advances. Needs no code.
 - **Rejoin** — the same URL restores seat, role and Secret. The masthead's room
   code opens the QR and seat links from any screen.
-- **Tie vote** — Chameleon escapes with +3.
+- **Tie vote** — nobody is caught; the Chameleon escapes with +2.
 - **Illegal moves** — impossible by construction; every step is a constrained
   set, and values are gated on `CSS.supports`.
-- **Text length** — `{label}`, `{text}` and `aria-label` capped at 24 characters.
-  A layout constraint, not anti-cheat: spelling out the Secret is self-defeating,
-  so the incentive structure polices itself.
+- **Writing the answer down** — impossible. Copy is fixed lorem ipsum; the only
+  thing a text move decides is *where* a span exists.
 - **Player leaves in lobby** — fine. Below 4, the match can't start.
 
 ## Vocabulary

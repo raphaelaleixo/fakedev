@@ -16,13 +16,17 @@ function lookup(key: string): unknown {
  * sixteenth style or a missing label fails CI instead of surfacing mid-game.
  */
 describe("the decks", () => {
-  test("holds fifteen of each", () => {
-    expect(STYLES).toHaveLength(15);
-    expect(COMPONENTS).toHaveLength(15);
+  /**
+   * Deliberately explicit. The lists are curated, not grown — a deck that
+   * changes size should be a decision somebody made, not a diff nobody noticed.
+   */
+  test("holds the curated counts", () => {
+    expect(STYLES).toHaveLength(13);
+    expect(COMPONENTS).toHaveLength(14);
   });
 
-  test("offers 225 Secrets from thirty authored items", () => {
-    expect(STYLES.length * COMPONENTS.length).toBe(225);
+  test("offers 182 Secrets from twenty-seven authored items", () => {
+    expect(STYLES.length * COMPONENTS.length).toBe(182);
   });
 
   test("gives every entry a unique id within its deck", () => {

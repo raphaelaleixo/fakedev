@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { advanceMatch, seatColorFor, startMatch, startNextRound } from "./match";
 import { MAX_PLAYERS, SEAT_COLOR_ORDER } from "./constants";
+import { COMPONENTS, STYLES } from "./content/deck";
 import type { MatchState, Round } from "./types";
 
 const seats = [1, 2, 3, 4];
@@ -56,11 +57,13 @@ describe("startNextRound", () => {
     expect(next.round?.index).toBe(7);
   });
 
-  test("keeps fifteen rounds available before either deck runs dry", () => {
+  /** The shorter deck sets the ceiling, and it is far past any real match. */
+  test("never repeats a half until the shorter deck runs dry", () => {
+    const rounds = Math.min(STYLES.length, COMPONENTS.length);
     let match = startMatch(seats, () => 0.5);
     const styles = new Set<string>();
     const components = new Set<string>();
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < rounds; i++) {
       styles.add(match.round!.styleId);
       components.add(match.round!.componentId);
       match = {
@@ -68,10 +71,10 @@ describe("startNextRound", () => {
         usedStyleIds: [...match.usedStyleIds, match.round!.styleId],
         usedComponentIds: [...match.usedComponentIds, match.round!.componentId],
       };
-      if (i < 14) match = startNextRound(match, () => 0.5);
+      if (i < rounds - 1) match = startNextRound(match, () => 0.5);
     }
-    expect(styles.size).toBe(15);
-    expect(components.size).toBe(15);
+    expect(styles.size).toBe(rounds);
+    expect(components.size).toBe(rounds);
   });
 
   test("refuses to deal into a finished match", () => {

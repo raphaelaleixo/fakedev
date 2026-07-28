@@ -1,118 +1,61 @@
 import { describe, expect, test } from "vitest";
 import { renderTreeToHtml } from "./render";
+import { LOREM } from "./constants";
 import type { RenderTree } from "./types";
 
 function tree(overrides: Partial<RenderTree> = {}): RenderTree {
   return {
-    outer: { tag: "div", attributes: {}, styles: {} },
-    inner: { tag: "div", attributes: {}, styles: {} },
-    label: "",
-    text: "",
+    outer: { styles: {} },
+    "outer-text": { styles: {}, present: false },
+    inner: { styles: {} },
+    "inner-text": { styles: {}, present: false },
     ...overrides,
   };
 }
 
 describe("renderTreeToHtml", () => {
-  test("nests inner inside outer", () => {
+  test("nests inner inside outer, with no spans until they are played", () => {
     expect(renderTreeToHtml(tree())).toBe("<div><div></div></div>");
   });
 
-  test("puts the label in outer, before inner", () => {
-    const html = renderTreeToHtml(tree({ label: "I'm not a robot", text: "Submit" }));
-    expect(html).toBe("<div>I&#39;m not a robot<div>Submit</div></div>");
-  });
-
-  test("applies the tag of each element", () => {
+  test("puts outer's span before inner, and inner's inside it", () => {
     const html = renderTreeToHtml(
       tree({
-        outer: { tag: "label", attributes: {}, styles: {} },
-        inner: { tag: "button", attributes: {}, styles: {} },
+        "outer-text": { styles: {}, present: true },
+        "inner-text": { styles: {}, present: true },
       }),
     );
-    expect(html).toBe("<label><button></button></label>");
-  });
-
-  test("serializes attributes", () => {
-    const html = renderTreeToHtml(
-      tree({
-        inner: { tag: "input", attributes: { type: "checkbox" }, styles: {} },
-      }),
+    expect(html).toBe(
+      `<div><span>${LOREM}</span><div><span>${LOREM}</span></div></div>`,
     );
-    expect(html).toContain('<input type="checkbox">');
   });
 
-  test("serializes styles into one style attribute", () => {
+  test("serializes declarations into one style attribute", () => {
     const html = renderTreeToHtml(
-      tree({
-        outer: {
-          tag: "div",
-          attributes: {},
-          styles: { "background-color": "#eee", padding: "8px" },
-        },
-      }),
+      tree({ outer: { styles: { "background-color": "#eee", padding: "8px" } } }),
     );
     expect(html).toContain('style="background-color: #eee; padding: 8px"');
   });
 
-  test("drops a boolean attribute set to false rather than rendering it", () => {
+  test("styles a span independently of its box", () => {
     const html = renderTreeToHtml(
-      tree({ inner: { tag: "button", attributes: { disabled: "false" }, styles: {} } }),
+      tree({ "inner-text": { styles: { "font-style": "italic" }, present: true } }),
     );
-    expect(html).not.toContain("disabled");
+    expect(html).toContain('<span style="font-style: italic">');
   });
 
-  test("renders a boolean attribute set to true as a bare attribute", () => {
-    const html = renderTreeToHtml(
-      tree({ inner: { tag: "button", attributes: { disabled: "true" }, styles: {} } }),
-    );
-    expect(html).toContain("<button disabled>");
-  });
-
-  test("closes a void element without children, as a browser would", () => {
-    const html = renderTreeToHtml(
-      tree({ inner: { tag: "input", attributes: {}, styles: {} }, text: "lost" }),
-    );
-    expect(html).toBe("<div><input></div>");
-  });
-
-  test("keeps the label when a void inner swallows the text slot", () => {
-    const html = renderTreeToHtml(
-      tree({
-        inner: { tag: "input", attributes: {}, styles: {} },
-        label: "Email",
-        text: "lost",
-      }),
-    );
-    expect(html).toBe("<div>Email<input></div>");
-  });
-
-  test("escapes text so a stray angle bracket cannot inject markup", () => {
-    const html = renderTreeToHtml(tree({ text: "<script>alert(1)</script>" }));
-    expect(html).not.toContain("<script>");
-    expect(html).toContain("&lt;script&gt;");
-  });
-
-  test("escapes attribute values so a quote cannot break out", () => {
-    const html = renderTreeToHtml(
-      tree({
-        inner: { tag: "input", attributes: { placeholder: '" onload="x' }, styles: {} },
-      }),
-    );
+  /**
+   * Copy is never chosen, so it can't carry markup — but the escaping stays as
+   * a guard on values, which are free-form.
+   */
+  test("escapes a value that would break out of the attribute", () => {
+    const html = renderTreeToHtml(tree({ outer: { styles: { color: '" onload="x' } } }));
     expect(html).not.toContain('onload="x');
     expect(html).toContain("&quot;");
   });
 
-  test("rejects a tag name that is not a plain identifier", () => {
-    const html = renderTreeToHtml(
-      tree({ outer: { tag: 'div onload="x"', attributes: {}, styles: {} } }),
-    );
-    expect(html).toBe("<div><div></div></div>");
-  });
-
-  test("rejects an attribute name that is not a plain identifier", () => {
-    const html = renderTreeToHtml(
-      tree({ inner: { tag: "div", attributes: { 'x" onload="y': "1" }, styles: {} } }),
-    );
+  test("drops a property name that is not a plain identifier", () => {
+    const html = renderTreeToHtml(tree({ outer: { styles: { 'x" onload': "1" } } }));
     expect(html).not.toContain("onload");
   });
 });

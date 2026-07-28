@@ -34,18 +34,6 @@ export default function ValueEditor({
   const { t } = useTranslation();
 
   switch (schema?.valueType) {
-    case "boolean":
-      return (
-        <Choices
-          options={[
-            { label: t("composer.on"), value: "true" },
-            { label: t("composer.off"), value: "false" },
-          ]}
-          value={value}
-          onChange={onChange}
-        />
-      );
-
     case "enum":
       return <Choices options={schema.options ?? []} value={value} onChange={onChange} />;
 

@@ -106,7 +106,7 @@ describe("ResultScreen", () => {
 
   test("reveals both halves of the Secret", () => {
     show(<ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />);
-    expect(screen.getByText("Flat Design")).toBeInTheDocument();
+    expect(screen.getByText("Material")).toBeInTheDocument();
     expect(screen.getByText("Progress Bar")).toBeInTheDocument();
   });
 
@@ -118,7 +118,7 @@ describe("ResultScreen", () => {
   test("credits naming both halves", () => {
     show(
       <ResultScreen
-        round={mockRoundAt("result", { styleId: "flat-design", componentId: "progress-bar" })}
+        round={mockRoundAt("result", { styleId: "material", componentId: "progress-bar" })}
         {...props}
       />,
     );
@@ -128,7 +128,7 @@ describe("ResultScreen", () => {
   test("credits naming half of it, and pays both sides", () => {
     show(
       <ResultScreen
-        round={mockRoundAt("result", { styleId: "flat-design", componentId: "avatar" })}
+        round={mockRoundAt("result", { styleId: "material", componentId: "avatar" })}
         {...props}
       />,
     );

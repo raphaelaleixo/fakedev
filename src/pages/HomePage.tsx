@@ -1,7 +1,8 @@
 import { Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { Plane, Skyline } from "../components/Skyline";
+import { Box, Button, Link, Stack, Typography } from "@mui/material";
+import { Skyline } from "../components/Skyline";
+import { Ludoratory } from "../components/Ludoratory";
 import { color, font } from "../theme/tokens";
 
 /**
@@ -12,6 +13,16 @@ import { color, font } from "../theme/tokens";
  * An homage to the game this adapts, not a reproduction of it: our own
  * silhouette, our own typeface, and the original credited below.
  */
+/** The small print, in one voice: mono, tight, and quiet against the flame. */
+const fine = {
+  fontFamily: font.mono,
+  fontSize: "0.72rem",
+  lineHeight: 1.5,
+  letterSpacing: "0.06em",
+  color: color.onFlame,
+  opacity: 0.75,
+} as const;
+
 export default function HomePage() {
   const { t } = useTranslation();
 
@@ -26,27 +37,8 @@ export default function HomePage() {
         overflow: "hidden",
       }}
     >
-      {/* The empty half, with one mark in it. */}
-      <Box sx={{ flex: "1 1 auto", position: "relative", minHeight: 120 }}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: { xs: "18%", md: "24%" },
-            left: 0,
-            animation: "drift 30s linear infinite",
-            "@keyframes drift": {
-              from: { transform: "translateX(-15vw)" },
-              to: { transform: "translateX(105vw)" },
-            },
-            "@media (prefers-reduced-motion: reduce)": {
-              animation: "none",
-              transform: "translateX(14vw)",
-            },
-          }}
-        >
-          <Plane size={54} />
-        </Box>
-      </Box>
+      {/* The empty half. Nothing in it — that is the whole idea. */}
+      <Box sx={{ flex: "1 1 auto", minHeight: 120 }} />
 
       {/* Same gutters and column as the title band, so the houses stand on the
           same left edge as the "A" and their ground line meets the flame. */}
@@ -74,7 +66,7 @@ export default function HomePage() {
               fontFamily: font.display,
               fontWeight: 800,
               textTransform: "uppercase",
-              fontSize: "clamp(2.6rem, 11vw, 7rem)",
+              fontSize: "clamp(2.1rem, 8.6vw, 5.4rem)",
               lineHeight: 0.86,
               letterSpacing: "-0.035em",
             }}
@@ -89,7 +81,7 @@ export default function HomePage() {
               textTransform: "uppercase",
               fontSize: "clamp(0.95rem, 3.4vw, 2.1rem)",
               letterSpacing: "0.12em",
-              mt: 0.5,
+              mt: "0.1em",
             }}
           >
             {t("home.titleTail")}
@@ -134,18 +126,34 @@ export default function HomePage() {
             </Button>
           </Stack>
 
-          <Typography
-            sx={{
-              mt: { xs: 3, md: 4 },
-              fontFamily: font.mono,
-              fontSize: "0.72rem",
-              letterSpacing: "0.06em",
-              color: color.onFlame,
-              opacity: 0.75,
-            }}
-          >
-            {t("home.credit")}
-          </Typography>
+          <Typography sx={{ ...fine, mt: { xs: 3, md: 4 } }}>{t("home.credit")}</Typography>
+
+          {/* The one part of the cover that belongs to the collection rather
+              than to this game, so it is lifted verbatim from the others. */}
+          <Stack direction="row" spacing={1.5} sx={{ mt: 1.5, alignItems: "center" }}>
+            <Ludoratory size={30} sx={{ flex: "none", color: color.onFlame, opacity: 0.75 }} />
+            <Box>
+              <Typography sx={fine}>
+                {t("footer.madeByPrefix")}
+                <Link href="https://ludoratory.com" target="_blank" rel="noopener noreferrer" sx={{ color: "inherit" }}>
+                  {t("footer.madeByLink")}
+                </Link>
+                {t("footer.madeBySuffix")}
+              </Typography>
+              <Typography sx={fine}>
+                {t("footer.licensePrefix")}
+                <Link
+                  href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ color: "inherit" }}
+                >
+                  {t("footer.licenseLink")}
+                </Link>
+                {t("footer.licenseSuffix")}
+              </Typography>
+            </Box>
+          </Stack>
         </Box>
       </Box>
     </Box>

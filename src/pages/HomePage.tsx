@@ -1,8 +1,10 @@
-import { Link as RouterLink } from "react-router-dom";
+import { useState } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Link, Stack, Typography } from "@mui/material";
 import { Skyline } from "../components/Skyline";
 import { Ludoratory } from "../components/Ludoratory";
+import { useGame } from "../contexts/GameContext";
 import { color, font } from "../theme/tokens";
 
 /**
@@ -25,6 +27,26 @@ const fine = {
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { createRoom } = useGame();
+  const [opening, setOpening] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  /**
+   * The cover's primary action opens a room outright. Asking for a code first
+   * is backwards for the one person who doesn't have one yet — they're the
+   * person the code comes *from*.
+   */
+  async function openRoom() {
+    setOpening(true);
+    setFailed(false);
+    try {
+      navigate(`/room/${await createRoom()}`);
+    } catch {
+      setOpening(false);
+      setFailed(true);
+    }
+  }
 
   return (
     <Box
@@ -110,16 +132,17 @@ export default function HomePage() {
             sx={{ mt: { xs: 3, md: 4 } }}
           >
             <Button
-              component={RouterLink}
-              to="/join"
+              onClick={openRoom}
+              disabled={opening}
               size="large"
               sx={{
                 backgroundColor: color.ink,
                 color: color.flame,
                 "&:hover": { backgroundColor: "#000" },
+                "&.Mui-disabled": { backgroundColor: color.ink, color: color.flame, opacity: 0.6 },
               }}
             >
-              {t("home.newGame")}
+              {opening ? t("home.newGamePending") : t("home.newGame")}
             </Button>
             <Button
               component={RouterLink}
@@ -142,6 +165,12 @@ export default function HomePage() {
               {t("home.howToPlay")}
             </Button>
           </Stack>
+
+          {failed && (
+            <Typography role="alert" sx={{ ...fine, fontWeight: 700, mt: 1.5 }}>
+              {t("home.newGameFailed")}
+            </Typography>
+          )}
 
           {/* The one part of the cover that belongs to the collection rather
               than to this game, so it is lifted verbatim from the others. */}

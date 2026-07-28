@@ -4,7 +4,9 @@
     "titleMain": "A Fake Dev",
     "titleTail": "Goes to Amsterdam",
     "subtitle": "Build a component together. One of you has no idea what it is.",
-    "newGame": "Open a room",
+    "newGame": "New game",
+    "newGamePending": "Opening…",
+    "newGameFailed": "Couldn't open a room. Check your connection and try again.",
     "resumeGame": "Join a room",
     "howToPlay": "How to play",
     "credit": "After A Fake Artist Goes to New York by Jun Sasaki, Oink Games."

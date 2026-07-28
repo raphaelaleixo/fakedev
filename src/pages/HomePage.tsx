@@ -65,19 +65,48 @@ const HOUSES_WIDTH = "min(clamp(13rem, 26.5cqi, 18.4rem), 42dvh)";
  * Everything painted flame therefore overlaps its neighbour by a hair. The
  * houses do the same for the same reason: their ground bar is flame, so the
  * overlap is invisible and the two read as one surface.
+ *
+ * The band pads its bottom by the same amount, so nothing it contains sits in
+ * the strip the footer paints over — which was clipping the outlined button's
+ * bottom border and reading as the footer covering the button.
  */
-const SEAM_OVERLAP = "-2px";
+const SEAM_OVERLAP = 2;
 const flame = { backgroundColor: color.flame, color: color.ink, ...bleed } as const;
 
-/** The small print, in one voice: mono, tight, and quiet against the flame. */
+/**
+ * The small print, in one voice: the display face, small and a shade off the ink.
+ *
+ * The cover is set in Bricolage throughout — only the buttons keep the mono the
+ * theme gives them, which is the app's interface voice and belongs on controls
+ * rather than on prose.
+ *
+ * Its quietness comes from size, tracking and `onFlame` being a warmer, darker
+ * brown than the headline's ink — not from opacity. A composited colour is
+ * harder to reason about than a token, drags any SVG beside it down with the
+ * text, and gets fought over by the view transition, which fades these same
+ * elements.
+ */
 const fine = {
-  fontFamily: font.mono,
-  fontSize: "0.72rem",
+  fontFamily: font.display,
+  // index.html loads Bricolage at 600 and 800 only. Asking for 400 would get
+  // 600 anyway, by CSS font matching — better to say so than to let the
+  // browser decide.
+  fontWeight: 600,
+  fontSize: "0.78rem",
   lineHeight: 1.5,
-  letterSpacing: "0.06em",
+  // A grotesque needs far less tracking than the mono this replaced; 0.06em
+  // was holding monospaced letters apart, and reads as loose here.
+  letterSpacing: "0.02em",
   color: color.onFlame,
-  opacity: 0.75,
 } as const;
+
+/**
+ * The three actions differ in fill and border colour and in nothing else. A
+ * border occupies space whether or not you can see it, so the two that read as
+ * borderless carry a transparent one — otherwise the outlined button comes out
+ * 4px larger in both directions than the others.
+ */
+const action = { border: "2px solid" } as const;
 
 /** Links have to be findable without colour, and inherit is all we give them. */
 const inherited = {
@@ -145,7 +174,7 @@ export default function HomePage() {
           sx={{
             ...bleed,
             containerType: "inline-size",
-            mb: SEAM_OVERLAP,
+            mb: `-${SEAM_OVERLAP}px`,
             viewTransitionName: "cover-art",
           }}
         >
@@ -156,6 +185,10 @@ export default function HomePage() {
           sx={{
             ...flame,
             pt: { xs: 3, md: 4 },
+            // Reserves the strip the footer paints over; without it the
+            // outlined button's bottom border was being clipped, which read as
+            // the footer covering the button.
+            pb: `${SEAM_OVERLAP}px`,
             containerType: "inline-size",
             viewTransitionName: "cover-band",
           }}
@@ -197,14 +230,13 @@ export default function HomePage() {
           <Typography
             sx={{
               ...fine,
-              // JetBrains Mono ships 400/500/700 here; 700 is a real face, not
-              // a synthesised one.
-              fontWeight: 700,
-              fontSize: "clamp(0.8rem, 1.45cqi, 1rem)",
+              // 800 is the other weight loaded, and it ties the line to the
+              // headline above it rather than to the footer below.
+              fontWeight: 800,
+              fontSize: "clamp(0.85rem, 1.45cqi, 1.05rem)",
               // Progressive enhancement: evens the two wrapped lines where
               // supported, ignored entirely where it isn't.
               textWrap: "balance",
-              opacity: 0.9,
               mt: { xs: 2, md: 2.5 },
             }}
           >
@@ -227,10 +259,15 @@ export default function HomePage() {
               aria-disabled={opening}
               size="large"
               sx={{
+                ...action,
                 backgroundColor: color.ink,
+                borderColor: "transparent",
                 color: color.flame,
                 "&:hover": { backgroundColor: "#000" },
-                '&[aria-disabled="true"]': { opacity: 0.6, cursor: "progress" },
+                '&[aria-disabled="true"]': {
+                  backgroundColor: color.inkPanel,
+                  cursor: "progress",
+                },
               }}
             >
               {opening ? t("home.newGamePending") : t("home.newGame")}
@@ -241,7 +278,8 @@ export default function HomePage() {
               viewTransition
               size="large"
               sx={{
-                border: `2px solid ${color.ink}`,
+                ...action,
+                borderColor: color.ink,
                 color: color.ink,
                 "&:hover": { backgroundColor: color.ink, color: color.flame },
               }}
@@ -253,7 +291,12 @@ export default function HomePage() {
               to="/how-to-play"
               viewTransition
               size="large"
-              sx={{ color: color.ink, "&:hover": { textDecoration: "underline" } }}
+              sx={{
+                ...action,
+                borderColor: "transparent",
+                color: color.ink,
+                "&:hover": { textDecoration: "underline" },
+              }}
             >
               {t("home.howToPlay")}
             </Button>
@@ -262,7 +305,7 @@ export default function HomePage() {
           {/* Losing the room stops you dead, so it interrupts. The "Opening…"
               state deliberately does not — interstitial announcements are noise. */}
           {failed && (
-            <Typography role="alert" sx={{ ...fine, fontWeight: 700, mt: 1.5 }}>
+            <Typography role="alert" sx={{ ...fine, fontWeight: 800, mt: 1.5 }}>
               {t("home.newGameFailed")}
             </Typography>
           )}
@@ -277,7 +320,7 @@ export default function HomePage() {
         sx={{
           ...flame,
           viewTransitionName: "cover-foot",
-          mt: SEAM_OVERLAP,
+          mt: `-${SEAM_OVERLAP}px`,
           pt: { xs: 3, md: 4 },
           pb: { xs: 7, md: 10 },
           display: "grid",
@@ -288,7 +331,7 @@ export default function HomePage() {
       >
         <Ludoratory
           size={30}
-          sx={{ gridRow: "1 / 3", color: color.onFlame, opacity: 0.75 }}
+          sx={{ gridRow: "1 / 3", color: color.onFlame }}
         />
         <Typography sx={fine}>
           {t("footer.madeByPrefix")}

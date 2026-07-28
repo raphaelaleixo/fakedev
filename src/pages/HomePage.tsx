@@ -81,7 +81,8 @@ export default function HomePage() {
               textTransform: "uppercase",
               fontSize: "clamp(0.95rem, 3.4vw, 2.1rem)",
               letterSpacing: "0.12em",
-              mt: "0.1em",
+              lineHeight: 1,
+              mt: "-0.12em",
             }}
           >
             {t("home.titleTail")}

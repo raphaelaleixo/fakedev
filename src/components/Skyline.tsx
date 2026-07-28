@@ -39,27 +39,3 @@ export function Skyline({ height = "clamp(150px, 30vh, 340px)" }: { height?: num
     </Box>
   );
 }
-
-/**
- * The plane, holding the empty half of the cover on its own. Same idea as the
- * source: one small mark in a lot of space is what makes it read as a journey.
- */
-export function Plane({ size = 64 }: { size?: number }) {
-  return (
-    <Box
-      component="svg"
-      viewBox="0 0 100 100"
-      aria-hidden
-      sx={{
-        display: "block",
-        width: size,
-        height: size,
-        fill: "currentColor",
-        transform: "rotate(-16deg)",
-      }}
-    >
-      <path d="M6 54 l88-26 -14 22 -30 6 -8 22 -10 3 1-23 -22 4 z" />
-      <path d="M52 56 l26 20 -6 3 -26-17 z" />
-    </Box>
-  );
-}

@@ -88,6 +88,19 @@ export default function HomePage() {
             {t("home.titleTail")}
           </Typography>
 
+          {/* Attribution sits with the title, not in the small print: it names
+              the game this one is an adaptation of. */}
+          <Typography
+            sx={{
+              ...fine,
+              fontSize: "clamp(0.8rem, 1.5vw, 1rem)",
+              opacity: 0.85,
+              mt: { xs: 2, md: 2.5 },
+            }}
+          >
+            {t("home.credit")}
+          </Typography>
+
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1.5}
@@ -127,11 +140,9 @@ export default function HomePage() {
             </Button>
           </Stack>
 
-          <Typography sx={{ ...fine, mt: { xs: 3, md: 4 } }}>{t("home.credit")}</Typography>
-
           {/* The one part of the cover that belongs to the collection rather
               than to this game, so it is lifted verbatim from the others. */}
-          <Stack direction="row" spacing={1.5} sx={{ mt: 1.5, alignItems: "center" }}>
+          <Stack direction="row" spacing={1.5} sx={{ mt: { xs: 3, md: 4 }, alignItems: "center" }}>
             <Ludoratory size={30} sx={{ flex: "none", color: color.onFlame, opacity: 0.75 }} />
             <Box>
               <Typography sx={fine}>

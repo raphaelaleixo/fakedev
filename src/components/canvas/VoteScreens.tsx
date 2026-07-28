@@ -7,7 +7,7 @@ import { getComponent, getStyle } from "../../game/content/deck";
 import { foldEdits } from "../../game/fold";
 import RenderWindow from "./RenderWindow";
 import type { Round } from "../../game/types";
-import { color, font } from "../../theme/tokens";
+import { color, dim, font } from "../../theme/tokens";
 import type { SeatInfo } from "./LiveInspector";
 
 /**
@@ -103,14 +103,24 @@ export function VotingScreen({ round, seats }: { round: Round; seats: SeatInfo[]
                 minWidth: 150,
                 fontFamily: font.mono,
                 fontSize: "1.3rem",
-                border: `2px solid ${SEAT_COLORS[seat.color]}`,
+                border: `2px solid ${
+                  locked ? SEAT_COLORS[seat.color] : dim(SEAT_COLORS[seat.color], 50)
+                }`,
                 backgroundColor: locked ? SEAT_COLORS[seat.color] : "transparent",
-                color: locked ? color.ink : color.paper,
-                opacity: locked ? 1 : 0.5,
+                color: locked ? color.ink : dim(color.paper, 50),
               }}
             >
               {seat.name}
-              <Box sx={{ fontSize: "0.75rem", opacity: 0.85 }}>
+              {/* Quieter than the name, mixed toward whatever it sits on —
+                  the seat's fill once locked, the ink field before. */}
+              <Box
+                sx={{
+                  fontSize: "0.75rem",
+                  color: locked
+                    ? dim(color.ink, 85, SEAT_COLORS[seat.color])
+                    : dim(color.paper, 42),
+                }}
+              >
                 {locked ? t("vote.locked") : t("vote.thinking")}
               </Box>
             </Box>

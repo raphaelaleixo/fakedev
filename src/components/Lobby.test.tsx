@@ -47,12 +47,42 @@ describe("Lobby", () => {
 
   test("renders an empty room without falling over", () => {
     renderLobby(0);
-    expect(screen.getByRole("button")).toBeDisabled();
+    expect(screen.getByRole("button")).toHaveAttribute("aria-disabled", "true");
   });
 
-  test("keeps start disabled below the minimum player count", () => {
+  /**
+   * The masthead already carries the game's name, so repeating it here was
+   * saying it twice. The page still needs exactly one h1 — it is what names
+   * the view and where RouteFocus lands on arrival — so it stays, unseen.
+   */
+  test("names the view in one heading, without repeating the wordmark", () => {
+    renderLobby(4);
+    const headings = screen.getAllByRole("heading", { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveAccessibleName(expect.stringContaining("7KQP2"));
+    expect(headings[0].textContent).not.toContain("Amsterdam");
+  });
+
+  /**
+   * `disabled` drops the control out of the tab order, so a keyboard user can
+   * never reach it to find out why they are waiting. `aria-disabled` says the
+   * same thing and leaves it reachable; the label carries the reason.
+   */
+  test("keeps start reachable while the table is short, and refuses to fire", () => {
+    const onStart = vi.fn();
+    renderLobby(3, onStart);
+
+    const start = screen.getByRole("button", { name: /waiting/i });
+    expect(start).toHaveAttribute("aria-disabled", "true");
+    expect(start).toBeEnabled();
+
+    start.click();
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  test("refuses to start below the minimum player count", () => {
     renderLobby(MIN_PLAYERS - 1);
-    expect(screen.getByRole("button")).toBeDisabled();
+    expect(screen.getByRole("button")).toHaveAttribute("aria-disabled", "true");
   });
 
   test("enables start once the table is big enough", () => {

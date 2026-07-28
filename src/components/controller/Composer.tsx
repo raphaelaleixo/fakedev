@@ -15,7 +15,7 @@ import { supportedCssProperties } from "../../game/css";
 import { rankSuggestions } from "../../game/suggest";
 import { STYLE_SCHEMA, getKeySchema } from "../../game/content/keySchema";
 import type { ComposerDraft, ComposerMove, Edit, EditTarget } from "../../game/types";
-import { color, font } from "../../theme/tokens";
+import { color, dim, font } from "../../theme/tokens";
 import ValueEditor from "./ValueEditor";
 import ColorSwatch from "../ColorSwatch";
 import { LOREM } from "../../game/constants";
@@ -182,7 +182,18 @@ export default function Composer({
                   sx={{ justifyContent: "space-between", fontFamily: font.mono }}
                 >
                   <Box component="span">{slot.key}</Box>
-                  <Box component="span" sx={{ opacity: 0.7, fontSize: "0.85em" }}>
+                  {/* Mixed toward the fill this variant actually has, so the
+                      hint stays quieter than the key without going see-through
+                      over whatever is behind the button. */}
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: "0.85em",
+                      color: chosen
+                        ? dim(color.onFlame, 70, color.flame)
+                        : dim(color.paper, 70),
+                    }}
+                  >
                     {slot.value === undefined ? (
                       t("composer.open")
                     ) : (

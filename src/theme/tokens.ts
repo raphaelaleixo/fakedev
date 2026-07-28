@@ -43,6 +43,22 @@ export const color = {
   inkRule: "#26304f",
 } as const;
 
+/**
+ * Dim a colour by mixing it toward a surface, not by making the element
+ * translucent.
+ *
+ * `opacity` fades everything inside an element together and lets the page show
+ * through, which is right for motion and wrong for state. These are states —
+ * an inactive seat, an unlocked vote, a superseded declaration — and every one
+ * of them carries a *hue* that has to survive the dimming, because the hue is
+ * who. A flat muted token would erase that; mixing toward the surface keeps it
+ * and produces an opaque colour.
+ *
+ * `oklab` rather than sRGB so a 55% mix looks like 55% at every hue.
+ */
+export const dim = (value: string, percent: number, toward: string = color.ink) =>
+  `color-mix(in oklab, ${value} ${percent}%, ${toward})`;
+
 export const font = {
   /** Used big and used flat: the wordmark, the countdown, the winner. */
   display: '"Bricolage Grotesque", system-ui, sans-serif',

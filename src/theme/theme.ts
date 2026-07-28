@@ -64,6 +64,16 @@ const theme = createTheme({
           borderRadius: radius.sm,
           paddingInline: 20,
           paddingBlock: 10,
+          /**
+           * Every button carries a border, visible or not.
+           *
+           * A border occupies space whether you can see it or not, so a row
+           * mixing outlined and filled buttons came out uneven — the outlined
+           * one 4px larger in both directions. Declaring it here and letting
+           * variants set only the *colour* keeps every button in the app the
+           * same size.
+           */
+          border: "2px solid transparent",
           // Flame is a fill; as type it needs the dark field behind it, which
           // it now has everywhere.
           "&.Mui-disabled": {

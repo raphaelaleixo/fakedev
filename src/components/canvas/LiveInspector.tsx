@@ -4,7 +4,7 @@ import ColorSwatch from "../ColorSwatch";
 import { SEAT_COLORS } from "../../game/constants";
 import { LOREM } from "../../game/constants";
 import type { Edit, EditTarget, RenderTree, SeatColor } from "../../game/types";
-import { color, font } from "../../theme/tokens";
+import { color, dim, font } from "../../theme/tokens";
 
 export interface SeatInfo {
   id: number;
@@ -194,23 +194,25 @@ function Overrides({
 }) {
   if (history.overridden.length === 0) return null;
   return (
-    <Box component="span" sx={{ opacity: 0.6 }}>
-      <Punct> /* </Punct>
+    // Dimmed per span rather than on the wrapper: these are tinted by author,
+    // and who wrote a superseded value is exactly what the comment is for.
+    <Box component="span">
+      <Punct faint> /* </Punct>
       {history.overridden.map((edit, i) => (
-        <Box component="span" key={edit.id} sx={{ color: tint(edit.playerId) }}>
+        <Box component="span" key={edit.id} sx={{ color: dim(tint(edit.playerId), 60) }}>
           <ColorSwatch value={(edit.kind === "style" && edit.value) || ""} />
           {edit.kind === "style" && edit.value}
-          {i < history.overridden.length - 1 && <Punct>, </Punct>}
+          {i < history.overridden.length - 1 && <Punct faint>, </Punct>}
         </Box>
       ))}
-      <Punct> */</Punct>
+      <Punct faint> */</Punct>
     </Box>
   );
 }
 
-function Punct({ children }: { children: React.ReactNode }) {
+function Punct({ children, faint }: { children: React.ReactNode; faint?: boolean }) {
   return (
-    <Box component="span" sx={{ color: color.inkPunct }}>
+    <Box component="span" sx={{ color: faint ? dim(color.inkPunct, 60) : color.inkPunct }}>
       {children}
     </Box>
   );

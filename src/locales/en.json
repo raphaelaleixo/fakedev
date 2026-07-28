@@ -35,6 +35,7 @@
     "creating": "Opening…"
   },
   "lobby": {
+    "heading": "Room {{code}} — waiting to start",
     "treeLabel": "Players in this room",
     "joinAt": "Room code",
     "needMore_one": "{{count}} more dev to start",

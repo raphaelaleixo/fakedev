@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Stack, Typography } from "@mui/material";
+import { visuallyHidden } from "@mui/utils";
 import { RoomQRCode, buildJoinUrl, useRoomState, type RoomState } from "react-gameroom";
 import { MIN_PLAYERS, SEAT_COLORS } from "../game/constants";
 import { seatColorFor } from "../game/match";
@@ -31,6 +32,7 @@ export default function Lobby({
   const newest = useNewestArrival(activePlayers.map((p) => p.id));
 
   const missing = Math.max(0, MIN_PLAYERS - playerCount);
+  const ready = canStart && !starting;
 
   return (
     <Box
@@ -39,63 +41,23 @@ export default function Lobby({
         backgroundColor: color.ink,
         color: color.paper,
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", md: "1fr auto" },
+        gridTemplateColumns: { xs: "1fr", md: "auto 1fr" },
         alignItems: "start",
         gap: { xs: 4, md: 8 },
         p: { xs: 3, md: 6 },
       }}
     >
-      <Box sx={{ minWidth: 0 }}>
-        <Typography
-          variant="h1"
-          sx={{
-            fontSize: "clamp(1.8rem, 4.4vw, 3.4rem)",
-            maxWidth: "14ch",
-            mb: 4,
-            color: color.paper,
-          }}
-        >
-          {t("home.title")}
-        </Typography>
+      {/* The masthead already carries the game's name; printing it again here
+          said it twice on one screen. The heading stays because the view still
+          needs naming — it is what RouteFocus lands on and what a screen reader
+          announces on arrival — but it is not shown. It is out of flow, so it
+          takes no grid cell, and it sits first so the reading order still opens
+          with the heading after the columns were swapped. */}
+      <Typography variant="h1" sx={visuallyHidden}>
+        {t("lobby.heading", { code: roomState.roomId })}
+      </Typography>
 
-        <Box component="section" aria-label={t("lobby.treeLabel")}>
-          <MarkupLine>
-            <Punct>&lt;</Punct>
-            <Tag>room</Tag>
-            <Pair name="code">{roomState.roomId}</Pair>
-            <Pair name="players">{String(playerCount)}</Pair>
-            <Punct>&gt;</Punct>
-          </MarkupLine>
-
-          {activePlayers.map((slot) => (
-            <MarkupLine key={slot.id} indent={1} highlight={slot.id === newest}>
-              <Punct>&lt;</Punct>
-              <Tag>dev</Tag>
-              <Pair name="seat">{String(slot.id)}</Pair>
-              <Pair name="name">{slot.name ?? ""}</Pair>
-              <Pair name="color">
-                <Swatch value={SEAT_COLORS[slot.data?.color ?? seatColorFor(slot.id)]} />
-                {slot.data?.color ?? seatColorFor(slot.id)}
-              </Pair>
-              <Punct> /&gt;</Punct>
-            </MarkupLine>
-          ))}
-
-          {missing > 0 && (
-            <MarkupLine indent={1}>
-              <Comment>{t("lobby.needMore", { count: missing })}</Comment>
-            </MarkupLine>
-          )}
-
-          <MarkupLine>
-            <Punct>&lt;/</Punct>
-            <Tag>room</Tag>
-            <Punct>&gt;</Punct>
-          </MarkupLine>
-        </Box>
-      </Box>
-
-      <Stack spacing={2} sx={{ justifySelf: { md: "end" } }}>
+      <Stack spacing={2}>
         <Box
           sx={{
             p: 2,
@@ -125,23 +87,81 @@ export default function Lobby({
           </Typography>
         </Box>
 
+        {/* `disabled` would drop this out of the tab order, so a keyboard
+            user could never land on it to find out what they are waiting for.
+            `aria-disabled` says the same thing and leaves it reachable; the
+            label carries the reason, so no extra description is needed. */}
         <Button
           variant="contained"
           size="large"
-          onClick={onStart}
-          disabled={!canStart || starting}
+          onClick={() => {
+            if (!ready) return;
+            onStart();
+          }}
+          aria-disabled={!ready}
           sx={{
-            // MUI's disabled fill is a translucent black — invisible on ink.
-            "&.Mui-disabled": {
+            '&[aria-disabled="true"]': {
               backgroundColor: "transparent",
               color: color.muted,
-              border: `1px solid ${color.inkPunct}`,
+              borderColor: color.inkPunct,
+              cursor: "not-allowed",
             },
           }}
         >
           {canStart ? t("lobby.start") : t("lobby.waiting", { count: missing })}
         </Button>
       </Stack>
+      <Box sx={{ minWidth: 0 }}>
+        <Box component="section" aria-label={t("lobby.treeLabel")}>
+          <MarkupLine>
+            <Punct>&lt;</Punct>
+            <Tag>room</Tag>
+            <Pair name="code">{roomState.roomId}</Pair>
+            <Pair name="players">{String(playerCount)}</Pair>
+            <Punct>&gt;</Punct>
+          </MarkupLine>
+
+          {activePlayers.map((slot) => (
+            <MarkupLine key={slot.id} indent={1} highlight={slot.id === newest}>
+              <Punct>&lt;</Punct>
+              <Tag>dev</Tag>
+              <Pair name="seat">{String(slot.id)}</Pair>
+              <Pair name="name">{slot.name ?? ""}</Pair>
+              <Pair name="color">
+                <Swatch value={SEAT_COLORS[slot.data?.color ?? seatColorFor(slot.id)]} />
+                {slot.data?.color ?? seatColorFor(slot.id)}
+              </Pair>
+              <Punct> /&gt;</Punct>
+            </MarkupLine>
+          ))}
+
+          {missing > 0 && (
+            <MarkupLine indent={1}>
+              {/* The only thing on this screen that is waiting for something,
+                  so it is the only thing that moves. Opacity rather than
+                  colour because this is motion, not a palette decision, and
+                  it is the one property a compositor animates for free. */}
+              <Box
+                component="span"
+                sx={{
+                  animation: "lobby-waiting 2.4s ease-in-out infinite",
+                  "@keyframes lobby-waiting": { "50%": { opacity: 0.4 } },
+                  "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                }}
+              >
+                <Comment>{t("lobby.needMore", { count: missing })}</Comment>
+              </Box>
+            </MarkupLine>
+          )}
+
+          <MarkupLine>
+            <Punct>&lt;/</Punct>
+            <Tag>room</Tag>
+            <Punct>&gt;</Punct>
+          </MarkupLine>
+        </Box>
+      </Box>
+
     </Box>
   );
 }

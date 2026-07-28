@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { SEAT_COLORS, SOFT_TIMER_SECONDS } from "../../game/constants";
-import { color, font } from "../../theme/tokens";
+import { color, dim, font } from "../../theme/tokens";
 import type { SeatInfo } from "./LiveInspector";
 
 /**
@@ -43,12 +43,13 @@ export default function TurnRail({
                 py: 0.5,
                 fontFamily: font.mono,
                 fontSize: "0.95rem",
-                color: active ? color.ink : color.paper,
+                color: active ? color.ink : dim(color.paper, 55),
                 backgroundColor: active ? color.paper : "transparent",
                 // Order matters: the shorthand would wipe the seat rule.
-                border: `1px solid ${color.inkRule}`,
-                borderLeft: `4px solid ${tint}`,
-                opacity: active ? 1 : 0.55,
+                border: `1px solid ${active ? color.inkRule : dim(color.inkRule, 55)}`,
+                // Dimmed by mixing toward the field, not by going translucent:
+                // the seat's hue is who this is, and it has to survive.
+                borderLeft: `4px solid ${active ? tint : dim(tint, 55)}`,
               }}
             >
               {seat?.name ?? `#${id}`}

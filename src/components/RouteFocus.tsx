@@ -31,6 +31,20 @@ export default function RouteFocus() {
     const frame = requestAnimationFrame(() => {
       const heading = document.querySelector<HTMLElement>("h1");
       if (!heading) return;
+
+      /**
+       * A view that autofocuses a control has already said where focus
+       * belongs, and it knows better than this does — the join screen sends
+       * you straight into the code field. Anything other than `<body>` holding
+       * focus means somebody claimed it deliberately, so leave it alone.
+       */
+      const claimed = document.activeElement;
+      if (claimed && claimed !== document.body) {
+        heading.dataset.routeFocus = "skipped";
+        return;
+      }
+
+      heading.dataset.routeFocus = "moved";
       heading.tabIndex = -1;
       heading.focus({ preventScroll: true });
     });

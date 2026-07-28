@@ -1,10 +1,9 @@
-import { useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Link, Stack, Typography } from "@mui/material";
 import { Skyline } from "../components/Skyline";
 import { Ludoratory } from "../components/Ludoratory";
-import { useGame } from "../contexts/GameContext";
+import { useOpenRoom } from "../game/useOpenRoom";
 import { color, font } from "../theme/tokens";
 
 /**
@@ -117,38 +116,8 @@ const inherited = {
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { createRoom } = useGame();
-  const [opening, setOpening] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  /**
-   * The cover's primary action opens a room outright. Asking for a code first
-   * is backwards for the one person who doesn't have one yet — they're the
-   * person the code comes *from*.
-   *
-   * The in-flight guard is here rather than on the button's `disabled`, because
-   * disabling an element you just pressed throws the user's focus back to the
-   * document body.
-   */
-  async function openRoom() {
-    if (opening) return;
-    setOpening(true);
-    setFailed(false);
-    try {
-      // `flushSync` is not decoration. Every other way out of the cover is a
-      // <Link>, which navigates from inside a click handler; this one lands
-      // after an await, where React treats the update as non-urgent and can
-      // defer the render past the point the browser snapshots the new state —
-      // so the transition runs against a page that has not changed yet.
-      // flushSync commits it synchronously inside the transition callback,
-      // which is what the API expects.
-      navigate(`/room/${await createRoom()}`, { viewTransition: true, flushSync: true });
-    } catch {
-      setOpening(false);
-      setFailed(true);
-    }
-  }
+  // Opening a room is shared with the join screen — see useOpenRoom.
+  const { open: openRoom, opening, failed } = useOpenRoom();
 
   return (
     <>

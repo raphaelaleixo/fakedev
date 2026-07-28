@@ -16,10 +16,20 @@ function show() {
               <>
                 <h1>Cover</h1>
                 <Link to="/next">Go</Link>
+                <Link to="/typing">Type</Link>
               </>
             ),
           },
           { path: "/next", element: <h1>Next page</h1> },
+          {
+            path: "/typing",
+            element: (
+              <>
+                <h1>Typing page</h1>
+                <input aria-label="Room code" autoFocus />
+              </>
+            ),
+          },
         ],
       },
     ],
@@ -55,6 +65,27 @@ describe("RouteFocus", () => {
         "-1",
       ),
     );
+  });
+
+  /**
+   * A page that autofocuses a control has already said where focus belongs.
+   * Overriding it drops the user out of the field they were sent to — which is
+   * exactly what happens on the join screen, where the code input claims focus
+   * on mount.
+   */
+  test("leaves focus where the arriving view put it", async () => {
+    const { user } = show();
+    await user.click(screen.getByRole("link", { name: "Type" }));
+
+    // Wait until RouteFocus has actually run — it marks the heading on its way
+    // past — otherwise this asserts before the race has happened.
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Typing page" })).toHaveAttribute(
+        "data-route-focus",
+        "skipped",
+      ),
+    );
+    expect(screen.getByRole("textbox", { name: "Room code" })).toHaveFocus();
   });
 
   /** Stealing focus from the address bar on a cold load is its own bug. */

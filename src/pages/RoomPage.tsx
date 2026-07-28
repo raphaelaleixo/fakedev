@@ -154,7 +154,9 @@ function Shell({
       }}
     >
       <AppHeader roomState={roomState} />
-      {children}
+      <Box component="main" sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {children}
+      </Box>
     </Box>
   );
 }

@@ -109,7 +109,10 @@ export default function ControllerShell({
 
       {isChameleon && <ChameleonDecks />}
 
-      <Box sx={{ flex: 1, p: { xs: 1.5, sm: 2 }, width: "100%", maxWidth: 680, mx: "auto" }}>
+      <Box
+        component="main"
+        sx={{ flex: 1, p: { xs: 1.5, sm: 2 }, width: "100%", maxWidth: 680, mx: "auto" }}
+      >
         <Box
           sx={{
             backgroundColor: color.inkPanel,

@@ -47,7 +47,21 @@ const theme = createTheme({
       textTransform: "none",
       letterSpacing: 0,
     },
-    caption: { fontFamily: font.mono, letterSpacing: "0.08em", textTransform: "uppercase" },
+    /**
+     * `caption` is this app's label voice — composer steps, "The Secret",
+     * "Room code", the value editor. Setting it in the display face draws the
+     * line the interface actually has: **labels in Bricolage, values in mono**.
+     * The thing being named and the thing itself stop looking alike.
+     *
+     * 600 because that and 800 are the only weights index.html loads; asking
+     * for anything else would resolve to one of them regardless.
+     */
+    caption: {
+      fontFamily: font.display,
+      fontWeight: 600,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+    },
   },
   components: {
     // Flat throughout: hairlines separate, elevation never does.
@@ -92,8 +106,18 @@ const theme = createTheme({
           },
         },
         contained: { "&:hover": { backgroundColor: color.paper, color: color.ink } },
+        /**
+         * MUI draws outlined borders at half alpha, which is translucency
+         * doing a colour's job — the field behind shows through and the line
+         * reads as a smudge rather than a rule. The palette-specific classes
+         * beat the shared `outlined` one, so each has to say it.
+         */
         outlined: { borderColor: color.inkRule, color: color.paper },
       },
+      variants: [
+        { props: { variant: "outlined", color: "primary" }, style: { borderColor: color.flame } },
+        { props: { variant: "outlined", color: "secondary" }, style: { borderColor: color.paper } },
+      ],
     },
     MuiOutlinedInput: {
       styleOverrides: {
@@ -107,8 +131,24 @@ const theme = createTheme({
         input: { color: color.paper },
       },
     },
-    MuiInputLabel: { styleOverrides: { root: { color: color.muted } } },
-    MuiFormHelperText: { styleOverrides: { root: { color: color.muted } } },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: { color: color.muted, fontFamily: font.display, fontWeight: 600 },
+      },
+    },
+    MuiFormHelperText: {
+      styleOverrides: {
+        // Helper text names the shape of a value without being one, so it
+        // belongs with the labels rather than with the mono it sits under.
+        root: {
+          color: color.muted,
+          fontFamily: font.display,
+          fontWeight: 600,
+          letterSpacing: 0,
+          marginInline: 0,
+        },
+      },
+    },
     MuiToggleButton: {
       styleOverrides: {
         root: {

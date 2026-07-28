@@ -9,7 +9,7 @@ export default function HowToPlayPage() {
   return (
     <Box sx={{ minHeight: "100dvh", backgroundColor: color.ink, color: color.paper }}>
       <AppHeader />
-      <Container maxWidth="md">
+      <Container component="main" maxWidth="md">
       <Box sx={{ py: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
           {t("howToPlay.title")}

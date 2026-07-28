@@ -113,7 +113,10 @@ function Shell({ children }: { children: ReactNode }) {
       }}
     >
       <AppHeader />
-      <Box sx={{ flex: 1, display: "flex", alignItems: "center", p: 3 }}>
+      <Box
+        component="main"
+        sx={{ flex: 1, display: "flex", alignItems: "center", p: 3 }}
+      >
       <Box sx={{ width: "100%", maxWidth: 460, mx: "auto", fontFamily: font.mono }}>
         {children}
       </Box>

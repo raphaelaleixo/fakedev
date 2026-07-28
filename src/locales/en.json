@@ -29,6 +29,7 @@
   "join": {
     "heading": "Join a room",
     "codeLabel": "Room code",
+    "codeHint": "{{count}} letters or numbers, from the big screen",
     "submit": "Join",
     "hostPrompt": "Running the big screen?",
     "create": "Open a new room",

@@ -45,6 +45,21 @@ const bleed = {
 } as const;
 
 /**
+ * The houses, at 60% of the headline's width.
+ *
+ * "A FAKE DEV" measures about 5.6em in this face, so 0.6 × 5.6 ≈ 3.4 × the
+ * title's font size. That ramp is `clamp(2.75rem, 7.8cqi, 5.4rem)`, so this is
+ * the same ramp times 3.4 — the ratio then holds at every width instead of
+ * only at the one I happened to check.
+ *
+ * Two departures, both deliberate. The floor is higher than 3.4 × 2.75rem
+ * because a phone wants the drawing present rather than proportional. And
+ * `42dvh` caps it on a short screen, since the cover has to fit in one
+ * viewport and the houses are the part that can give.
+ */
+const HOUSES_WIDTH = "min(clamp(13rem, 26.5cqi, 18.4rem), 42dvh)";
+
+/**
  * The flame band is drawn by two elements — `main` ends where `footer` begins —
  * and any two boxes that merely touch show a subpixel seam at some zoom levels.
  * Everything painted flame therefore overlaps its neighbour by a hair. The
@@ -116,8 +131,11 @@ export default function HomePage() {
           justifyContent: "flex-end",
         }}
       >
-        <Box sx={{ ...bleed, mb: SEAM_OVERLAP }}>
-          <Skyline />
+        {/* A container here too, so `cqi` inside it measures the same column
+            the title does — that is what lets the houses be expressed as a
+            fraction of the headline rather than as a guess in rems. */}
+        <Box sx={{ ...bleed, containerType: "inline-size", mb: SEAM_OVERLAP }}>
+          <Skyline maxWidth={HOUSES_WIDTH} />
         </Box>
 
         <Box sx={{ ...flame, pt: { xs: 3, md: 4 }, containerType: "inline-size" }}>

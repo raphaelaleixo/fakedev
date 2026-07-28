@@ -55,7 +55,7 @@ export default function HomePage() {
           color: color.ink,
           px: { xs: 3, md: 8 },
           pt: { xs: 3, md: 4 },
-          pb: { xs: 4, md: 6 },
+          pb: { xs: 7, md: 10 },
         }}
       >
         <Box sx={{ maxWidth: 1100, mx: "auto", width: "100%" }}>
@@ -93,8 +93,11 @@ export default function HomePage() {
           <Typography
             sx={{
               ...fine,
+              // JetBrains Mono ships 400/500/700 here; 700 is a real face, not
+              // a synthesised one.
+              fontWeight: 700,
               fontSize: "clamp(0.8rem, 1.5vw, 1rem)",
-              opacity: 0.85,
+              opacity: 0.9,
               mt: { xs: 2, md: 2.5 },
             }}
           >

@@ -50,7 +50,7 @@ export default function HomePage() {
 
       {/* Same gutters and column as the title band, so the houses stand on the
           same left edge as the "A" and their ground line meets the flame. */}
-      <Box sx={{ flex: "0 0 auto", px: { xs: 3, md: 8 } }}>
+      <Box sx={{ flex: "0 0 auto", px: { xs: 3, md: 8 }, mb: "-2px" }}>
         <Box sx={{ maxWidth: 1100, mx: "auto", width: "100%" }}>
           <Skyline />
         </Box>
@@ -67,18 +67,7 @@ export default function HomePage() {
         }}
       >
         <Box sx={{ maxWidth: 1100, mx: "auto", width: "100%" }}>
-          {/* Three scales, stacked. The article is tiny on purpose. */}
-          <Typography
-            component="p"
-            sx={{
-              fontFamily: font.display,
-              fontWeight: 800,
-              fontSize: "clamp(1rem, 2vw, 1.5rem)",
-              lineHeight: 1,
-            }}
-          >
-            A
-          </Typography>
+          {/* Two lines, two scales. */}
           <Typography
             component="h1"
             sx={{

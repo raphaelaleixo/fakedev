@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { Box } from "@mui/material";
 import { slotHistories, type SlotHistory } from "../../game/fold";
 import ColorSwatch from "../ColorSwatch";
@@ -42,10 +43,13 @@ export default function LiveInspector({
   edits,
   tree,
   seats,
+  sx,
 }: {
   edits: Edit[];
   tree: RenderTree;
   seats: SeatInfo[];
+  /** The defaults below are sized for a TV; the rules page wants it small. */
+  sx?: ComponentProps<typeof Box>["sx"];
 }) {
   const histories = slotHistories(edits);
   const seatById = new Map(seats.map((s) => [s.id, s]));
@@ -69,6 +73,7 @@ export default function LiveInspector({
         fontFamily: font.mono,
         fontSize: "clamp(0.9rem, 1.5vw, 1.5rem)",
         lineHeight: 1.8,
+        ...sx,
       }}
     >
       <OpenTag tag="div" declarations={forTarget("outer")} tint={tint} />

@@ -23,8 +23,17 @@
     "joinLink": "Join"
   },
   "howToPlay": {
-    "title": "How to Play",
-    "back": "Back"
+    "title": "How to play",
+    "goal": "A group of players must work together to find the one Chameleon among them, while that player tries to avoid detection.",
+    "secret": "Each round, players see the round's Secret — a style and a component, e.g. “Neumorphic · Toggle Switch”. But the Chameleon only sees “style × component”, and never learns either half.",
+    "aim": "Nobody is trying to finish it. You are making the code look like the Secret, not build one — enough that the others can see you know it, and not so much that the Chameleon works it out.",
+    "turns": "Players take turns making one CSS edit each — name a property, give a value to one somebody else named, or add text. After everyone has had two turns, everyone votes on who they think the Chameleon is.",
+    "board": "The screen shows the code as it grows, not the component it would render, and every edit is in its author's colour.",
+    "escape": "The Chameleon wins if they don't get the majority vote.",
+    "steal": "But even if the Chameleon gets caught, they get one chance to guess the Secret. Get both halves and they still win. Get one and they salvage a point.",
+    "points": "First to five points takes the match.",
+    "table": "Four to ten players, one screen everyone can see, and a device each.",
+    "back": "Back to the start"
   },
   "join": {
     "heading": "Join a room",

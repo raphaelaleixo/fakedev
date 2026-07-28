@@ -20,12 +20,13 @@ import { Box } from "@mui/material";
  * width-driven with `height: auto`, which keeps the aspect ratio true at every
  * size with nothing to hold in sync — cropping to fill a wide screen would cut
  * the gables, which are the whole point of the drawing. On a phone it fills the
- * column; past `maxWidth` it stops rather than growing to fill the page.
+ * column; on a desktop it is bounded by the viewport's *height*, because the
+ * cover has to fit on one screen and the houses are the part that can give.
  *
  * It flows left, so the cover has one axis rather than a centred illustration
  * fighting a hard-left title.
  */
-export function Skyline({ maxWidth = "34rem" }: { maxWidth?: string }) {
+export function Skyline({ maxWidth = "min(32rem, 48dvh)" }: { maxWidth?: string }) {
   return (
     <Box
       component="svg"
@@ -34,9 +35,11 @@ export function Skyline({ maxWidth = "34rem" }: { maxWidth?: string }) {
       aria-hidden
       sx={{
         display: "block",
-        // Width-driven, height auto: the aspect ratio is then true at every
-        // size with no clamp to keep in sync. On a phone it fills the column;
-        // on a wide screen it stops, rather than growing to fill the page.
+        // One value, three constraints, and the aspect ratio stays true
+        // because only the width is ever set. `dvh` in a *width* is the
+        // interesting part: height is width / 1.619, so capping the width at
+        // 48dvh caps the height at ~30dvh without a second property that could
+        // letterbox the drawing inside its own box.
         width: `min(100%, ${maxWidth})`,
         height: "auto",
         mr: "auto",

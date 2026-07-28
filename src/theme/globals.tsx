@@ -14,6 +14,16 @@ export default function AppGlobalStyles() {
         // through an overscroll bounce, and white there is jarring.
         body: { backgroundColor: color.ink },
 
+        /**
+         * The app shell owns the viewport, so a page can be more than one
+         * element tall without pushing itself off the bottom. The cover is
+         * <main> plus <footer>: with the height on <main> the page came out
+         * exactly one footer taller than the screen and scrolled for no
+         * reason. Pages that are a single element are unaffected — they keep
+         * their own `min-height: 100dvh` and simply fill this.
+         */
+        "#root": { minHeight: "100dvh", display: "flex", flexDirection: "column" },
+
         ".fullscreen-toggle": {
           fontFamily: font.mono,
           fontSize: "0.8rem",

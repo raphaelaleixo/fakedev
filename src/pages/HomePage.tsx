@@ -104,7 +104,10 @@ export default function HomePage() {
       <Box
         component="main"
         sx={{
-          minHeight: "100dvh",
+          // Takes the slack the footer leaves, and never less than its
+          // content — a short landscape viewport should scroll, a phone in
+          // portrait should not.
+          flex: "1 0 auto",
           backgroundColor: color.ink,
           color: color.flame,
           display: "flex",

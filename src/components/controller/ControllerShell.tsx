@@ -129,7 +129,19 @@ function RoleBar({
       <Box
         sx={{
           px: 2,
-          py: 1.5,
+          pt: 1.5,
+          /**
+           * The bottom edge of a phone is the home indicator, and this bar is
+           * flush against it.
+           *
+           * It costs nothing today: without `viewport-fit=cover` in the
+           * viewport meta, iOS keeps the page inside the safe area and the
+           * inset resolves to zero. Those two facts are load-bearing together
+           * though — turn that flag on for a full-screen controller and the
+           * `?` lands under the gesture area. Said here so the coupling does
+           * not live in a file that has nothing to do with this one.
+           */
+          pb: "max(12px, env(safe-area-inset-bottom))",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",

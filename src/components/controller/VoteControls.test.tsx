@@ -1,12 +1,13 @@
 import { describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { I18nextProvider } from "react-i18next";
 import { StealPicker, VotePicker } from "./VoteControls";
 import i18n from "../../i18n";
 import theme from "../../theme/theme";
-import { MOCK_EDITS, MOCK_SEATS, MOCK_SLATE } from "../../mocks/fixtures";
+import { MOCK_EDITS, MOCK_SEATS } from "../../mocks/fixtures";
+import { COMPONENTS, STYLES } from "../../game/content/deck";
 import type { ReactElement } from "react";
 
 function show(ui: ReactElement) {
@@ -40,16 +41,36 @@ describe("VotePicker", () => {
     expect(onVote).toHaveBeenCalledWith(4);
   });
 
-  test("shows the locked choice and stops offering others", () => {
+  /**
+   * The list stays. Who you were choosing between is most of what you want to
+   * look at while everyone else decides, and a screen that rearranges itself
+   * the moment you commit makes committing feel like leaving the room.
+   *
+   * Nothing in it is a control any more, though — there is nothing left to
+   * press, so the rows stop being buttons rather than becoming buttons you are
+   * refused.
+   */
+  test("keeps everyone on screen once the vote is in, and marks the choice", () => {
     show(<VotePicker seats={MOCK_SEATS} voterId={1} locked={4} onVote={() => undefined} />);
-    expect(screen.getByText("Ines")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Lock it in" })).toBeNull();
+
+    for (const name of ["Ana", "Tom", "Ines", "Joost"]) {
+      expect(screen.getByText(name)).toBeInTheDocument();
+    }
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    expect(screen.getByText("Ines").closest("[aria-current]")).not.toBeNull();
   });
 });
 
 describe("StealPicker", () => {
   const steal = (onSteal = () => undefined) =>
-    show(<StealPicker slate={MOCK_SLATE} edits={MOCK_EDITS} onSteal={onSteal} />);
+    show(<StealPicker edits={MOCK_EDITS} onSteal={onSteal} />);
+
+  /** Type enough to identify a card, then take the highlighted option. */
+  const name = async (user: UserEvent, field: string, text: string) => {
+    await user.click(screen.getByRole("combobox", { name: field }));
+    await user.keyboard(text);
+    await user.keyboard("{Enter}");
+  };
 
   /**
    * `rules.md` forbids the render on a controller. This is the deliberate
@@ -65,10 +86,19 @@ describe("StealPicker", () => {
     expect(iframe?.getAttribute("srcdoc")).toContain("Lorem ipsum dolor sit");
   });
 
-  test("offers both slates", () => {
-    steal();
-    expect(screen.getByRole("button", { name: "Wireframe" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Primary Button" })).toBeInTheDocument();
+  /**
+   * The whole deck on both axes, not five drawn at random. The decks are
+   * already public on the Chameleon's own controller, so a slate never hid
+   * anything — it narrowed a guess that should reward having read the board.
+   */
+  test("offers every card on both axes", async () => {
+    const { user } = steal();
+    await user.click(screen.getByRole("combobox", { name: "What style was it?" }));
+    expect(screen.getAllByRole("option")).toHaveLength(STYLES.length);
+
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("combobox", { name: "And what was it?" }));
+    expect(screen.getAllByRole("option")).toHaveLength(COMPONENTS.length);
   });
 
   /** Splitting the guess is what keeps catching the Chameleon worth doing. */
@@ -78,9 +108,9 @@ describe("StealPicker", () => {
     const confirm = () => screen.getByRole("button", { name: "That's my answer" });
 
     expect(confirm()).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "Brutalist" }));
+    await name(user, "What style was it?", "Brutal");
     expect(confirm()).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "Avatar" }));
+    await name(user, "And what was it?", "Avat");
     expect(confirm()).toBeEnabled();
 
     await user.click(confirm());
@@ -89,7 +119,7 @@ describe("StealPicker", () => {
 
   test("never names the Secret before the guess is made", () => {
     const { container } = steal();
-    // The slate contains it as an option, but nothing marks which one it is.
+    // Every card is an option, and nothing marks which one is the answer.
     expect(container.innerHTML).not.toContain("chameleon");
     expect(container.textContent).not.toContain("The Secret");
   });

@@ -94,9 +94,8 @@ export default function PlayerPage() {
           onVote={(suspectId) => run(() => vote(id!, seat, suspectId))}
         />
       ) : round.phase === "steal" ? (
-        isChameleon && round.stealSlate ? (
+        isChameleon ? (
           <StealPicker
-            slate={round.stealSlate}
             edits={round.edits}
             busy={busy}
             onSteal={(guess) => run(() => steal(id!, guess))}

@@ -140,7 +140,8 @@
     "oneShot": "One answer each. No second attempt.",
     "confirm": "That's my answer",
     "headingStyle": "What style was it?",
-    "headingComponent": "And what was it?"
+    "headingComponent": "And what was it?",
+    "pick": "Type to search"
   },
   "result": {
     "escaped": "The impostor ({{name}}) got away with it!",

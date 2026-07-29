@@ -93,6 +93,9 @@ export const STYLE_SCHEMA: KeySchemaEntry[] = [
   {
     key: "font-family",
     valueType: "enum",
+    // The one list where the words are the least useful part: "cursive" tells
+    // you nothing that seeing it does not tell you faster.
+    showsItself: true,
     options: [
       // Generic families rather than named stacks. Deterministic faces are a
       // pending job — see the font-bundling plan.

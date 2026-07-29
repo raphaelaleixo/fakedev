@@ -59,14 +59,6 @@ function deserializeRound(value: unknown): Round | null {
     edits: asArray<Edit>(raw.edits),
     votes: asNumberMap(raw.votes),
     turnOrder: asArray<number>(raw.turnOrder),
-    ...(raw.stealSlate
-      ? {
-          stealSlate: {
-            styles: asArray<string>((raw.stealSlate as Raw).styles),
-            components: asArray<string>((raw.stealSlate as Raw).components),
-          },
-        }
-      : {}),
     ...(outcome ? { outcome } : {}),
   };
 }

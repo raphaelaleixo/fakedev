@@ -35,7 +35,14 @@ export default function ValueEditor({
 
   switch (schema?.valueType) {
     case "enum":
-      return <Choices options={schema.options ?? []} value={value} onChange={onChange} />;
+      return (
+        <Choices
+          options={schema.options ?? []}
+          value={value}
+          onChange={onChange}
+          previewProperty={schema.showsItself ? schema.key : undefined}
+        />
+      );
 
     case "color":
       return <ColorEditor value={value} onChange={onChange} invalid={invalid} />;
@@ -60,10 +67,20 @@ function Choices({
   options,
   value,
   onChange,
+  previewProperty,
 }: {
   options: { label: string; value: string }[];
   value: string;
   onChange: (value: string) => void;
+  /**
+   * A CSS property to apply to each chip, set to the value that chip names —
+   * so the option demonstrates itself instead of describing itself.
+   *
+   * It replaces the mono the chips are otherwise set in, which is the point:
+   * mono is the board's face, and a chip previewing `serif` in mono would be
+   * showing the wrong thing in the most confusing possible way.
+   */
+  previewProperty?: string;
 }) {
   return (
     <ToggleButtonGroup
@@ -73,7 +90,15 @@ function Choices({
       sx={{ flexWrap: "wrap", gap: 0.5 }}
     >
       {options.map((option) => (
-        <ToggleButton key={option.value} value={option.value} sx={{ fontFamily: font.mono }}>
+        <ToggleButton
+          key={option.value}
+          value={option.value}
+          sx={
+            previewProperty
+              ? { [previewProperty]: option.value, textTransform: "none" }
+              : { fontFamily: font.mono }
+          }
+        >
           {option.label}
         </ToggleButton>
       ))}

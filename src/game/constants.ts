@@ -20,9 +20,6 @@ export const PARTIAL_STEAL_POINTS = 1;
 /** Each player who caught a Chameleon that didn't fully recover. */
 export const CORRECT_VOTER_POINTS = 1;
 
-/** Five styles and five components, each slate including the true answer. */
-export const STEAL_SLATE_SIZE = 5;
-
 /**
  * The only copy in the game, and it is never chosen.
  *

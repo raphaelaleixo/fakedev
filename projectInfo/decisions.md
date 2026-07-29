@@ -163,3 +163,33 @@ So the caught Chameleon's controller shows the render above the slate. The Devs
 still don't see it — the TV holds it for resolution — so the reveal beat
 survives intact, and the asymmetry is deliberate: the person guessing gets what
 the paper game gives them, and nobody else gets an early look.
+
+## The steal is over the full deck, not a slate of five
+
+`rules.md` gives the caught Chameleon "two slates of five drawn at random, each
+including the true answer". The slates are gone: they name any of the thirteen
+styles and any of the fourteen components, from a searchable dropdown.
+
+**The slate was never hiding anything.** Both decks are already public on the
+Chameleon's own controller, behind the `?` on their role bar — that is the whole
+point of showing them, so the Chameleon can pick a hypothesis early and play
+toward it. A slate does not conceal the deck; it *narrows* the guess. And what
+it narrows it to is luck: five options with the answer guaranteed among them is
+a one-in-five lottery that pays a Chameleon who read nothing the same as one who
+read the board.
+
+The cost is real and worth stating. Blind odds per axis fall from 20% to 7.7%
+for the style and 7.1% for the component, and both halves from 4% to 0.55%. So
+being caught hurts more than it did, and a Chameleon who has genuinely lost the
+thread will usually get nothing back.
+
+That is the trade: the steal stops being a consolation roll and becomes the last
+place in the round where paying attention pays. It also fits how the halves
+already score — half right is worth something, so a Chameleon who read the style
+off the board and never worked out the component still leaves with a point,
+which is exactly the outcome the slate was blurring.
+
+**What this touched:** `STEAL_SLATE_SIZE`, `buildStealSlate`, the `stealSlate`
+field on `Round` and its serialization are all gone, and `resolveRound` no
+longer needs an `Rng`. The big screen's guarantee got stronger rather than
+weaker — it used to be "never show the five", and it is now "never name a card".

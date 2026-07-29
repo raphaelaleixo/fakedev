@@ -99,10 +99,6 @@ export const MOCK_VERDICTS = {
 
 export type MockVerdict = keyof typeof MOCK_VERDICTS;
 
-export const MOCK_SLATE = {
-  styles: ["wireframe", "newspaper", "brutalist", "material", "vaporwave"],
-  components: ["avatar", "toggle-switch", "primary-button", "tooltip", "app-header"],
-};
 
 /** The same round frozen at any later phase, for building those screens. */
 export function mockRoundAt(
@@ -117,7 +113,6 @@ export function mockRoundAt(
     votes: phase === "countdown" ? {} : MOCK_VERDICTS[verdict],
   };
 
-  if (phase === "steal") return { ...base, stealSlate: MOCK_SLATE };
   if (phase !== "result") return base;
 
   const caught = verdict === "caught";
@@ -146,7 +141,6 @@ export function mockRoundAt(
 
   return {
     ...base,
-    stealSlate: MOCK_SLATE,
     stealGuess,
     outcome: {
       caughtPlayerId: 4,

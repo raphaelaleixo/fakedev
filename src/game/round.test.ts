@@ -3,7 +3,6 @@ import {
   activePlayerId,
   applyRoundOutcome,
   beginVoting,
-  buildStealSlate,
   castVote,
   createRound,
   resolveRound,
@@ -126,43 +125,6 @@ function seededRng(...values: number[]) {
   return () => values[Math.min(i++, values.length - 1)];
 }
 
-describe("buildStealSlate", () => {
-  const slate = (r = 0.3) => buildStealSlate("brutalist", "progress-bar", seededRng(r));
-
-  test("offers five of each", () => {
-    expect(slate().styles).toHaveLength(5);
-    expect(slate().components).toHaveLength(5);
-  });
-
-  test("always contains both true answers", () => {
-    expect(slate().styles).toContain("brutalist");
-    expect(slate().components).toContain("progress-bar");
-  });
-
-  test("draws each half from its own deck only", () => {
-    const { styles, components } = slate();
-    expect(styles.every((id) => STYLES.some((c) => c.id === id))).toBe(true);
-    expect(components.every((id) => COMPONENTS.some((c) => c.id === id))).toBe(true);
-  });
-
-  test("never repeats a card within a slate", () => {
-    expect(new Set(slate().styles).size).toBe(5);
-    expect(new Set(slate().components).size).toBe(5);
-  });
-
-  /**
-   * Drawn fresh at steal time, so the same Secret never presents the same five
-   * twice — the flaw the old fixed similarity groups had.
-   */
-  test("varies the decoys between draws", () => {
-    const seen = new Set([0.1, 0.35, 0.6, 0.85].map((r) => slate(r).styles.join()));
-    expect(seen.size).toBeGreaterThan(1);
-  });
-
-  test("refuses an id that is not in the deck", () => {
-    expect(() => buildStealSlate("nope", "progress-bar", seededRng(0.3))).toThrow(/unknown/i);
-  });
-});
 
 describe("createRound", () => {
   const seats = [1, 2, 3, 4];
@@ -355,26 +317,15 @@ describe("voting", () => {
 });
 
 describe("resolveRound", () => {
-  test("sends a caught Chameleon to the steal with both slates", () => {
-    const round = resolveRound(
-      makeRound({ phase: "reveal", votes: { 1: 3, 2: 3, 3: 1, 4: 3 } }),
-      seededRng(0.3),
-    );
+  test("sends a caught Chameleon to the steal, with nothing decided yet", () => {
+    const round = resolveRound(makeRound({ phase: "reveal", votes: { 1: 3, 2: 3, 3: 1, 4: 3 } }));
     expect(round.phase).toBe("steal");
-    expect(round.stealSlate?.styles).toHaveLength(5);
-    expect(round.stealSlate?.components).toHaveLength(5);
-    expect(round.stealSlate?.styles).toContain("brutalist");
-    expect(round.stealSlate?.components).toContain("progress-bar");
     expect(round.outcome).toBeUndefined();
   });
 
   test("resolves straight to the result when the Chameleon escapes", () => {
-    const round = resolveRound(
-      makeRound({ phase: "reveal", votes: { 1: 2, 2: 2, 3: 2, 4: 1 } }),
-      seededRng(0.3),
-    );
+    const round = resolveRound(makeRound({ phase: "reveal", votes: { 1: 2, 2: 2, 3: 2, 4: 1 } }));
     expect(round.phase).toBe("result");
-    expect(round.stealSlate).toBeUndefined();
     expect(round.outcome).toEqual({
       caughtPlayerId: 2,
       chameleonCaught: false,
@@ -385,10 +336,7 @@ describe("resolveRound", () => {
   });
 
   test("resolves a tie to the result with the Chameleon paid", () => {
-    const round = resolveRound(
-      makeRound({ phase: "reveal", votes: { 1: 3, 2: 3, 3: 2, 4: 2 } }),
-      seededRng(0.3),
-    );
+    const round = resolveRound(makeRound({ phase: "reveal", votes: { 1: 3, 2: 3, 3: 2, 4: 2 } }));
     expect(round.phase).toBe("result");
     expect(round.outcome?.tied).toBe(true);
     expect(round.outcome?.awards).toEqual({ 3: 2 });
@@ -399,7 +347,6 @@ describe("submitSteal", () => {
   const caught = makeRound({
     phase: "steal",
     votes: { 1: 3, 2: 3, 3: 1, 4: 2 },
-    stealSlate: { styles: ["brutalist", "wireframe"], components: ["progress-bar", "avatar"] },
   });
 
   test("pays the Chameleon 2 for naming both", () => {

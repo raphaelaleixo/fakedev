@@ -15,7 +15,6 @@ import { getComponent, getStyle } from "../game/content/deck";
 import { seatColorFor } from "../game/match";
 import {
   MOCK_SEATS,
-  MOCK_SLATE,
   MOCK_VOTES,
   mockRound,
 } from "../mocks/fixtures";
@@ -32,6 +31,44 @@ import { color, font } from "../theme/tokens";
 const VIEWS = ["turn", "waiting", "vote", "voted", "steal", "lookUp"] as const;
 type View = (typeof VIEWS)[number];
 
+/**
+ * One property per kind of value editor, so each can be reached in a keystroke
+ * rather than by remembering which property happens to be a colour.
+ *
+ * The last one has no schema entry at all, which is the case the composer meets
+ * whenever somebody types a real CSS property nobody curated — the whole point
+ * of the list not being a whitelist.
+ */
+const PROBES: [string, string][] = [
+  ["enum", "display"],
+  // Its own probe despite also being an enum: six generic families is the one
+  // list whose *options* are the thing worth looking at, and it is where the
+  // pending font-bundling work will land.
+  ["font", "font-family"],
+  ["colour", "background-color"],
+  ["length", "padding"],
+  ["freetext", "box-shadow"],
+  ["no schema", "aspect-ratio"],
+];
+
+/**
+ * An open declaration for a key, so there is something to answer.
+ *
+ * A value move answers a declaration somebody else opened — that is the rule
+ * the whole turn structure rests on — so jumping straight to a value editor
+ * means putting the other half of the move on the board first.
+ */
+function opened(key: string): Edit {
+  return {
+    id: `probe-${key}`,
+    playerId: 1,
+    turnIndex: 0,
+    target: "outer",
+    kind: "style",
+    key,
+  } as Edit;
+}
+
 export default function MockController() {
   const { t } = useTranslation();
   const [seat, setSeat] = useState(1);
@@ -39,6 +76,7 @@ export default function MockController() {
   const [committed, setCommitted] = useState<Edit[]>([]);
   const [picked, setPicked] = useState<StealGuess | null>(null);
   const [openControls, setOpenControls] = useState(true);
+  const [probe, setProbe] = useState<string | null>(null);
   const controlsId = useId();
 
   /**
@@ -80,9 +118,21 @@ export default function MockController() {
               {t("controller.yourTurn")}
             </Typography>
             <Composer
+              // Remounted when the probe changes, because the draft is read
+              // once — see `initialDraft`.
+              key={probe ?? "none"}
               playerId={seat}
               turnIndex={round.turnIndex}
-              edits={[...round.edits, ...committed]}
+              edits={
+                probe
+                  ? [...round.edits, ...committed, opened(probe)]
+                  : [...round.edits, ...committed]
+              }
+              initialDraft={
+                probe
+                  ? { target: "outer", move: "value", key: probe }
+                  : undefined
+              }
               onCommit={(edit) => setCommitted((prev) => [...prev, edit])}
             />
             {committed.length > 0 && (
@@ -134,7 +184,6 @@ export default function MockController() {
         // Only the caught Chameleon sees the slate. Everyone else waits.
         return isChameleon ? (
           <StealPicker
-            slate={MOCK_SLATE}
             edits={round.edits}
             onSteal={setPicked}
           />
@@ -205,6 +254,32 @@ export default function MockController() {
                 </Button>
               ))}
             </ButtonGroup>
+
+            <Typography variant="caption" sx={{ color: color.muted }}>
+              value editor (opens a declaration to answer)
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 0.5,
+                maxWidth: 260,
+              }}
+            >
+              {PROBES.map(([label, key]) => (
+                <Button
+                  key={label}
+                  size="small"
+                  variant={probe === key ? "contained" : "outlined"}
+                  onClick={() => {
+                    setProbe(probe === key ? null : key);
+                    setView("turn");
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </Box>
 
             <Typography variant="caption" sx={{ color: color.muted }}>
               screen

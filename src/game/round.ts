@@ -2,7 +2,6 @@ import {
   CHAMELEON_POINTS,
   CORRECT_VOTER_POINTS,
   PARTIAL_STEAL_POINTS,
-  STEAL_SLATE_SIZE,
   TARGET_SCORE,
   TURNS_PER_PLAYER,
 } from "./constants";
@@ -125,43 +124,6 @@ function pickOne<T>(items: T[], rng: Rng): T {
   return items[Math.floor(rng() * items.length)];
 }
 
-/** Fisher-Yates. Returns a new array. */
-function shuffle<T>(items: T[], rng: Rng): T[] {
-  const out = [...items];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
-
-/** Five drawn from a deck, always including the answer, order randomized. */
-function slateFor(deck: Card[], answerId: string, rng: Rng): string[] {
-  const answer = deck.find((card) => card.id === answerId);
-  if (!answer) throw new Error(`Unknown card: ${answerId}`);
-  const decoys = shuffle(
-    deck.filter((card) => card.id !== answerId),
-    rng,
-  ).slice(0, STEAL_SLATE_SIZE - 1);
-  return shuffle([answer, ...decoys], rng).map((card) => card.id);
-}
-
-/**
- * The caught Chameleon's two slates — five styles and five components, each
- * containing the true answer. Drawn at steal time, not at setup, so they can't
- * leak early, and drawn fresh each time so the same Secret never presents the
- * same five twice.
- */
-export function buildStealSlate(
-  styleId: string,
-  componentId: string,
-  rng: Rng = Math.random,
-): { styles: string[]; components: string[] } {
-  return {
-    styles: slateFor(STYLES, styleId, rng),
-    components: slateFor(COMPONENTS, componentId, rng),
-  };
-}
 
 export interface CreateRoundInput {
   index: number;
@@ -299,11 +261,10 @@ function finish(round: Round, guess: StealGuess | null, tally: VoteResult): Roun
 }
 
 /**
- * Closes the vote. A caught Chameleon goes to the steal with a freshly drawn
- * slate; anyone else — including a tie, where nobody is caught — resolves
- * straight to the result.
+ * Closes the vote. A caught Chameleon goes to the steal; anyone else —
+ * including a tie, where nobody is caught — resolves straight to the result.
  */
-export function resolveRound(round: Round, rng: Rng = Math.random): Round {
+export function resolveRound(round: Round): Round {
   if (round.phase !== "reveal") {
     throw new Error(`Cannot resolve during the ${round.phase} phase.`);
   }
@@ -314,7 +275,6 @@ export function resolveRound(round: Round, rng: Rng = Math.random): Round {
   return {
     ...round,
     phase: "steal",
-    stealSlate: buildStealSlate(round.styleId, round.componentId, rng),
   };
 }
 

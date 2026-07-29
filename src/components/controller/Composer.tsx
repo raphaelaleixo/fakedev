@@ -53,6 +53,7 @@ export default function Composer({
   edits,
   onCommit,
   busy,
+  initialDraft,
 }: {
   playerId: number;
   turnIndex: number;
@@ -60,9 +61,18 @@ export default function Composer({
   edits: Edit[];
   onCommit: (edit: Edit) => void;
   busy?: boolean;
+  /**
+   * The state to open in, for the mock — a real turn always starts empty.
+   *
+   * Read once. Changing it later does nothing on purpose: syncing a prop into
+   * state would need an effect that could stamp on a half-built move mid-turn,
+   * which is a real bug traded for a dev convenience. Remount with a `key` to
+   * jump somewhere else.
+   */
+  initialDraft?: ComposerDraft;
 }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState<ComposerDraft>({});
+  const [draft, setDraft] = useState<ComposerDraft>(initialDraft ?? {});
 
   const allProperties = useMemo(() => supportedCssProperties(), []);
   /**

@@ -6,7 +6,8 @@ import type { ReactElement } from "react";
 import ResolutionScreen, { type ResolutionPhase } from "./ResolutionScreen";
 import i18n from "../../i18n";
 import theme from "../../theme/theme";
-import { MOCK_SEATS, MOCK_SLATE, mockRoundAt } from "../../mocks/fixtures";
+import { MOCK_SEATS, mockRoundAt } from "../../mocks/fixtures";
+import { COMPONENTS, STYLES } from "../../game/content/deck";
 import type { Round } from "../../game/types";
 
 const show = (ui: ReactElement) =>
@@ -191,10 +192,15 @@ describe("the reveal beat", () => {
 });
 
 describe("the steal beat", () => {
-  test("never shows the slate on the big screen", () => {
+  /**
+   * The room watches the Impostor guess without being shown what they are
+   * choosing between — which is now the whole deck, so naming any card here
+   * would be handing the table the answer to next round as well.
+   */
+  test("never names a card on the big screen", () => {
     const { container } = beat(mockRoundAt("steal"));
-    for (const id of [...MOCK_SLATE.styles, ...MOCK_SLATE.components]) {
-      expect(container.innerHTML).not.toContain(id);
+    for (const card of [...STYLES, ...COMPONENTS]) {
+      expect(container.innerHTML).not.toContain(card.id);
     }
     expect(container.textContent).not.toContain("Primary Button");
   });

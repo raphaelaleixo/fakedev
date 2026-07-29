@@ -68,6 +68,14 @@ export interface KeySchemaEntry {
   step?: number;
   /** valueType "freetext": character cap. */
   maxLength?: number;
+  /**
+   * valueType "enum": draw each option *in* the value it names.
+   *
+   * Opt-in rather than automatic, because most of these would wreck the chip
+   * they are drawn on — `display: none` would remove its own label. It is only
+   * honest where the property changes how text looks and nothing else.
+   */
+  showsItself?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -261,7 +269,6 @@ export interface Round {
    * Written at steal time, not at setup: five of each, shuffled, always
    * including the true answer.
    */
-  stealSlate?: { styles: string[]; components: string[] };
   /** The caught Chameleon's one answer per axis. */
   stealGuess?: StealGuess;
   /** Written when the round resolves; this is when hidden info becomes visible. */

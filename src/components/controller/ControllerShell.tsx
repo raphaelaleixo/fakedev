@@ -41,9 +41,20 @@ export default function ControllerShell({
   const { t } = useTranslation();
 
   return (
+    /**
+     * The viewport, not a page that grows past it.
+     *
+     * With `minHeight` the whole document scrolled, and both the header and the
+     * role bar had to be `sticky` to survive it — which put the role bar on top
+     * of whatever was at the bottom of the content, and the bottom of the
+     * content is where the button that does something lives. Fixing the frame
+     * to the viewport and letting only the middle scroll means the two edges
+     * are simply always there, with nothing underneath them.
+     */
     <Box
       sx={{
-        minHeight: "100dvh",
+        height: "100dvh",
+        overflow: "hidden",
         backgroundColor: color.ink,
         display: "flex",
         flexDirection: "column",
@@ -57,7 +68,22 @@ export default function ControllerShell({
           the two edges that frame them. */}
       <Box
         component="main"
-        sx={{ flex: 1, p: { xs: 2, sm: 3 }, width: "100%", maxWidth: 680, mx: "auto" }}
+        sx={{
+          flex: 1,
+          // Both needed: `minHeight: 0` lets a flex item be shorter than its
+          // content, and without it the scroll never engages.
+          minHeight: 0,
+          overflowY: "auto",
+          // Content sits at the top and takes the height it needs. Stretching
+          // it to the frame pushed every screen's last control onto the bottom
+          // edge, which reads as a page that has been pulled apart to fill
+          // space rather than one that ends where it ends.
+          alignContent: "start",
+          p: { xs: 2, sm: 3 },
+          width: "100%",
+          maxWidth: 680,
+          mx: "auto",
+        }}
       >
         {children}
       </Box>
@@ -90,9 +116,7 @@ function RoleBar({
     <Box
       component="footer"
       sx={{
-        position: "sticky",
-        bottom: 0,
-        zIndex: 2,
+        flex: "0 0 auto",
         borderTop: `1px solid ${color.inkRule}`,
         backgroundColor: color.ink,
       }}

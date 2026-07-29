@@ -5,7 +5,7 @@ import AppHeader from "../components/AppHeader";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
 import {
-  CountdownScreen,
+  CountdownOverlay,
   ResultScreen,
   RevealScreen,
   StealScreen,
@@ -52,12 +52,15 @@ const SCORES = { 1: 3, 2: 1, 4: 2, 5: 1 };
 export default function MockBigScreen() {
   const [view, setView] = useState<RoundPhase | "lobby">("turns");
   /**
-   * Routed through the same hook the real screen uses, so every phase change
-   * here animates exactly as it will in a room — otherwise the one place these
-   * transitions can be exercised without four people and a TV is the one place
-   * they do not happen.
+   * Only lobby-to-round transitions, exactly as the real screen does.
+   *
+   * This used to wrap every phase change, which meant the mock animated things
+   * the game does not — turns to countdown slid the whole board sideways, which
+   * is precisely what putting the countdown over the board was meant to stop. A
+   * mock that shows transitions the real screen has never had is worse than one
+   * with none.
    */
-  const shown = useViewTransition(view, "round-start");
+  const phase = useViewTransition(view === "lobby" ? "lobby" : "playing", "round-start");
   const [count, setCount] = useState(3);
   const [turns, setTurns] = useState(MOCK_EDITS.length);
   const [steal, setSteal] = useState(0);
@@ -71,13 +74,21 @@ export default function MockBigScreen() {
   ][steal];
 
   function screen() {
-    switch (shown) {
+    if (phase === "lobby") {
+      return <Lobby roomState={roomWith(count)} onStart={() => setView("turns")} />;
+    }
+    switch (view) {
       case "lobby":
-        return <Lobby roomState={roomWith(count)} onStart={() => setView("turns")} />;
+        return null;
       case "turns":
         return <Canvas round={mockRound(turns)} seats={MOCK_SEATS} scores={SCORES} />;
       case "countdown":
-        return <CountdownScreen onDone={() => setView("voting")} />;
+        return (
+          <>
+            <Canvas round={mockRound(turns)} seats={MOCK_SEATS} scores={SCORES} />
+            <CountdownOverlay onDone={() => setView("voting")} />
+          </>
+        );
       case "voting":
         // The fixture has everybody voted, which is the one state the screen is
         // never in while it matters.
@@ -120,6 +131,8 @@ export default function MockBigScreen() {
         display: "flex",
         flexDirection: "column",
         backgroundColor: color.ink,
+        // Matches PageShell: the countdown covers the view without replacing it.
+        position: "relative",
       }}
     >
       <AppHeader roomState={roomWith(count)} />

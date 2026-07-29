@@ -44,7 +44,19 @@ export default function PageShell({
       <AppHeader roomState={roomState} seatName={seatName} seatColor={seatColor} />
       <Box
         component="main"
-        sx={fill ? { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" } : undefined}
+        sx={
+          fill
+            ? {
+                flex: 1,
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+                // A positioning context for anything that covers the view
+                // without replacing it — the countdown does exactly that.
+                position: "relative",
+              }
+            : undefined
+        }
       >
         {children}
       </Box>

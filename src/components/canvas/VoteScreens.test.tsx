@@ -2,7 +2,13 @@ import { describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ThemeProvider } from "@mui/material/styles";
 import { I18nextProvider } from "react-i18next";
-import { ResultScreen, RevealScreen, StealScreen, VotingScreen } from "./VoteScreens";
+import {
+  CountdownOverlay,
+  ResultScreen,
+  RevealScreen,
+  StealScreen,
+  VotingScreen,
+} from "./VoteScreens";
 import i18n from "../../i18n";
 import theme from "../../theme/theme";
 import { MOCK_SEATS, MOCK_SLATE, mockRoundAt } from "../../mocks/fixtures";
@@ -16,6 +22,24 @@ const show = (ui: ReactElement) =>
   );
 
 const SCORES = { 1: 3, 2: 1, 4: 2, 5: 1 };
+
+describe("CountdownOverlay", () => {
+  /**
+   * The board stays put through the countdown. It used to be a screen of its
+   * own, so the board left when the turns ended and came back when the vote
+   * opened — two changes for a moment that is really one.
+   */
+  test("covers the view without replacing it", () => {
+    const { container } = show(
+      <>
+        <p>the board</p>
+        <CountdownOverlay onDone={() => undefined} />
+      </>,
+    );
+    expect(screen.getByText("the board")).toBeInTheDocument();
+    expect(container.textContent).toContain("3");
+  });
+});
 
 describe("VotingScreen", () => {
   /**

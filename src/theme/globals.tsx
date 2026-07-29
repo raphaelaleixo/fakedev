@@ -169,6 +169,9 @@ export default function AppGlobalStyles() {
          */
         "[data-route-focus]:focus": { outline: "none" },
 
+        // The one pulse — see `pulse` in tokens.
+        "@keyframes pulse": { "50%": { opacity: 0.35 } },
+
         ".fullscreen-toggle": {
           fontFamily: font.mono,
           fontSize: "0.8rem",

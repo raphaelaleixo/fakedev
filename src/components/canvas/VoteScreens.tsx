@@ -7,7 +7,7 @@ import { getComponent, getStyle } from "../../game/content/deck";
 import { foldEdits } from "../../game/fold";
 import RenderWindow from "./RenderWindow";
 import type { Round } from "../../game/types";
-import { color, dim, font } from "../../theme/tokens";
+import { color, dim, font, motion, pulse } from "../../theme/tokens";
 import type { SeatInfo } from "./LiveInspector";
 import BoardPanel from "./BoardPanel";
 import RoundLayout from "./RoundLayout";
@@ -49,7 +49,19 @@ function Stage({ children }: { children: React.ReactNode }) {
 }
 
 /** 3… 2… 1… Point! Then the vote opens on its own. */
-export function CountdownScreen({ onDone }: { onDone: () => void }) {
+/**
+ * 3… 2… 1… Point! — over the board, not instead of it.
+ *
+ * It used to be a screen of its own, which meant the board left when the turns
+ * ended and came back when the vote opened: two changes for a moment that is
+ * really one. As an overlay the board never moves. The countdown arrives on top
+ * of it, and when it goes the only thing that has changed is the column.
+ *
+ * The scrim is a real translucent surface rather than dimming — the board has
+ * to still be *there* behind it, which is the whole point of putting it over
+ * the board.
+ */
+export function CountdownOverlay({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation();
   const [tick, setTick] = useState(3);
 
@@ -63,7 +75,18 @@ export function CountdownScreen({ onDone }: { onDone: () => void }) {
   }, [tick, onDone]);
 
   return (
-    <Stage>
+    <Box
+      // The room is told to look up; nothing here is interactive.
+      role="status"
+      sx={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 5,
+        display: "grid",
+        placeItems: "center",
+        backgroundColor: `color-mix(in oklab, ${color.ink} 88%, transparent)`,
+      }}
+    >
       <Typography
         key={tick}
         variant="h1"
@@ -72,19 +95,18 @@ export function CountdownScreen({ onDone }: { onDone: () => void }) {
           color: tick > 0 ? color.paper : color.flame,
           animation: "pop 220ms ease-out",
           "@keyframes pop": {
-            from: { transform: "scale(0.7)", opacity: 0 },
-            to: { transform: "scale(1)", opacity: 1 },
+            from: { scale: "0.7", opacity: 0 },
+            to: { scale: "1", opacity: 1 },
           },
           "@media (prefers-reduced-motion: reduce)": { animation: "none" },
         }}
       >
         {tick > 0 ? tick : t("vote.point")}
       </Typography>
-    </Stage>
+    </Box>
   );
 }
 
-/** Who has locked a vote — never who they picked. */
 /**
  * The vote, with the board still on it.
  *
@@ -138,11 +160,7 @@ export function VotingScreen({ round, seats }: { round: Round; seats: SeatInfo[]
                           : {
                               // Offset per row, so four people still thinking
                               // read as four people rather than as one alarm.
-                              // Negative, so nobody waits for their turn to
-                              // start — every label is already mid-breath.
-                              animation: `deciding 2.4s ${index * -0.4}s ease-in-out infinite`,
-                              "@keyframes deciding": { "50%": { opacity: 0.3 } },
-                              "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                              ...pulse(motion.waiting, `${index * -0.4}s`),
                             }),
                       }}
                     >

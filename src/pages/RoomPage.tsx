@@ -11,7 +11,7 @@ import Canvas from "../components/canvas/Canvas";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
 import type { FakeDevPlayerData } from "../game/types";
 import {
-  CountdownScreen,
+  CountdownOverlay,
   ResultScreen,
   RevealScreen,
   StealScreen,
@@ -113,7 +113,13 @@ export default function RoomPage() {
       case "turns":
         return <Canvas round={round} seats={seats(roomState)} scores={matchState?.scores ?? {}} />;
       case "countdown":
-        return <CountdownScreen onDone={() => id && openVoting(id)} />;
+        // Over the board, not instead of it — see CountdownOverlay.
+        return (
+          <>
+            <Canvas round={round} seats={seats(roomState)} scores={matchState?.scores ?? {}} />
+            <CountdownOverlay onDone={() => id && openVoting(id)} />
+          </>
+        );
       case "voting":
         return <VotingScreen round={round} seats={seats(roomState)} />;
       case "reveal":

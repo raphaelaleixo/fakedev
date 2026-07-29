@@ -3,7 +3,7 @@ import { Box } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
 import { useTranslation } from "react-i18next";
 import { SOFT_TIMER_SECONDS } from "../../game/constants";
-import { color, dim, font } from "../../theme/tokens";
+import { color, dim, font, motion, pulse } from "../../theme/tokens";
 import type { SeatInfo } from "./LiveInspector";
 import { SeatList, SeatRow } from "./SeatList";
 
@@ -129,9 +129,7 @@ function SoftTimer({ name }: { name: string }) {
           color: color.flame,
           fontSize: "0.95rem",
           letterSpacing: 0,
-          animation: "nudge 1.6s ease-in-out infinite",
-          "@keyframes nudge": { "50%": { opacity: 0.35 } },
-          "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+          ...pulse(motion.urging),
         }}
       >
         {t("canvas.finishTurn", { name })}

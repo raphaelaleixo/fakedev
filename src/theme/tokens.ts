@@ -109,7 +109,34 @@ export const motion = {
   slow: "460ms",
   /** The beat one thing waits so another can lead it. */
   stagger: "80ms",
+
+  /** Breathing, not blinking: the room is waiting on a person. */
+  waiting: "2.4s",
+  /** The same thing once it has gone on too long. */
+  urging: "1.6s",
 } as const;
+
+/**
+ * The one pulse in the app.
+ *
+ * Three of these had grown independently — a lobby line short of players, an
+ * overdue turn, a vote nobody has cast — at two rates and three depths, none of
+ * which meant anything different. They all say the same thing: somebody is
+ * being waited on. One keyframe, one depth, and a rate that says whether it is
+ * patient or not.
+ *
+ * The keyframes live in `globals`, since an animation named once and used in
+ * three places should not be redefined at each of them.
+ *
+ * A negative `delay` is the useful kind: it starts a row mid-breath rather than
+ * leaving it still until its first cycle comes round, so a staggered list looks
+ * right from the first frame instead of settling into it.
+ */
+export const pulse = (rate: string = motion.waiting, delay: string = "0s") =>
+  ({
+    animation: `pulse ${rate} ${delay} ease-in-out infinite`,
+    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+  }) as const;
 
 /** Flat shapes, hard edges. Nothing here is rounded much and nothing is shadowed. */
 export const radius = {

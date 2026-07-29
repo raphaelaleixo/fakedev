@@ -6,7 +6,7 @@ import { RoomQRCode, buildJoinUrl, useRoomState, type RoomState } from "react-ga
 import { MIN_PLAYERS, SEAT_COLORS } from "../game/constants";
 import { seatColorFor } from "../game/match";
 import type { FakeDevPlayerData } from "../game/types";
-import { color, font } from "../theme/tokens";
+import { color, font, pulse } from "../theme/tokens";
 import { Comment, MarkupLine, Pair, Punct, Swatch, Tag } from "./MarkupLine";
 
 /**
@@ -143,11 +143,7 @@ export default function Lobby({
                   it is the one property a compositor animates for free. */}
               <Box
                 component="span"
-                sx={{
-                  animation: "lobby-waiting 2.4s ease-in-out infinite",
-                  "@keyframes lobby-waiting": { "50%": { opacity: 0.4 } },
-                  "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-                }}
+                sx={pulse()}
               >
                 <Comment>{t("lobby.needMore", { count: missing })}</Comment>
               </Box>

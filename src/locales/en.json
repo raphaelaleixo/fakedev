@@ -129,6 +129,8 @@
     "thinking": "deciding",
     "lockedCount": "{{locked}} of {{total}} locked in",
     "revealHeading": "The votes",
+    "received_one": "{{count}} vote",
+    "received_other": "{{count}} votes",
     "confirm": "Lock it in",
     "youPicked": "You pointed at",
     "lockedIn": "That's locked. Look up."
@@ -144,6 +146,7 @@
   },
   "result": {
     "theSecretWas": "It was",
+    "wasImpostor": "{{name}} was the Impostor",
     "caught": "{{name}} was the Impostor, and got caught",
     "escaped": "{{name}} was the Impostor, and walked away with it",
     "tied": "The vote tied — {{name}} was the Impostor, and escapes",
@@ -152,7 +155,8 @@
     "nextRound": "Next round",
     "matchWinner": "{{names}} wins",
     "half": "{{name}} was the Impostor, got caught, and named half of it",
-    "guessedNothing": "{{name}} was the Impostor, got caught, and got neither"
+    "guessedNothing": "{{name}} was the Impostor, got caught, and got neither",
+    "standings": "Standings"
   },
   "deck": {
     "style": {

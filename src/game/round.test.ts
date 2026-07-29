@@ -13,7 +13,8 @@ import {
   submitSteal,
   tallyVotes,
   totalTurns,
-  roundPhase,
+  roundStage,
+  stageTransition,
 } from "./round";
 import { COMPONENTS, STYLES, getComponent, getStyle } from "./content/deck";
 import type { Edit, MatchState, Round } from "./types";
@@ -542,20 +543,46 @@ describe("the used pools stay sets", () => {
   });
 });
 
-describe("roundPhase", () => {
+describe("roundStage", () => {
   /**
-   * The bug this exists for: reporting "playing" until Firebase answers means
-   * the status flips the moment it does, which fires the lobby-to-round
-   * transition on top of the route transition from the cover and cancels it.
-   * Arriving at a room you just made must be one continuous state, not two.
+   * A room that has not answered yet is a room in the lobby. Reading unknown as
+   * "round" would flip the moment Firebase replied, which is a transition
+   * starting on top of the one already running — and two overlapping
+   * transitions cancel each other out.
    */
-  test("reads an unloaded room as the lobby, not as play", () => {
-    expect(roundPhase(undefined)).toBe("lobby");
-    expect(roundPhase("lobby")).toBe("lobby");
+  test("reads unknown as the lobby", () => {
+    expect(roundStage(undefined, undefined)).toBe("lobby");
+    expect(roundStage("lobby", undefined)).toBe("lobby");
   });
 
-  test("reads anything else as play", () => {
-    expect(roundPhase("playing")).toBe("playing");
-    expect(roundPhase("finished")).toBe("playing");
+  test("puts the turns and the countdown in the round", () => {
+    expect(roundStage("playing", "turns")).toBe("round");
+    expect(roundStage("playing", "countdown")).toBe("round");
+  });
+
+  /**
+   * The vote and everything after it is one stage, so none of it starts a
+   * transition: the list growing into the tally is CSS on rows that never
+   * leave the page, and a transition over the top would freeze the lot into
+   * snapshots.
+   */
+  test("makes the vote and everything after it one stage", () => {
+    for (const phase of ["voting", "reveal", "steal", "result"] as const) {
+      expect(roundStage("playing", phase)).toBe("verdict");
+    }
+  });
+});
+
+describe("stageTransition", () => {
+  /** A round beginning arrives from the side, wherever it began from. */
+  test("treats a new round like a first round", () => {
+    expect(stageTransition("lobby", "round")).toBe("round-start");
+    expect(stageTransition("verdict", "round")).toBe("round-start");
+    expect(stageTransition("verdict", "lobby")).toBe("round-start");
+  });
+
+  /** The board is on both sides of the vote opening, and identical. */
+  test("cuts to the vote rather than moving anything", () => {
+    expect(stageTransition("round", "verdict")).toBe("open-vote");
   });
 });

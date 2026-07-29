@@ -21,6 +21,10 @@ import { color, font } from "../../theme/tokens";
  * is an h2: the view is the round, and whatever the column is doing happens
  * within it. It sits outside the `aside` so it can share that row, so the
  * `aside` is named by it rather than containing it.
+ *
+ * It deliberately carries no transition name. It belongs to the board — when
+ * the round ends the two of them leave together, and a name would have pinned
+ * it in place while everything under it slid away.
  */
 export default function RoundLayout({
   roundNumber,

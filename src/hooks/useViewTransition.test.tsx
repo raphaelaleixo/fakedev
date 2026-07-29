@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import { useViewTransition } from "./useViewTransition";
+import { useTransitionSettled, useViewTransition } from "./useViewTransition";
 
 function Phase({ status }: { status: string }) {
   return <p>{useViewTransition(status)}</p>;
@@ -53,5 +53,60 @@ describe("useViewTransition, with the API present", () => {
 
     await waitFor(() => expect(started).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.getByText("playing")).toBeInTheDocument());
+  });
+});
+
+function Beat({ status }: { status: string }) {
+  const shown = useViewTransition(status);
+  return <p>{`${shown} ${useTransitionSettled() ? "settled" : "moving"}`}</p>;
+}
+
+/**
+ * Anything on a timer has to start counting from the end of the movement, not
+ * from the commit that began it.
+ *
+ * The resolution's beats are the case: the phase commits *inside* the
+ * transition callback, so a `setTimeout` armed on mount is racing the
+ * choreography rather than following it. Slow motion makes the race visible —
+ * the Impostor was being ringed while the list was still growing, a white
+ * outline arriving mid-flight — but the margins are only ever a few hundred
+ * milliseconds, and a slow commit closes them at any speed.
+ */
+describe("useTransitionSettled", () => {
+  let release: () => void;
+
+  beforeEach(() => {
+    (document as Partial<Document>).startViewTransition = ((cb: () => void) => {
+      cb();
+      const finished = new Promise<void>((resolve) => {
+        release = () => resolve();
+      });
+      return {
+        ready: Promise.resolve(),
+        finished,
+        updateCallbackDone: Promise.resolve(),
+        skipTransition() {},
+        types: new Set<string>(),
+      };
+    }) as Document["startViewTransition"];
+  });
+
+  afterEach(() => {
+    delete (document as Partial<Document>).startViewTransition;
+  });
+
+  test("reads as settled while nothing is moving", () => {
+    render(<Beat status="reveal" />);
+    expect(screen.getByText("reveal settled")).toBeInTheDocument();
+  });
+
+  test("is unsettled for as long as the transition runs, and settles when it ends", async () => {
+    const { rerender } = render(<Beat status="reveal" />);
+    rerender(<Beat status="steal" />);
+
+    await waitFor(() => expect(screen.getByText("steal moving")).toBeInTheDocument());
+
+    release();
+    await waitFor(() => expect(screen.getByText("steal settled")).toBeInTheDocument());
   });
 });

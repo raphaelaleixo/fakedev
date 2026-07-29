@@ -16,10 +16,13 @@ import SeatAvatar from "./SeatAvatar";
  */
 export function SeatList({
   label,
+  labelledBy,
   ordered,
   children,
 }: {
-  label: string;
+  label?: string;
+  /** Preferred where the list already has a visible heading — one name, not two. */
+  labelledBy?: string;
   /** `ol` when the sequence is the point, `ul` when it is just the roster. */
   ordered?: boolean;
   children: ReactNode;
@@ -27,7 +30,8 @@ export function SeatList({
   return (
     <Box
       component={ordered ? "ol" : "ul"}
-      aria-label={label}
+      aria-label={labelledBy ? undefined : label}
+      aria-labelledby={labelledBy}
       sx={{ listStyle: "none", m: 0, p: 0, display: "grid" }}
     >
       {children}

@@ -1,20 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Button, ButtonGroup, Slider, Stack, Typography } from "@mui/material";
 import { createInitialRoom, joinPlayer, type RoomState } from "react-gameroom";
 import AppHeader from "../components/AppHeader";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
+import ResolutionScreen from "../components/canvas/ResolutionScreen";
 import {
   CountdownOverlay,
-  ResultScreen,
-  RevealScreen,
-  StealScreen,
-  VotingScreen,
 } from "../components/canvas/VoteScreens";
 import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
 import { seatColorFor } from "../game/match";
 import type { FakeDevPlayerData, RoundPhase } from "../game/types";
-import { MOCK_EDITS, MOCK_SEATS, MOCK_VOTES, mockRound, mockRoundAt } from "../mocks/fixtures";
+import {
+  MOCK_EDITS,
+  MOCK_SEATS,
+  MOCK_VOTES,
+  mockRound,
+  mockRoundAt,
+  type MockVerdict,
+} from "../mocks/fixtures";
+import { roundStage, stageTransition } from "../game/round";
 import { useViewTransition } from "../hooks/useViewTransition";
 import { color } from "../theme/tokens";
 
@@ -51,20 +56,26 @@ const SCORES = { 1: 3, 2: 1, 4: 2, 5: 1 };
 
 export default function MockBigScreen() {
   const [view, setView] = useState<RoundPhase | "lobby">("turns");
-  /**
-   * Only lobby-to-round transitions, exactly as the real screen does.
-   *
-   * This used to wrap every phase change, which meant the mock animated things
-   * the game does not — turns to countdown slid the whole board sideways, which
-   * is precisely what putting the countdown over the board was meant to stop. A
-   * mock that shows transitions the real screen has never had is worse than one
-   * with none.
-   */
-  const phase = useViewTransition(view === "lobby" ? "lobby" : "playing", "round-start");
+  // The same question the real screen asks, from the same function. Answering
+  // it here instead is how the mock ended up animating things the game never
+  // did.
+  const stage = useViewTransition(
+    roundStage(view === "lobby" ? "lobby" : "playing", view === "lobby" ? undefined : view),
+    stageTransition,
+  );
   const [count, setCount] = useState(3);
   const [turns, setTurns] = useState(MOCK_EDITS.length);
   const [steal, setSteal] = useState(0);
   const [lockedIn, setLockedIn] = useState(MOCK_SEATS.length);
+  const [verdict, setVerdict] = useState<MockVerdict>("caught");
+  const [slow, setSlow] = useState(false);
+
+  // Scales every duration in the choreography at once, so the *order* of the
+  // movements can be watched rather than guessed at.
+  useEffect(() => {
+    document.documentElement.classList.toggle("vt-slow", slow);
+    return () => document.documentElement.classList.remove("vt-slow");
+  }, [slow]);
 
   // Cycles the three steal outcomes: both, one, neither.
   const guess = [
@@ -74,12 +85,10 @@ export default function MockBigScreen() {
   ][steal];
 
   function screen() {
-    if (phase === "lobby") {
+    if (stage === "lobby") {
       return <Lobby roomState={roomWith(count)} onStart={() => setView("turns")} />;
     }
-    switch (view) {
-      case "lobby":
-        return null;
+    switch (view === "lobby" ? "turns" : view) {
       case "turns":
         return <Canvas round={mockRound(turns)} seats={MOCK_SEATS} scores={SCORES} />;
       case "countdown":
@@ -90,37 +99,29 @@ export default function MockBigScreen() {
           </>
         );
       case "voting":
-        // The fixture has everybody voted, which is the one state the screen is
-        // never in while it matters.
-        return (
-          <VotingScreen
-            round={{
-              ...mockRoundAt("voting"),
-              votes: Object.fromEntries(Object.entries(MOCK_VOTES).slice(0, lockedIn)),
-            }}
-            seats={MOCK_SEATS}
-          />
-        );
       case "reveal":
-        return (
-          <RevealScreen
-            round={mockRoundAt("reveal")}
-            seats={MOCK_SEATS}
-            onDone={() => setView("steal")}
-          />
-        );
       case "steal":
-        return <StealScreen round={mockRoundAt("steal")} seats={MOCK_SEATS} />;
-      case "result":
+      case "result": {
+        const phase = view === "lobby" || view === "turns" || view === "countdown" ? "voting" : view;
         return (
-          <ResultScreen
-            round={mockRoundAt("result", guess)}
+          <ResolutionScreen
+            round={{
+              ...mockRoundAt(phase, phase === "result" ? guess : undefined, verdict),
+              // The fixture has everybody voted, which is the one state the
+              // vote is never in while it matters.
+              ...(view === "voting"
+                ? { votes: Object.fromEntries(Object.entries(MOCK_VOTES).slice(0, lockedIn)) }
+                : {}),
+            }}
+            phase={phase}
             seats={MOCK_SEATS}
             scores={SCORES}
             finished={false}
+            onRevealDone={() => setView("steal")}
             onNext={() => setView("turns")}
           />
         );
+      }
     }
   }
 
@@ -151,6 +152,14 @@ export default function MockBigScreen() {
           zIndex: 10,
         }}
       >
+        <Button
+          size="small"
+          variant={slow ? "contained" : "outlined"}
+          onClick={() => setSlow((on) => !on)}
+        >
+          slow motion: {slow ? "on" : "off"}
+        </Button>
+
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
           {PHASES.map((phase) => (
             <Button
@@ -163,6 +172,20 @@ export default function MockBigScreen() {
             </Button>
           ))}
         </Box>
+
+        {(view === "reveal" || view === "steal" || view === "result") && (
+          <ButtonGroup size="small" fullWidth>
+            {(["caught", "escaped", "tied"] as const).map((v) => (
+              <Button
+                key={v}
+                variant={v === verdict ? "contained" : "outlined"}
+                onClick={() => setVerdict(v)}
+              >
+                {v}
+              </Button>
+            ))}
+          </ButtonGroup>
+        )}
 
         {view === "result" && (
           <Button size="small" variant="outlined" onClick={() => setSteal((s) => (s + 1) % 3)}>

@@ -7,7 +7,7 @@ import {
   TURNS_PER_PLAYER,
 } from "./constants";
 import { COMPONENTS, STYLES } from "./content/deck";
-import type { Card, Edit, MatchState, Round, StealGuess, StealResult } from "./types";
+import type { Card, Edit, MatchState, Round, RoundPhase, StealGuess, StealResult } from "./types";
 
 /** Vote tally: how many pointed at each suspect, and who is at the top. */
 export interface VoteTally {
@@ -368,7 +368,9 @@ export function applyRoundOutcome(match: MatchState, round: Round): MatchState {
 }
 
 /**
- * Which half of a round the big screen is showing: the lobby, or play.
+ * Which of the three things the big screen is showing: the lobby, the round, or
+ * its resolution. Reveal, steal and result are one stage — they are beats of a
+ * single page, not three screens.
  *
  * **An unknown room reads as the lobby, not as play.** A room that has not
  * loaded yet is the overwhelmingly common case — you have just this second
@@ -381,6 +383,40 @@ export function applyRoundOutcome(match: MatchState, round: Round): MatchState {
  * Rejoining a match already in progress does flip, and does slide. That is the
  * rare case, and sliding into a round you are joining is not a lie.
  */
-export function roundPhase(status: string | undefined): "lobby" | "playing" {
-  return status !== undefined && status !== "lobby" ? "playing" : "lobby";
+/**
+ * Where a view transition is allowed to happen, and nowhere finer.
+ *
+ * Only two moments in a round replace the page: the turns giving way to the
+ * vote, and a new round replacing the last one's result. Everything between —
+ * the vote growing into the tally, the tally becoming the answer — is CSS on
+ * elements that stay mounted, and a stage that changed there would start a
+ * transition over the top of it. A view transition freezes the page into
+ * snapshots; the CSS underneath would keep running, invisibly, behind two
+ * still pictures.
+ */
+export type Stage = "lobby" | "round" | "verdict";
+
+const VERDICT: RoundPhase[] = ["voting", "reveal", "steal", "result"];
+
+/** Unknown reads as lobby: a room still loading has not started anything. */
+export function roundStage(status: string | undefined, phase: RoundPhase | undefined): Stage {
+  if (status === undefined || status === "lobby") return "lobby";
+  return phase && VERDICT.includes(phase) ? "verdict" : "round";
+}
+
+/**
+ * Which choreography a change between two stages calls for.
+ *
+ * Pure, and next to `roundStage` on purpose: the big screen and the mock both
+ * ask this question, and the last time they answered it separately the mock
+ * animated things the game never did.
+ *
+ *  - **round-start** — a round beginning, from the lobby or from the last one's
+ *    result. It arrives from the side, the same movement either way, because it
+ *    is the same event.
+ *  - **open-vote** — the turns giving way to the vote. A cut: the board is on
+ *    both sides of this and identical, so the only honest movement is none.
+ */
+export function stageTransition(_from: Stage, to: Stage): string {
+  return to === "verdict" ? "open-vote" : "round-start";
 }

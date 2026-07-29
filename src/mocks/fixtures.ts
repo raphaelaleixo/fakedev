@@ -83,30 +83,66 @@ export function mockRound(turnsPlayed = MOCK_EDITS.length): Round {
 /** Seats 1, 2 and 5 point at the Chameleon; 3 misfires; the Chameleon points at 1. */
 export const MOCK_VOTES: Record<number, number> = { 1: 4, 2: 4, 3: 2, 4: 1, 5: 4 };
 
+/**
+ * The three ways a vote can land. Only `caught` was reachable from the mock,
+ * which meant the escape — the outcome with no steal at all — could not be
+ * looked at.
+ */
+export const MOCK_VERDICTS = {
+  /** Seat 4 is the Chameleon and draws the most votes. */
+  caught: MOCK_VOTES,
+  /** Everyone points at seat 2, who is not the Chameleon. */
+  escaped: { 1: 2, 3: 2, 4: 2, 5: 2 } as Record<number, number>,
+  /** Two players tie at the top, so nobody is caught. */
+  tied: { 1: 2, 2: 4, 3: 4, 5: 2 } as Record<number, number>,
+} as const;
+
+export type MockVerdict = keyof typeof MOCK_VERDICTS;
+
 export const MOCK_SLATE = {
   styles: ["wireframe", "newspaper", "brutalist", "material", "vaporwave"],
   components: ["avatar", "toggle-switch", "primary-button", "tooltip", "app-header"],
 };
 
 /** The same round frozen at any later phase, for building those screens. */
-export function mockRoundAt(phase: Round["phase"], stealGuess?: StealGuess): Round {
+export function mockRoundAt(
+  phase: Round["phase"],
+  stealGuess?: StealGuess,
+  verdict: MockVerdict = "caught",
+): Round {
   const base: Round = {
     ...mockRound(),
     phase,
     turnIndex: MOCK_EDITS.length,
-    votes: phase === "countdown" ? {} : MOCK_VOTES,
+    votes: phase === "countdown" ? {} : MOCK_VERDICTS[verdict],
   };
 
   if (phase === "steal") return { ...base, stealSlate: MOCK_SLATE };
   if (phase !== "result") return base;
 
-  const steal = stealGuess
+  const caught = verdict === "caught";
+  const steal = caught && stealGuess
     ? {
         style: stealGuess.styleId === base.styleId,
         component: stealGuess.componentId === base.componentId,
       }
     : null;
   const halves = steal ? Number(steal.style) + Number(steal.component) : 0;
+
+  // An uncaught Chameleon takes the round outright and nobody else scores —
+  // there is no steal to split, which is the whole difference.
+  if (!caught) {
+    return {
+      ...base,
+      outcome: {
+        caughtPlayerId: verdict === "tied" ? null : 2,
+        chameleonCaught: false,
+        tied: verdict === "tied",
+        steal: null,
+        awards: { 4: 2 },
+      },
+    };
+  }
 
   return {
     ...base,

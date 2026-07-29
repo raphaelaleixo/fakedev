@@ -4,18 +4,15 @@ import { useTranslation } from "react-i18next";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import type { RoomState } from "react-gameroom";
 import { useGame } from "../contexts/GameContext";
-import { roundPhase } from "../game/round";
+import { roundStage, stageTransition } from "../game/round";
 import { useViewTransition } from "../hooks/useViewTransition";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
+import ResolutionScreen from "../components/canvas/ResolutionScreen";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
 import type { FakeDevPlayerData } from "../game/types";
 import {
   CountdownOverlay,
-  ResultScreen,
-  RevealScreen,
-  StealScreen,
-  VotingScreen,
 } from "../components/canvas/VoteScreens";
 import PageShell from "../components/PageShell";
 import { seatColorFor } from "../game/match";
@@ -44,7 +41,15 @@ export default function RoomPage() {
    * Holding the phase one commit behind the real one lets the browser own the
    * swap. See useViewTransition.
    */
-  const phase = useViewTransition(roundPhase(roomState?.status), "round-start");
+  /**
+   * The two moments that replace the page: the vote opening and a new round
+   * beginning. Everything between them animates itself in CSS on elements that
+   * stay mounted — see `ResolutionScreen`.
+   */
+  const stage = useViewTransition(
+    roundStage(roomState?.status, matchState?.round?.phase),
+    stageTransition,
+  );
 
   useEffect(() => {
     if (id) loadRoom(id);
@@ -83,7 +88,7 @@ export default function RoomPage() {
       );
     }
 
-    if (phase === "lobby" && roomState.status === "lobby") {
+    if (stage === "lobby" && roomState.status === "lobby") {
       return (
         <Lobby
           roomState={roomState}
@@ -121,25 +126,19 @@ export default function RoomPage() {
           </>
         );
       case "voting":
-        return <VotingScreen round={round} seats={seats(roomState)} />;
       case "reveal":
-        return (
-          <RevealScreen
-            round={round}
-            seats={seats(roomState)}
-            onDone={() => id && closeVoting(id)}
-          />
-        );
       case "steal":
-        return <StealScreen round={round} seats={seats(roomState)} />;
       case "result":
+        // One screen for all four, changing props — see ResolutionScreen.
         return (
-          <ResultScreen
+          <ResolutionScreen
             round={round}
+            phase={round.phase}
             seats={seats(roomState)}
             scores={matchState?.scores ?? {}}
             finished={matchState?.status === "finished"}
             winnerIds={matchState?.winnerIds}
+            onRevealDone={() => id && closeVoting(id)}
             onNext={() => id && nextRound(id)}
           />
         );

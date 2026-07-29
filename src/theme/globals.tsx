@@ -35,6 +35,21 @@ export default function AppGlobalStyles() {
           "--font-prose": font.prose,
         },
 
+        /**
+         * Slow motion, for looking at a transition instead of inferring it.
+         *
+         * Every duration and delay in the choreography reads one of these, so
+         * overriding the four scales the whole orchestration proportionally —
+         * the order of the movements is preserved, which is the thing worth
+         * checking. Toggled from the mock big screen.
+         */
+        "html.vt-slow": {
+          "--motion-quick": "900ms",
+          "--motion-base": "1700ms",
+          "--motion-slow": "2300ms",
+          "--motion-stagger": "400ms",
+        },
+
         // The page surfaces set their own colour; this is only what shows
         // through an overscroll bounce, and white there is jarring.
         body: { backgroundColor: color.ink },
@@ -130,6 +145,20 @@ export default function AppGlobalStyles() {
         "html.vt-round-start::view-transition-old(masthead), html.vt-round-start::view-transition-new(masthead)":
           { animation: "none" },
 
+        /**
+         * The vote opening is a cut, on purpose.
+         *
+         * The board is on both sides of it and identical — the countdown was
+         * only ever an overlay — so the sole thing that changes is the column
+         * beside it. Sliding the page for that would move the board away from
+         * itself and back. With every animation off the transition ends on the
+         * next frame, which is the point: this exists to *suppress* the default
+         * cross-fade, not to draw anything.
+         */
+        [`html.vt-open-vote::view-transition-group(*),
+          html.vt-open-vote::view-transition-old(*),
+          html.vt-open-vote::view-transition-new(*)`]: { animation: "none" },
+
         "::view-transition-new(masthead)": {
           animation: `masthead-drop var(--motion-base) var(--motion-stagger) var(--motion-enter) both`,
         },
@@ -171,6 +200,12 @@ export default function AppGlobalStyles() {
 
         // The one pulse — see `pulse` in tokens.
         "@keyframes pulse": { "50%": { opacity: 0.35 } },
+
+        // Votes arriving on a row, one after another. A plain CSS animation on
+        // the real elements, which is all it ever needed to be: the rows are
+        // never snapshotted, so nothing here has to be staged around a
+        // transition.
+        "@keyframes count-in": { from: { opacity: 0, scale: "0.8" } },
 
         ".fullscreen-toggle": {
           fontFamily: font.mono,

@@ -207,6 +207,56 @@ export default function AppGlobalStyles() {
         // transition.
         "@keyframes count-in": { from: { opacity: 0, scale: "0.8" } },
 
+        /**
+         * The rejoin grid, which is `react-gameroom`'s `PlayerSlotsGrid`.
+         *
+         * Styled from out here because the component takes `className` and
+         * `slotClassName` but renders its own children — a name and a status
+         * line, and nothing else. That is why these rows carry no avatar while
+         * every other list of people in the game does: putting one in would
+         * mean not using the component, and the library is the thing to improve
+         * rather than route around. A `renderSlot` prop would close it, and
+         * `PlayerScreen` already takes `renderHeader`/`renderStarted`, so the
+         * idiom is there.
+         */
+        ".seat-grid": {
+          display: "grid",
+          gap: 8,
+        },
+        ".seat-slot": {
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "14px 16px",
+          border: `2px solid ${color.paper}`,
+          borderRadius: radius.sm,
+          textDecoration: "none",
+          fontFamily: font.display,
+          fontWeight: 600,
+          fontSize: "1.1rem",
+          color: color.paper,
+          // A tap target that is a whole row, and a press that answers — the
+          // same 0.97 the buttons use, so a link that acts like a button feels
+          // like one.
+          transition: "background-color 150ms ease-out, color 150ms ease-out, scale 80ms ease-out",
+          "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+          "&:hover": { backgroundColor: color.paper, color: color.ink },
+          "&:active": { scale: "0.97" },
+          "&:focus-visible": focusRing,
+          // The status line the library renders beside the name. Muted and
+          // small: the name is what you are looking for in this list.
+          "& [role='status']": {
+            flex: "none",
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: color.flame,
+          },
+          "&:hover [role='status']": { color: color.ink },
+        },
+
         ".fullscreen-toggle": {
           fontFamily: font.mono,
           fontSize: "0.8rem",

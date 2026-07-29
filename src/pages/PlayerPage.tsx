@@ -5,6 +5,7 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import { useGame } from "../contexts/GameContext";
 import ControllerShell from "../components/controller/ControllerShell";
 import Composer from "../components/controller/Composer";
+import Waiting from "../components/controller/Waiting";
 import { StealPicker, VotePicker } from "../components/controller/VoteControls";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
 import { getComponent, getStyle } from "../game/content/deck";
@@ -50,7 +51,13 @@ export default function PlayerPage() {
     if (id) loadRoom(id);
   }, [id, loadRoom]);
 
-  if (notFound) return <Bare>{t("room.notFound", { code: id })}</Bare>;
+  if (notFound) {
+    return (
+      <Bare>
+        <Message>{t("room.notFound", { code: id })}</Message>
+      </Bare>
+    );
+  }
   if (loading || !roomState) {
     return (
       <Bare>
@@ -60,10 +67,24 @@ export default function PlayerPage() {
   }
 
   const slot = roomState.players.find((p) => p.id === seat);
-  if (!slot || slot.status === "empty") return <Bare>{t("controller.badSeat")}</Bare>;
+  if (!slot || slot.status === "empty") {
+    return (
+      <Bare>
+        <Message>{t("controller.badSeat")}</Message>
+      </Bare>
+    );
+  }
 
   const round = matchState?.round;
-  if (!round) return <Bare>{t("controller.waitingForStart")}</Bare>;
+  // Waiting, not broken — so it gets the waiting treatment rather than the
+  // error one, even though there is no shell to put it in yet.
+  if (!round) {
+    return (
+      <Bare>
+        <Waiting headline={t("controller.waitingForStart")} />
+      </Bare>
+    );
+  }
 
   const isChameleon = round.chameleonId === seat;
   const style = getStyle(round.styleId);
@@ -121,10 +142,28 @@ export default function PlayerPage() {
             onSteal={(guess) => run(() => steal(id!, guess), "controller.stealFailed")}
           />
         ) : (
-          <Waiting>{t("controller.stealWait")}</Waiting>
+          // Naming them costs nothing — the reveal has already happened on the
+          // TV, so who they are is public by now — and it makes the wait a
+          // person rather than a process.
+          <Waiting
+            seat={seats.find((s) => s.id === round.chameleonId)}
+            headline={seats.find((s) => s.id === round.chameleonId)?.name ?? ""}
+            note={t("controller.guessing")}
+          />
         )
       ) : round.phase !== "turns" ? (
-        <Waiting>{t("controller.lookUp")}</Waiting>
+        /**
+         * Two states share this branch and only one of them is an ending. The
+         * countdown sits between the last turn and the vote — nothing has
+         * finished, the turns have just run out — so it says so, and the round
+         * ending is the other line.
+         */
+        <Waiting
+          headline={t(round.phase === "countdown" ? "controller.turnsUp" : "controller.roundOver")}
+          note={t(
+            round.phase === "countdown" ? "controller.lookUp" : "controller.resultsOnScreen",
+          )}
+        />
       ) : active === seat ? (
         <Box>
           <Typography variant="h4" sx={{ mb: 2 }}>
@@ -140,24 +179,22 @@ export default function PlayerPage() {
         </Box>
       ) : (
         // Whose turn it is, and nothing else. No render mirror, no inspector.
-        <Waiting>
-          {t("controller.otherTurn", {
-            name: roomState.players.find((p) => p.id === active)?.name ?? `#${active}`,
-          })}
-        </Waiting>
+        <Waiting
+          seat={seats.find((s) => s.id === active)}
+          headline={seats.find((s) => s.id === active)?.name ?? `#${active}`}
+          note={t("controller.editing")}
+        />
       )}
     </ControllerShell>
   );
 }
 
-function Waiting({ children }: { children: React.ReactNode }) {
-  return (
-    <Box sx={{ py: 8, textAlign: "center" }}>
-      <Typography sx={{ color: color.muted, fontSize: "1.2rem" }}>{children}</Typography>
-    </Box>
-  );
-}
-
+/**
+ * The screen before there is a screen: no room, no seat, no shell to hang one
+ * on. Children are rendered as they come — it used to wrap them in a
+ * `Typography`, which is a `<p>`, and a `<p>` holding a layout is invalid HTML
+ * the moment anything but a sentence goes in it.
+ */
 function Bare({ children }: { children: React.ReactNode }) {
   return (
     <Box
@@ -170,7 +207,12 @@ function Bare({ children }: { children: React.ReactNode }) {
         p: 3,
       }}
     >
-      <Typography sx={{ color: color.muted }}>{children}</Typography>
+      {children}
     </Box>
   );
+}
+
+/** A line of text on a bare screen. */
+function Message({ children }: { children: React.ReactNode }) {
+  return <Typography sx={{ color: color.muted }}>{children}</Typography>;
 }

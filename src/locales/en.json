@@ -56,7 +56,7 @@
   },
   "playerJoin": {
     "heading": "Take a seat",
-    "roomLine": "Room {{code}}",
+    "roomLine": "Room",
     "nameLabel": "Your name",
     "submit": "Join",
     "joining": "Joining…",
@@ -67,7 +67,8 @@
       "room-not-found": "No room with that code.",
       "already-started": "That round already started.",
       "room-full": "This room is full."
-    }
+    },
+    "rejoinNote": "Tap your own name. The round is already dealt, so nobody new can join it."
   },
   "room": {
     "notFound": "No room with code {{code}}."
@@ -92,9 +93,7 @@
     "yourRole": "Your role",
     "fakeDev": "FAKE DEV",
     "yourTurn": "Your turn",
-    "otherTurn": "{{name}} is editing",
     "lookUp": "Look at the big screen",
-    "stealWait": "The Impostor is guessing",
     "waitingForStart": "Waiting for the round to start",
     "badSeat": "That seat isn't in this room.",
     "commitFailed": "That edit didn't land. Try again.",
@@ -102,7 +101,12 @@
     "componentLabel": "Component",
     "decksHint": "Everything it could be",
     "voteFailed": "That vote didn't land. Try again.",
-    "stealFailed": "That guess didn't land. Try again."
+    "stealFailed": "That guess didn't land. Try again.",
+    "editing": "is editing",
+    "guessing": "is guessing",
+    "turnsUp": "Turns are up",
+    "roundOver": "The round has ended",
+    "resultsOnScreen": "See the results on the big screen"
   },
   "composer": {
     "target": "Where",

@@ -10,6 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 import ControllerShell from "../components/controller/ControllerShell";
 import Composer from "../components/controller/Composer";
+import Waiting from "../components/controller/Waiting";
 import { StealPicker, VotePicker } from "../components/controller/VoteControls";
 import { getComponent, getStyle } from "../game/content/deck";
 import { seatColorFor } from "../game/match";
@@ -160,7 +161,7 @@ export default function MockController() {
         );
 
       case "waiting":
-        return <Waiting>{t("controller.otherTurn", { name: "Ana" })}</Waiting>;
+        return <Waiting seat={MOCK_SEATS[1]} headline="Ana" note={t("controller.editing")} />;
 
       case "vote":
         return (
@@ -189,11 +190,20 @@ export default function MockController() {
             onSteal={setPicked}
           />
         ) : (
-          <Waiting>{t("controller.stealWait")}</Waiting>
+          <Waiting
+            seat={MOCK_SEATS[3]}
+            headline={MOCK_SEATS[3].name}
+            note={t("controller.guessing")}
+          />
         );
 
       case "lookUp":
-        return <Waiting>{t("controller.lookUp")}</Waiting>;
+        return (
+          <Waiting
+            headline={t("controller.roundOver")}
+            note={t("controller.resultsOnScreen")}
+          />
+        );
     }
   }
 
@@ -326,12 +336,3 @@ export default function MockController() {
   );
 }
 
-function Waiting({ children }: { children: React.ReactNode }) {
-  return (
-    <Box sx={{ py: 8, textAlign: "center" }}>
-      <Typography sx={{ color: color.muted, fontSize: "1.2rem" }}>
-        {children}
-      </Typography>
-    </Box>
-  );
-}

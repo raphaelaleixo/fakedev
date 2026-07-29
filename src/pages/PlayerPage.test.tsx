@@ -9,7 +9,7 @@ import PlayerPage from "./PlayerPage";
 import i18n from "../i18n";
 import theme from "../theme/theme";
 import { MOCK_SEATS, mockRoundAt } from "../mocks/fixtures";
-import type { RoundPhase } from "../game/types";
+import type { Round, RoundPhase } from "../game/types";
 
 const game = vi.hoisted(() => ({ current: {} as Partial<GameContextValue> }));
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game.current }));
@@ -28,13 +28,17 @@ function room() {
   };
 }
 
-function show(phase: RoundPhase, overrides: Partial<GameContextValue> = {}) {
+function show(
+  phase: RoundPhase,
+  overrides: Partial<GameContextValue> = {},
+  round: Partial<Round> = {},
+) {
   game.current = {
     roomState: room() as unknown as GameContextValue["roomState"],
     // Nobody has voted yet: the fixture ships a finished vote, which is the
     // one state the picker is never in while it still matters.
     matchState: {
-      round: { ...mockRoundAt(phase), votes: {} },
+      round: { ...mockRoundAt(phase), votes: {}, ...round },
     } as unknown as GameContextValue["matchState"],
     loading: false,
     notFound: false,
@@ -67,6 +71,32 @@ function show(phase: RoundPhase, overrides: Partial<GameContextValue> = {}) {
  * silently does not land looks exactly like a vote that did, and the player
  * sits there believing they have voted while the room waits on them.
  */
+/**
+ * At five players you spend eight turns of every ten here, so this is the
+ * resting state of the device rather than an interstitial. It names the person
+ * being waited on, which is what makes looking up at the room the obvious next
+ * move.
+ */
+describe("PlayerPage, while waiting", () => {
+  // Turn two of ten, so the seat in play is Ana and not this device. The
+  // fixture ships a round with every turn spent, which has no active player at
+  // all — a state this screen is never in while it matters.
+  const midTurn = { turnIndex: 1 };
+
+  test("names whose turn it is, and announces the change", () => {
+    show("turns", {}, midTurn);
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("Ana");
+    expect(status).toHaveTextContent("is editing");
+  });
+
+  test("does not mirror the board while somebody else edits", () => {
+    const { container } = show("turns", {}, midTurn);
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(container.textContent).not.toContain("untitled-component.html");
+  });
+});
+
 describe("PlayerPage, when a write fails", () => {
   test("says so when a vote does not land", async () => {
     const { user } = show("voting", {

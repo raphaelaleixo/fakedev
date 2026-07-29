@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { I18nextProvider } from "react-i18next";
@@ -80,7 +80,8 @@ describe("HomePage", () => {
     await user.click(screen.getByRole("button", { name: "New game" }));
 
     expect(createRoom).toHaveBeenCalled();
-    expect(router.state.location.pathname).toBe("/room/7KQP2");
+    // Navigation waits a frame, so React is idle when flushSync runs.
+    await waitFor(() => expect(router.state.location.pathname).toBe("/room/7KQP2"));
   });
 
   test("stays put and says so when the room can't be opened", async () => {

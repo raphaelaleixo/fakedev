@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import type { RoomState } from "react-gameroom";
 import { useGame } from "../contexts/GameContext";
+import { roundPhase } from "../game/round";
 import { useViewTransition } from "../hooks/useViewTransition";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
@@ -43,10 +44,7 @@ export default function RoomPage() {
    * Holding the phase one commit behind the real one lets the browser own the
    * swap. See useViewTransition.
    */
-  const phase = useViewTransition(
-    roomState?.status === "lobby" ? "lobby" : "playing",
-    "round-start",
-  );
+  const phase = useViewTransition(roundPhase(roomState?.status), "round-start");
 
   useEffect(() => {
     if (id) loadRoom(id);

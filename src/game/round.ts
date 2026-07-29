@@ -366,3 +366,21 @@ export function applyRoundOutcome(match: MatchState, round: Round): MatchState {
       : {}),
   };
 }
+
+/**
+ * Which half of a round the big screen is showing: the lobby, or play.
+ *
+ * **An unknown room reads as the lobby, not as play.** A room that has not
+ * loaded yet is the overwhelmingly common case — you have just this second
+ * created it — and reporting "playing" until Firebase answers means the status
+ * flips the instant it does. That flip is a state change like any other, so it
+ * fires the lobby-to-round transition, which starts while the route transition
+ * from the cover is still running and cancels it. The cover's drop would get a
+ * few frames in and vanish.
+ *
+ * Rejoining a match already in progress does flip, and does slide. That is the
+ * rare case, and sliding into a round you are joining is not a lie.
+ */
+export function roundPhase(status: string | undefined): "lobby" | "playing" {
+  return status !== undefined && status !== "lobby" ? "playing" : "lobby";
+}

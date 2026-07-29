@@ -13,6 +13,7 @@ import {
   submitSteal,
   tallyVotes,
   totalTurns,
+  roundPhase,
 } from "./round";
 import { COMPONENTS, STYLES, getComponent, getStyle } from "./content/deck";
 import type { Edit, MatchState, Round } from "./types";
@@ -538,5 +539,23 @@ describe("the used pools stay sets", () => {
     const next = applyRoundOutcome(match, round);
     expect(next.usedStyleIds).toEqual(["brutalist"]);
     expect(next.usedComponentIds).toEqual(["progress-bar"]);
+  });
+});
+
+describe("roundPhase", () => {
+  /**
+   * The bug this exists for: reporting "playing" until Firebase answers means
+   * the status flips the moment it does, which fires the lobby-to-round
+   * transition on top of the route transition from the cover and cancels it.
+   * Arriving at a room you just made must be one continuous state, not two.
+   */
+  test("reads an unloaded room as the lobby, not as play", () => {
+    expect(roundPhase(undefined)).toBe("lobby");
+    expect(roundPhase("lobby")).toBe("lobby");
+  });
+
+  test("reads anything else as play", () => {
+    expect(roundPhase("playing")).toBe("playing");
+    expect(roundPhase("finished")).toBe("playing");
   });
 });

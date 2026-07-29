@@ -27,7 +27,21 @@ export function useOpenRoom() {
     setOpening(true);
     setFailed(false);
     try {
-      navigate(`/room/${await createRoom()}`, { viewTransition: true, flushSync: true });
+      const roomId = await createRoom();
+
+      /**
+       * Wait for a frame before navigating.
+       *
+       * `flushSync` must not run while React is rendering — it warns and
+       * defers, and a deferred commit inside `startViewTransition` means the
+       * browser snapshots a state that has not changed yet, which is a
+       * transition that animates nothing. After an `await` there is no way to
+       * know whether the `setOpening(true)` above has committed yet; one frame
+       * guarantees it has.
+       */
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      navigate(`/room/${roomId}`, { viewTransition: true, flushSync: true });
     } catch {
       setOpening(false);
       setFailed(true);

@@ -3,7 +3,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Stack } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
-import { FullscreenToggle, RoomInfoModal, type RoomState } from "react-gameroom";
+import { FullscreenToggle, RoomInfoModal, buildJoinUrl, type RoomState } from "react-gameroom";
 import type { SeatColor } from "../game/types";
 import SeatAvatar from "./canvas/SeatAvatar";
 import { color, font } from "../theme/tokens";
@@ -131,12 +131,19 @@ export default function AppHeader({
           open={showInfo}
           onClose={() => setShowInfo(false)}
           className="room-info-modal"
-          labels={{
-            close: t("header.close"),
-            roomHeading: t("header.roomHeading"),
-            joinLink: t("header.joinLink"),
-            rejoinLink: t("playerJoin.rejoinLink"),
-          }}
+          closeButtonClassName="room-info-close"
+          /**
+           * Always the join URL, never the derived rejoin one.
+           *
+           * Left to itself the modal encodes `buildRejoinUrl` once the match
+           * starts, which is `/room/:id/players` — a route this game does not
+           * have, so scanning the code mid-round fell through to `*` and
+           * landed on the homepage. `react-unmatched` added the plural route;
+           * we do not need one, because `/room/:id/player` already detects
+           * state: a name form in the lobby, the seat list once it has begun.
+           */
+          qrUrl={buildJoinUrl(roomState.roomId)}
+          labels={{ close: t("header.close"), roomHeading: t("header.roomHeading") }}
         />
       )}
     </Box>

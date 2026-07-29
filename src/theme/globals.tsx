@@ -271,46 +271,100 @@ export default function AppGlobalStyles() {
           "&:focus-visible": focusRing,
         },
 
+        /**
+         * The room's own dialog — `react-gameroom`'s `RoomInfoModal`, which is
+         * how a player who dropped gets back to their seat mid-round.
+         *
+         * Styled from here because the component renders its own markup: a
+         * close button, a heading of "Room 7KQP2", the QR, and one link per
+         * slot. It hands us `className`, `closeButtonClassName` and
+         * `linkClassName`, so the parts are addressable even though their
+         * contents are not.
+         */
         ".room-info-modal": {
-          border: `4px solid ${color.flame}`,
+          position: "relative",
+          border: `1px solid ${color.inkRule}`,
           borderRadius: radius.none,
-          backgroundColor: color.ink,
+          backgroundColor: color.inkPanel,
           color: color.paper,
-          fontFamily: font.mono,
-          padding: "24px",
+          // Display, not mono. The dialog is chrome; the only code on it is the
+          // room id, and that arrives inside the heading's own sentence — see
+          // the note on the heading.
+          fontFamily: font.display,
+          padding: "28px 24px 24px",
           maxWidth: "min(92vw, 420px)",
-          "&::backdrop": { background: "rgba(6, 10, 24, 0.82)" },
-          "& h2, & h3": {
+          "&::backdrop": { background: `color-mix(in oklab, ${color.ink} 82%, transparent)` },
+          /**
+           * "Room 7KQP2" is one text node, so the label and the value cannot
+           * take different faces the way they do everywhere else in the app.
+           * Letter-spacing on the whole line is the closest honest compromise:
+           * it reads as a code without pretending the word is one.
+           */
+          "& h3": {
+            margin: "0 0 20px",
             fontFamily: font.display,
-            textTransform: "uppercase",
-            letterSpacing: "0.02em",
-            margin: "0 0 12px",
+            fontWeight: 800,
+            fontSize: "1.5rem",
+            letterSpacing: "0.04em",
+            textAlign: "center",
           },
-          "& a": {
-            display: "block",
-            color: color.flame,
-            padding: "8px 0",
-            borderBottom: `1px solid ${color.inkRule}`,
-            textDecoration: "none",
-          },
-          "& a:hover": { textDecoration: "underline" },
-          "& button": {
-            fontFamily: font.mono,
-            color: color.paper,
-            background: "transparent",
-            border: `1px solid ${color.inkRule}`,
-            borderRadius: radius.sm,
-            padding: "6px 12px",
-            cursor: "pointer",
-          },
-          // The QR has to stay light to scan — same window idea as the stage.
-          "& svg, & canvas, & img": {
+          /**
+           * The QR, as big as the dialog allows.
+           *
+           * `RoomInfoModal` renders it at a hardcoded 160px, so the size is set
+           * from here instead — it is an `svg`, so scaling it up costs nothing
+           * and loses nothing. A phone camera across a room is the whole job of
+           * this dialog, and 160px on a TV is a squint.
+           *
+           * The white stays: a QR needs a light quiet zone to scan, which is
+           * the same reason the render stage is a light window in a dark app.
+           */
+          "& [data-room-info-qr]": { display: "block", textAlign: "center", marginBottom: 20 },
+          "& [data-room-info-qr] [role='img']": {
             background: color.paper,
-            padding: 8,
-            display: "block",
-            margin: "0 auto 16px",
+            padding: 12,
+            lineHeight: 0,
           },
+          "& [data-room-info-qr] svg": {
+            width: "min(300px, 68vw)",
+            height: "auto",
+            display: "block",
+          },
+          /**
+           * No seat links. The QR is the whole point of this dialog — it is on
+           * the TV, in front of the room, and a list of one-tap links to
+           * everybody's private controller is the one place the app would hand
+           * over another player's Secret. Whoever needs their seat back scans
+           * the code and picks their own name on the page it opens.
+           *
+           * Hidden rather than not rendered, which is how `react-unmatched`
+           * does it too — `RoomInfoModal` has no prop for this. A `renderLinks`
+           * or a `showLinks={false}` would be the honest fix, alongside the
+           * `renderSlot` the rejoin grid wants.
+           */
+          "& [data-room-info-links]": { display: "none" },
         },
+
+        // Out of the flow and into the corner, so the heading can sit centred
+        // under the QR's own width rather than beside a button.
+        ".room-info-close": {
+          position: "absolute",
+          top: 8,
+          right: 8,
+          width: 36,
+          height: 36,
+          display: "grid",
+          placeItems: "center",
+          fontSize: "1rem",
+          color: color.muted,
+          background: "transparent",
+          border: "1px solid transparent",
+          borderRadius: radius.sm,
+          cursor: "pointer",
+          "&:hover": { color: color.paper, borderColor: color.inkRule },
+          "&:focus-visible": focusRing,
+        },
+
       }}
     />
   );

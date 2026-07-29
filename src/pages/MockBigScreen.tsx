@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Box, Button, ButtonGroup, Slider, Stack, Typography } from "@mui/material";
-import { createInitialRoom, joinPlayer, type RoomState } from "react-gameroom";
 import AppHeader from "../components/AppHeader";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
@@ -8,13 +7,12 @@ import ResolutionScreen from "../components/canvas/ResolutionScreen";
 import {
   CountdownOverlay,
 } from "../components/canvas/VoteScreens";
-import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
-import { seatColorFor } from "../game/match";
-import type { FakeDevPlayerData, RoundPhase } from "../game/types";
+import type { RoundPhase } from "../game/types";
 import {
   MOCK_EDITS,
   MOCK_SEATS,
   MOCK_VOTES,
+  mockRoom,
   mockRound,
   mockRoundAt,
   type MockVerdict,
@@ -23,19 +21,6 @@ import { roundStage, stageTransition } from "../game/round";
 import { useViewTransition } from "../hooks/useViewTransition";
 import { color } from "../theme/tokens";
 
-const NAMES = ["Rafa", "Ana", "Tom", "Ines", "Joost", "Mira", "Dev", "Sanne", "Kai", "Noor"];
-
-function roomWith(count: number): RoomState<FakeDevPlayerData> {
-  let room = createInitialRoom<FakeDevPlayerData>({
-    minPlayers: MIN_PLAYERS,
-    maxPlayers: MAX_PLAYERS,
-    requireFull: false,
-  });
-  for (let seat = 1; seat <= count; seat++) {
-    room = joinPlayer(room, seat, NAMES[seat - 1], { color: seatColorFor(seat) });
-  }
-  return { ...room, roomId: "7KQP2" };
-}
 
 /**
  * DEV-only. Drives the big screen off fixture data so layout can be built
@@ -86,7 +71,7 @@ export default function MockBigScreen() {
 
   function screen() {
     if (stage === "lobby") {
-      return <Lobby roomState={roomWith(count)} onStart={() => setView("turns")} />;
+      return <Lobby roomState={mockRoom(count)} onStart={() => setView("turns")} />;
     }
     switch (view === "lobby" ? "turns" : view) {
       case "turns":
@@ -136,7 +121,7 @@ export default function MockBigScreen() {
         position: "relative",
       }}
     >
-      <AppHeader roomState={roomWith(count)} />
+      <AppHeader roomState={mockRoom(count)} />
       {screen()}
 
       <Stack

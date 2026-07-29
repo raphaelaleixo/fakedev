@@ -23,6 +23,7 @@ export default function AppHeader({
   seatName,
   seatColor,
   slot,
+  fullscreen = true,
 }: {
   roomState?: RoomState;
   /** Shown on a controller, so a player can tell which seat this device is. */
@@ -30,6 +31,15 @@ export default function AppHeader({
   seatColor?: SeatColor;
   /** Extra right-hand content, if a screen needs it. */
   slot?: ReactNode;
+  /**
+   * The fullscreen toggle, which only the shared screen wants.
+   *
+   * A phone is already as full-screen as it gets, so on a controller the
+   * control does nothing anybody asked for and takes room from the one thing
+   * that matters up here — the room code, which is how a player who dropped
+   * gets back in.
+   */
+  fullscreen?: boolean;
 }) {
   const { t } = useTranslation();
   const [showInfo, setShowInfo] = useState(false);
@@ -107,10 +117,12 @@ export default function AppHeader({
           </Button>
         )}
 
-        <FullscreenToggle
-          className="fullscreen-toggle"
-          labels={{ enter: t("header.fullscreen"), exit: t("header.exitFullscreen") }}
-        />
+        {fullscreen && (
+          <FullscreenToggle
+            className="fullscreen-toggle"
+            labels={{ enter: t("header.fullscreen"), exit: t("header.exitFullscreen") }}
+          />
+        )}
       </Stack>
 
       {roomState && (

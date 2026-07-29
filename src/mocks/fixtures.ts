@@ -1,4 +1,6 @@
-import type { Edit, Round, StealGuess } from "../game/types";
+import { createInitialRoom, joinPlayer, type RoomState } from "react-gameroom";
+import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
+import type { Edit, FakeDevPlayerData, Round, StealGuess } from "../game/types";
 import type { SeatInfo } from "../components/canvas/LiveInspector";
 import { seatColorFor } from "../game/match";
 
@@ -29,6 +31,26 @@ import { seatColorFor } from "../game/match";
  */
 
 const NAMES = ["Rafa", "Ana", "Tom", "Ines", "Joost"];
+
+/**
+ * A room with `count` seats filled, built through `react-gameroom`'s own
+ * helpers rather than hand-written — a hand-written room is a guess about the
+ * library's shape, and a wrong guess in a fixture looks like a bug in the app.
+ */
+export function mockRoom(count = NAMES.length): RoomState<FakeDevPlayerData> {
+  // The five who play every fixture, then enough extras to fill a table — the
+  // lobby has to be seen at both ends of its range.
+  const names = [...NAMES, "Mira", "Dev", "Sanne", "Kai", "Noor"];
+  let room = createInitialRoom<FakeDevPlayerData>({
+    minPlayers: MIN_PLAYERS,
+    maxPlayers: MAX_PLAYERS,
+    requireFull: false,
+  });
+  for (let seat = 1; seat <= count; seat++) {
+    room = joinPlayer(room, seat, names[seat - 1], { color: seatColorFor(seat) });
+  }
+  return { ...room, roomId: "7KQP2" };
+}
 
 export const MOCK_SEATS: SeatInfo[] = NAMES.map((name, i) => ({
   id: i + 1,

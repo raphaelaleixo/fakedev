@@ -16,6 +16,7 @@ import { seatColorFor } from "../game/match";
 import {
   MOCK_SEATS,
   MOCK_VOTES,
+  mockRoom,
   mockRound,
 } from "../mocks/fixtures";
 import type { Edit, StealGuess } from "../game/types";
@@ -207,6 +208,7 @@ export default function MockController() {
         }
         seatName={player.name}
         seatColor={player.color ?? seatColorFor(seat)}
+        roomState={mockRoom()}
       >
         {body()}
         {picked && (

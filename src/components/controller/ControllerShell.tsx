@@ -60,7 +60,12 @@ export default function ControllerShell({
         flexDirection: "column",
       }}
     >
-      <AppHeader roomState={roomState} seatName={seatName} seatColor={seatColor} />
+      <AppHeader
+        roomState={roomState}
+        seatName={seatName}
+        seatColor={seatColor}
+        fullscreen={false}
+      />
 
       {/* No panel around the controls. A bordered card inside a page whose
           only content is that card is a box drawn around the whole screen —

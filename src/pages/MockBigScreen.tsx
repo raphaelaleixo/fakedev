@@ -14,7 +14,7 @@ import {
 import { MAX_PLAYERS, MIN_PLAYERS } from "../game/constants";
 import { seatColorFor } from "../game/match";
 import type { FakeDevPlayerData, RoundPhase } from "../game/types";
-import { MOCK_EDITS, MOCK_SEATS, mockRound, mockRoundAt } from "../mocks/fixtures";
+import { MOCK_EDITS, MOCK_SEATS, MOCK_VOTES, mockRound, mockRoundAt } from "../mocks/fixtures";
 import { useViewTransition } from "../hooks/useViewTransition";
 import { color } from "../theme/tokens";
 
@@ -61,6 +61,7 @@ export default function MockBigScreen() {
   const [count, setCount] = useState(3);
   const [turns, setTurns] = useState(MOCK_EDITS.length);
   const [steal, setSteal] = useState(0);
+  const [lockedIn, setLockedIn] = useState(MOCK_SEATS.length);
 
   // Cycles the three steal outcomes: both, one, neither.
   const guess = [
@@ -78,7 +79,17 @@ export default function MockBigScreen() {
       case "countdown":
         return <CountdownScreen onDone={() => setView("voting")} />;
       case "voting":
-        return <VotingScreen round={mockRoundAt("voting")} seats={MOCK_SEATS} />;
+        // The fixture has everybody voted, which is the one state the screen is
+        // never in while it matters.
+        return (
+          <VotingScreen
+            round={{
+              ...mockRoundAt("voting"),
+              votes: Object.fromEntries(Object.entries(MOCK_VOTES).slice(0, lockedIn)),
+            }}
+            seats={MOCK_SEATS}
+          />
+        );
       case "reveal":
         return (
           <RevealScreen
@@ -144,6 +155,26 @@ export default function MockBigScreen() {
           <Button size="small" variant="outlined" onClick={() => setSteal((s) => (s + 1) % 3)}>
             steal: {["both", "one", "neither"][steal]}
           </Button>
+        )}
+
+        {view === "voting" && (
+          <ButtonGroup size="small" fullWidth>
+            {MOCK_SEATS.map((_, n) => (
+              <Button
+                key={n}
+                variant={n === lockedIn ? "contained" : "outlined"}
+                onClick={() => setLockedIn(n)}
+              >
+                {n}
+              </Button>
+            ))}
+            <Button
+              variant={lockedIn === MOCK_SEATS.length ? "contained" : "outlined"}
+              onClick={() => setLockedIn(MOCK_SEATS.length)}
+            >
+              {MOCK_SEATS.length}
+            </Button>
+          </ButtonGroup>
         )}
 
         {view === "lobby" && (

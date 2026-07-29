@@ -110,7 +110,7 @@ export function VotingScreen({ round, seats }: { round: Round; seats: SeatInfo[]
       aside={
         <>
           <SeatList label={t("vote.heading")}>
-            {seats.map((seat) => {
+            {seats.map((seat, index) => {
               const isIn = votes[seat.id] !== undefined;
               return (
                 <SeatRow
@@ -119,6 +119,10 @@ export function VotingScreen({ round, seats }: { round: Round; seats: SeatInfo[]
                   lit={isIn}
                   trailing={
                     // Never colour alone: locked and deciding say so in words.
+                    // Deciding breathes, at the same rate as the lobby's
+                    // waiting line — the room is waiting on a person in both
+                    // cases, and a label that only sits there looks the same
+                    // whether somebody is thinking or has walked off.
                     <Box
                       component="span"
                       sx={{
@@ -129,6 +133,17 @@ export function VotingScreen({ round, seats }: { round: Round; seats: SeatInfo[]
                         letterSpacing: "0.06em",
                         textTransform: "uppercase",
                         color: isIn ? color.flame : dim(color.paper, 45),
+                        ...(isIn
+                          ? {}
+                          : {
+                              // Offset per row, so four people still thinking
+                              // read as four people rather than as one alarm.
+                              // Negative, so nobody waits for their turn to
+                              // start — every label is already mid-breath.
+                              animation: `deciding 2.4s ${index * -0.4}s ease-in-out infinite`,
+                              "@keyframes deciding": { "50%": { opacity: 0.3 } },
+                              "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                            }),
                       }}
                     >
                       {isIn ? t("vote.locked") : t("vote.thinking")}

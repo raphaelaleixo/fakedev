@@ -342,7 +342,7 @@ export interface ComposerDraft {
  *   room   RoomState<FakeDevPlayerData>   (react-gameroom owns this)
  *   game   MatchState                     (everyone subscribes to all of it)
  *
- * The big screen is the authority: it draws the Category, Secret, Chameleon and
+ * The big screen is the authority: it draws the round, Secret, Chameleon and
  * starting player, advances phases, and computes the outcome. Phones write only
  * their own edit on their own turn, their own vote, and the steal guess.
  *

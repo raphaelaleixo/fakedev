@@ -127,8 +127,8 @@
     "heading": "Who's the fake dev?",
     "locked": "locked in",
     "thinking": "deciding",
+    "lockedCount": "{{locked}} of {{total}} locked in",
     "revealHeading": "The votes",
-    "whoIsFake": "Who's the fake dev?",
     "confirm": "Lock it in",
     "youPicked": "You pointed at",
     "lockedIn": "That's locked. Look up."

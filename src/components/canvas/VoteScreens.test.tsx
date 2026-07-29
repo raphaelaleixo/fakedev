@@ -18,6 +18,37 @@ const show = (ui: ReactElement) =>
 const SCORES = { 1: 3, 2: 1, 4: 2, 5: 1 };
 
 describe("VotingScreen", () => {
+  /**
+   * The board is the evidence. Taking it away at the moment everyone has to
+   * decide who was not working toward the Secret turns a deduction into a
+   * memory test — in the paper game the drawing is still on the table.
+   */
+  test("keeps the board on screen while the room votes", () => {
+    const round = mockRoundAt("voting");
+    const { container } = show(<VotingScreen round={round} seats={MOCK_SEATS} />);
+    expect(container.textContent).toContain("untitled-component.html");
+    expect(container.textContent).toContain("display");
+  });
+
+  /**
+   * Turns and voting share one layout, so the column beside the board keeps its
+   * width and the round keeps its heading. Starting the vote should move one
+   * panel, not rearrange the room.
+   */
+  test("keeps the round's heading, with the question inside the column", () => {
+    const round = mockRoundAt("voting");
+    show(<VotingScreen round={round} seats={MOCK_SEATS} />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Round 1");
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Who's the fake dev?");
+  });
+
+  /** One number, so nobody has to count ten cards to know when to look up. */
+  test("counts who has locked in", () => {
+    const round = { ...mockRoundAt("voting"), votes: { 1: 4, 2: 4 } };
+    show(<VotingScreen round={round} seats={MOCK_SEATS} />);
+    expect(screen.getByText("2 of 5 locked in")).toBeInTheDocument();
+  });
+
   test("shows who has locked a vote without showing what they picked", () => {
     const round = mockRoundAt("voting");
     const { container } = show(<VotingScreen round={round} seats={MOCK_SEATS} />);

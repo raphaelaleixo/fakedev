@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
 import { useTranslation } from "react-i18next";
-import { SEAT_COLORS, SOFT_TIMER_SECONDS } from "../../game/constants";
+import { SOFT_TIMER_SECONDS } from "../../game/constants";
 import { color, dim, font } from "../../theme/tokens";
 import type { SeatInfo } from "./LiveInspector";
+import { SeatList, SeatRow } from "./SeatList";
 
 /**
  * Who is contributing, in turn order, with the current one marked — plus the
@@ -46,93 +47,42 @@ export default function TurnRail({
 
   return (
     <Box>
-      <Box
-        component="ol"
-        aria-label={label}
-        sx={{ listStyle: "none", m: 0, p: 0, display: "grid" }}
-      >
+      <SeatList label={label} ordered>
         {turnOrder.map((id) => {
           const seat = seatById.get(id);
-          const tint = seat ? SEAT_COLORS[seat.color] : color.muted;
           const active = id === activeId;
-          const name = seat?.name ?? `#${id}`;
           return (
-            <Box
+            <SeatRow
               key={id}
-              component="li"
-              aria-current={active || undefined}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.25,
-                py: 1,
-                "&:not(:last-of-type)": { borderBottom: `1px solid ${color.inkRule}` },
-              }}
-            >
-              {/* The name is right beside it, so the initial is decoration. */}
-              <Box
-                aria-hidden
-                sx={{
-                  flex: "none",
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  display: "grid",
-                  placeItems: "center",
-                  backgroundColor: active ? tint : dim(tint, 55),
-                  color: color.ink,
-                  fontFamily: font.display,
-                  fontWeight: 800,
-                  fontSize: "0.85rem",
-                  lineHeight: 1,
-                  // A ring rather than a fill change, so the seat colour stays
-                  // the seat colour while the turn moves around the table.
-                  outline: active ? `2px solid ${color.paper}` : "none",
-                  outlineOffset: 2,
-                }}
-              >
-                {name.slice(0, 1).toUpperCase()}
-              </Box>
-              <Box
-                component="span"
-                sx={{
-                  flex: 1,
-                  minWidth: 0,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  fontFamily: font.display,
-                  fontWeight: 600,
-                  fontSize: "0.95rem",
-                  color: active ? color.paper : dim(color.paper, 60),
-                }}
-              >
-                {name}
-              </Box>
-
-              {/* The bare number for the room to read across it, the whole
-                  phrase for anything reading it aloud — "Rafa 3" is not a
-                  sentence. */}
-              <Box
-                component="span"
-                sx={{
-                  flex: "none",
-                  fontFamily: font.display,
-                  fontWeight: 800,
-                  fontSize: "0.95rem",
-                  fontVariantNumeric: "tabular-nums",
-                  color: active ? color.flame : dim(color.flame, 70),
-                }}
-              >
-                <span aria-hidden>{scores[id] ?? 0}</span>
-                <Box component="span" sx={visuallyHidden}>
-                  {t("canvas.points", { count: scores[id] ?? 0 })}
+              seat={seat}
+              lit={active}
+              ringed={active}
+              current={active}
+              trailing={
+                // The bare number for the room to read across it, the whole
+                // phrase for anything reading it aloud — "Rafa 3" is not a
+                // sentence.
+                <Box
+                  component="span"
+                  sx={{
+                    flex: "none",
+                    fontFamily: font.display,
+                    fontWeight: 800,
+                    fontSize: "0.95rem",
+                    fontVariantNumeric: "tabular-nums",
+                    color: active ? color.flame : dim(color.flame, 70),
+                  }}
+                >
+                  <span aria-hidden>{scores[id] ?? 0}</span>
+                  <Box component="span" sx={visuallyHidden}>
+                    {t("canvas.points", { count: scores[id] ?? 0 })}
+                  </Box>
                 </Box>
-              </Box>
-            </Box>
+              }
+            />
           );
         })}
-      </Box>
+      </SeatList>
 
       <Box
         sx={{

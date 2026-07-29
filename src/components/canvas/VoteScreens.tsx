@@ -9,6 +9,9 @@ import RenderWindow from "./RenderWindow";
 import type { Round } from "../../game/types";
 import { color, dim, font } from "../../theme/tokens";
 import type { SeatInfo } from "./LiveInspector";
+import BoardPanel from "./BoardPanel";
+import RoundLayout from "./RoundLayout";
+import { SeatList, SeatRow } from "./SeatList";
 
 /**
  * The screens between the last turn and the next round.
@@ -82,56 +85,82 @@ export function CountdownScreen({ onDone }: { onDone: () => void }) {
 }
 
 /** Who has locked a vote — never who they picked. */
+/**
+ * The vote, with the board still on it.
+ *
+ * It used to replace the board with a centred ceremony screen, which turned the
+ * deduction into a memory test — in the paper game the drawing is still on the
+ * table while everyone points. So this is the turns layout with the sidebar
+ * swapped: the same file on the left, and who has locked in on the right.
+ *
+ * That also makes the whole question answerable from the screen. Every edit is
+ * already written in its author's colour, which is a better record of who did
+ * what than any per-player list could be — a list would flatten the nesting,
+ * and split the lines that carry two people.
+ */
 export function VotingScreen({ round, seats }: { round: Round; seats: SeatInfo[] }) {
   const { t } = useTranslation();
   const votes = round.votes ?? {};
+  const locked = seats.filter((seat) => votes[seat.id] !== undefined).length;
 
   return (
-    <Stage>
-      <Typography variant="h2" sx={{ fontSize: "clamp(1.8rem, 5vw, 3.5rem)" }}>
-        {t("vote.heading")}
-      </Typography>
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
-        {seats.map((seat) => {
-          const locked = votes[seat.id] !== undefined;
-          return (
-            <Box
-              key={seat.id}
-              sx={{
-                px: 3,
-                py: 2,
-                minWidth: 150,
-                fontFamily: font.mono,
-                fontSize: "1.3rem",
-                border: `2px solid ${
-                  locked ? SEAT_COLORS[seat.color] : dim(SEAT_COLORS[seat.color], 50)
-                }`,
-                backgroundColor: locked ? SEAT_COLORS[seat.color] : "transparent",
-                color: locked ? color.ink : dim(color.paper, 50),
-              }}
-            >
-              {seat.name}
-              {/* Quieter than the name, mixed toward whatever it sits on —
-                  the seat's fill once locked, the ink field before. */}
-              <Box
-                sx={{
-                  fontSize: "0.75rem",
-                  color: locked
-                    ? dim(color.ink, 85, SEAT_COLORS[seat.color])
-                    : dim(color.paper, 42),
-                }}
-              >
-                {locked ? t("vote.locked") : t("vote.thinking")}
-              </Box>
-            </Box>
-          );
-        })}
-      </Box>
-    </Stage>
+    <RoundLayout
+      roundNumber={round.index + 1}
+      asideTitle={t("vote.heading")}
+      aside={
+        <>
+          <SeatList label={t("vote.heading")}>
+            {seats.map((seat) => {
+              const isIn = votes[seat.id] !== undefined;
+              return (
+                <SeatRow
+                  key={seat.id}
+                  seat={seat}
+                  lit={isIn}
+                  trailing={
+                    // Never colour alone: locked and deciding say so in words.
+                    <Box
+                      component="span"
+                      sx={{
+                        flex: "none",
+                        fontFamily: font.display,
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: isIn ? color.flame : dim(color.paper, 45),
+                      }}
+                    >
+                      {isIn ? t("vote.locked") : t("vote.thinking")}
+                    </Box>
+                  }
+                />
+              );
+            })}
+          </SeatList>
+
+          {/* The one number that tells the room when to look up, rather than
+              making everybody count ten cards. */}
+          <Typography
+            role="status"
+            sx={{
+              fontFamily: font.display,
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              letterSpacing: "0.04em",
+              color: color.muted,
+            }}
+          >
+            {t("vote.lockedCount", { locked, total: seats.length })}
+          </Typography>
+        </>
+      }
+    >
+      <BoardPanel edits={round.edits} seats={seats} />
+    </RoundLayout>
   );
 }
 
-/** Every vote at once, as arrows from voter to suspect. */
 export function RevealScreen({
   round,
   seats,
@@ -153,7 +182,7 @@ export function RevealScreen({
 
   return (
     <Stage>
-      <Typography variant="h2" sx={{ fontSize: "clamp(1.8rem, 5vw, 3.5rem)" }}>
+      <Typography variant="h2" component="h1" sx={{ fontSize: "clamp(1.8rem, 5vw, 3.5rem)" }}>
         {t("vote.revealHeading")}
       </Typography>
       <Box sx={{ display: "grid", gap: 1, fontFamily: font.mono, fontSize: "1.4rem" }}>
@@ -162,7 +191,9 @@ export function RevealScreen({
             <Box component="span" sx={{ color: color.paper, minWidth: "8ch", textAlign: "right" }}>
               {seat.name}
             </Box>
-            <Box component="span" sx={{ color: color.muted }}>→</Box>
+            <Box component="span" sx={{ color: color.muted }}>
+              →
+            </Box>
             <Box component="span" sx={{ minWidth: "8ch", textAlign: "left" }}>
               {votes[seat.id] !== undefined ? nameOf(votes[seat.id]) : "—"}
             </Box>
@@ -183,7 +214,7 @@ export function StealScreen({ round, seats }: { round: Round; seats: SeatInfo[] 
 
   return (
     <Stage>
-      <Typography variant="h2" sx={{ fontSize: "clamp(1.8rem, 5vw, 3.5rem)" }}>
+      <Typography variant="h2" component="h1" sx={{ fontSize: "clamp(1.8rem, 5vw, 3.5rem)" }}>
         {t("steal.caught", { name })}
       </Typography>
       <Typography sx={{ color: color.muted, fontSize: "1.4rem" }}>
@@ -323,7 +354,7 @@ export function ResultScreen({
       </Box>
 
       {finished ? (
-        <Typography variant="h2" sx={{ fontSize: "clamp(1.6rem, 4vw, 3rem)" }}>
+        <Typography variant="h2" component="h1" sx={{ fontSize: "clamp(1.6rem, 4vw, 3rem)" }}>
           {t("result.matchWinner", {
             names: (winnerIds ?? [])
               .map((id) => seats.find((s) => s.id === id)?.name ?? `#${id}`)

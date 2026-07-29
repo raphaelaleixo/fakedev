@@ -150,14 +150,41 @@ Layout:
 - `src/components/canvas/` — the big screen during a round
 - `src/mocks/fixtures.ts` — the board the canvas is developed against
 
+## Type
+
+**Mono is buttons and the board. Nothing else.**
+
+The board is the one place the app shows *code*, and code is the game's
+content rather than its decoration. Setting the chrome around it in mono too
+makes the whole screen look like an editor and the board stops being the thing
+you look at. So the interface — headings, labels, names, counts, prose on the
+cover — is Bricolage; the inspector and the composer's values are mono. The one
+exception in play is `untitled-component.html`, on the grounds that a file name
+is code rather than chrome around it.
+
+Within the interface, **labels are named in the display face and values are set
+in mono**, which is why `caption`, `InputLabel` and `FormHelperText` are all
+Bricolage: "Room code" should not look like `7KQP2`.
+
+`font.prose` is for rules and instructions only — Bricolage loads at 600 and
+800 here, and neither is a reading weight, so `how-to-play` is the one page set
+in it. Asking for any other weight silently resolves to one of those two.
+
 ## Vocabulary
 
 Use these in code and UI; don't invent synonyms.
 
 **Chameleon** (the hidden role; their controller reads `FAKE DEV`) ·
-**Devs** (everyone else) · **Canvas** (the TV surface) · **Render Window** ·
-**Live Inspector** · **Commit** (one player edit) · **Category** (public) ·
-**Secret** (the component being built) · **Steal** (the caught Chameleon's guess)
+**Devs** (everyone else) · **Contributors** (everyone taking turns, as the big
+screen's sidebar labels them — *including* the Chameleon, which is why this is
+not a synonym for Devs) · **Canvas** (the TV surface) · **Render Window** ·
+**Live Inspector** · **Commit** (one player edit) ·
+**Secret** (the style and the component being built) ·
+**Steal** (the caught Chameleon's guess)
+
+**Category** is gone. It was the public half of the original single-axis
+design; nothing about the answer is public now, and the big screen names only
+the round.
 
 ## Things that will surprise you
 

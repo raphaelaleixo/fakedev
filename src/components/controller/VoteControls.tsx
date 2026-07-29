@@ -45,7 +45,7 @@ export function VotePicker({
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4">{t("vote.whoIsFake")}</Typography>
+      <Typography variant="h4">{t("vote.heading")}</Typography>
       <Stack spacing={1}>
         {seats
           // You cannot point at yourself.

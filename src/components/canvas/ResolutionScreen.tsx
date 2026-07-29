@@ -1,10 +1,10 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
 import { useTranslation } from "react-i18next";
 import { getComponent, getStyle } from "../../game/content/deck";
 import { foldEdits } from "../../game/fold";
-import { tallyVotes } from "../../game/round";
+import { resolveVotes, tallyVotes } from "../../game/round";
 import type { Round, RoundPhase } from "../../game/types";
 import { useTransitionSettled } from "../../hooks/useViewTransition";
 import { color, dim, font, motion, pulse } from "../../theme/tokens";
@@ -89,6 +89,12 @@ export default function ResolutionScreen({
 
   const votes = round.votes ?? {};
   const { counts } = tallyVotes(votes);
+  /**
+   * Asked of the domain rather than worked out from the counts, so the screen
+   * cannot disagree with the scoring about what happened — a tie is an escape,
+   * and that rule lives in one place.
+   */
+  const caught = resolveVotes(votes, round.chameleonId).chameleonCaught;
   const impostor = seats.find((s) => s.id === round.chameleonId);
   const style = getStyle(round.styleId);
   const component = getComponent(round.componentId);
@@ -165,7 +171,7 @@ export default function ResolutionScreen({
               fontSize: "clamp(1.2rem, 2.6vw, 2rem)",
               textTransform: "none",
               whiteSpace: "nowrap",
-              color: answered ? color.flame : color.paper,
+              color: color.paper,
             }}
           >
             {/* Sentence case, against the theme's uppercase h2. Nothing about
@@ -228,6 +234,10 @@ export default function ResolutionScreen({
               // Named from the moment the tally has had its beat, and stays
               // named through the steal and the answer.
               ringed={named && seat.id === round.chameleonId}
+              // Said once, then left alone. From the moment they are named it
+              // is simply true of them, so it stays beside the name through the
+              // steal and into the standings rather than being announced again.
+              note={named && seat.id === round.chameleonId ? <Tag>{t("result.impostor")}</Tag> : undefined}
               trailing={
                 voting ? (
                   <Waiting locked={votes[seat.id] !== undefined} row={index} />
@@ -277,15 +287,17 @@ export default function ResolutionScreen({
             })}
           </Typography>
 
+          {/* One line, not two. Naming the Impostor and saying what it cost
+              them is the same piece of news, and splitting it made the second
+              half arrive as an afterthought under the first. It breathes while
+              the guess is being made, because that is the one moment on this
+              screen where the room is waiting on a person. */}
           {named && !answered && (
-            <Typography role="status" sx={{ ...beatLine, color: color.flame }}>
-              {t("result.wasImpostor", { name: impostor?.name ?? "" })}
-            </Typography>
-          )}
-
-          {phase === "steal" && (
-            <Typography role="status" sx={{ ...beatLine, ...pulse(), color: color.muted }}>
-              {t("steal.guessing")}
+            <Typography
+              role="status"
+              sx={{ ...beatLine, ...(phase === "steal" ? pulse() : {}), color: color.flame }}
+            >
+              {t(caught ? "result.caught" : "result.escaped", { name: impostor?.name ?? "" })}
             </Typography>
           )}
 
@@ -337,6 +349,26 @@ const panel = (showing: boolean) =>
     transition: "translate var(--motion-slow) var(--motion-enter)",
     "@media (prefers-reduced-motion: reduce)": { transition: "none" },
   }) as const;
+
+/** A word that is true from now on, beside the name it is true of. */
+function Tag({ children }: { children: ReactNode }) {
+  return (
+    <Box
+      component="span"
+      sx={{
+        flex: "none",
+        fontFamily: font.display,
+        fontWeight: 700,
+        fontSize: "0.7rem",
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color: color.flame,
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
 
 const beatLine = {
   fontFamily: font.display,
@@ -445,6 +477,18 @@ function Points({ gained, total, won }: { gained: number; total: number; won?: b
   );
 }
 
+/** The two halves they named, as they would say them out loud. */
+function guessText(round: Round, t: (key: string) => string) {
+  const guess = round.stealGuess;
+  if (!guess) return "";
+  return [
+    getStyle(guess.styleId) ? t(getStyle(guess.styleId)!.labelKey) : guess.styleId,
+    getComponent(guess.componentId) ? t(getComponent(guess.componentId)!.labelKey) : guess.componentId,
+    // The same separator the Secret is written with above — a guess is an
+    // attempt at exactly that thing, so it should be spelled the same way.
+  ].join(" · ");
+}
+
 /** What it came to, and the way on. */
 function Answer({
   round,
@@ -464,33 +508,30 @@ function Answer({
   const impostor = seats.find((s) => s.id === round.chameleonId);
   const halves = outcome?.steal ? Number(outcome.steal.style) + Number(outcome.steal.component) : 0;
 
+  /**
+   * What they said and how it went, in one line.
+   *
+   * The guess used to be a second, quieter sentence under the verdict, which
+   * read as a footnote — but the guess *is* the verdict here: naming both
+   * halves steals the round outright, and naming one is worth something. So it
+   * is the sentence, and how close they got is its ending.
+   *
+   * No tie branch. A tied vote catches nobody, which is the Impostor getting
+   * away with it by another route, and saying so twice in different words made
+   * the same outcome look like two.
+   */
   const headline = !outcome
     ? ""
     : outcome.steal
-      ? t(halves === 2 ? "result.stolen" : halves === 1 ? "result.half" : "result.guessedNothing", {
-          name: impostor?.name,
-        })
-      : outcome.tied
-        ? t("result.tied", { name: impostor?.name })
-        : t("result.escaped", { name: impostor?.name });
+      ? t(
+          halves === 2 ? "result.guessedBoth" : halves === 1 ? "result.guessedHalf" : "result.guessedNone",
+          { name: impostor?.name, guess: guessText(round, t) },
+        )
+      : t("result.escaped", { name: impostor?.name });
 
   return (
     <Box sx={{ display: "grid", gap: 1.5, justifyItems: "start" }}>
       <Typography sx={beatLine}>{headline}</Typography>
-
-      {round.stealGuess && halves < 2 && (
-        <Typography sx={{ color: color.muted, fontFamily: font.display }}>
-          {t("result.guessed", {
-            guess: [getStyle(round.stealGuess.styleId), getComponent(round.stealGuess.componentId)]
-              .map(
-                (card, i) =>
-                  (card && t(card.labelKey)) ??
-                  [round.stealGuess?.styleId, round.stealGuess?.componentId][i],
-              )
-              .join(" · "),
-          })}
-        </Typography>
-      )}
 
       {finished ? (
         <Typography sx={{ ...beatLine, color: color.flame }}>

@@ -44,6 +44,7 @@ export function SeatRow({
   lit,
   ringed,
   current,
+  note,
   trailing,
 }: {
   seat: SeatInfo | undefined;
@@ -56,6 +57,13 @@ export function SeatRow({
   ringed?: boolean;
   /** Whose turn it is, for anything that cannot see the ring. */
   current?: boolean;
+  /**
+   * A word about this person, beside their name rather than at the end of the
+   * row. The end of the row is where the round's changing value goes — locked
+   * in, then votes, then points — and something that is true from now on should
+   * not be sitting in the slot that keeps being replaced.
+   */
+  note?: ReactNode;
   trailing?: ReactNode;
 }) {
   return (
@@ -71,22 +79,42 @@ export function SeatRow({
       }}
     >
       <SeatAvatar seat={seat} lit={lit} ringed={ringed} />
+      {/* The name and the word beside it sit on one baseline, which is the
+          only way two different type sizes look deliberate rather than
+          nudged. Nested rather than aligned across the whole row: baseline
+          alignment pulls its group to the top of the line, so doing it at row
+          level would drag the text off centre from the avatar. */}
       <Box
-        component="span"
         sx={{
-          flex: 1,
+          display: "flex",
+          alignItems: "baseline",
+          gap: 1,
+          // Shrinks before the note does, so a long name truncates rather than
+          // pushing the word off the row.
+          flex: "0 1 auto",
           minWidth: 0,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          fontFamily: font.display,
-          fontWeight: 600,
-          fontSize: "0.95rem",
-          color: lit ? color.paper : dim(color.paper, 60),
         }}
       >
-        {seat?.name ?? "?"}
+        <Box
+          component="span"
+          sx={{
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            fontFamily: font.display,
+            fontWeight: 600,
+            fontSize: "0.95rem",
+            color: lit ? color.paper : dim(color.paper, 60),
+          }}
+        >
+          {seat?.name ?? "?"}
+        </Box>
+        {note}
       </Box>
+      {/* Takes the slack, so the note stays against the name and the round's
+          value stays against the right-hand edge. */}
+      <Box sx={{ flex: 1 }} />
       {trailing}
     </Box>
   );

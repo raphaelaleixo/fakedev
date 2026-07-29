@@ -169,13 +169,23 @@ describe("the reveal beat", () => {
   /**
    * The Impostor is named whether or not they were caught, and before the
    * scoreboard rather than under it — the round has been building to this.
+   *
+   * Twice over, and deliberately: the announcement answers the question the
+   * column has been asking, and the word beside the name is what stays true
+   * afterwards. One is an event, the other is a fact.
    */
   test("names the Impostor as a beat of its own", () => {
     vi.useFakeTimers();
     beat(mockRoundAt("reveal"));
-    expect(screen.queryByText(/was the Impostor/)).toBeNull();
+    expect(screen.queryByText(/The impostor/)).toBeNull();
+    expect(screen.queryByText("impostor")).toBeNull();
     act(() => vi.advanceTimersByTime(3500));
-    expect(screen.getByText("Ines was the Impostor")).toBeInTheDocument();
+    // The fixture's vote catches Ines, so the same line carries the news and
+    // the stake: one piece of news, one sentence.
+    expect(
+      screen.getByText("The impostor (Ines) was caught! They have one last chance now!"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("impostor")).toBeInTheDocument();
     vi.useRealTimers();
   });
 });
@@ -223,9 +233,18 @@ describe("the answer beat", () => {
     expect(screen.getAllByText("1")).toHaveLength(2);
   });
 
-  test("says what the Impostor named when they got it wrong", () => {
+  /**
+   * The guess is the verdict, not a footnote under it — naming both halves
+   * steals the round outright — so it is one sentence ending in how close they
+   * came.
+   */
+  test("says what the Impostor named, and how close it was", () => {
     beat(RESULT);
-    expect(screen.getByText(/They guessed Wireframe · Avatar/)).toBeInTheDocument();
+    expect(
+      // The fixture guesses Wireframe · Avatar against a Material Primary
+      // Button: both halves wrong.
+      screen.getByText("Ines guessed: Wireframe · Avatar — and got neither"),
+    ).toBeInTheDocument();
   });
 
   test("shows this round's points beside the running totals", () => {

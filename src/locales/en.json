@@ -136,8 +136,6 @@
     "lockedIn": "That's locked. Look up."
   },
   "steal": {
-    "caught": "{{name}} was caught",
-    "guessing": "One guess at what you were building",
     "heading": "What were they building?",
     "oneShot": "One answer each. No second attempt.",
     "confirm": "That's my answer",
@@ -145,18 +143,15 @@
     "headingComponent": "And what was it?"
   },
   "result": {
-    "theSecretWas": "It was",
-    "wasImpostor": "{{name}} was the Impostor",
-    "caught": "{{name}} was the Impostor, and got caught",
-    "escaped": "{{name}} was the Impostor, and walked away with it",
-    "tied": "The vote tied — {{name}} was the Impostor, and escapes",
-    "stolen": "{{name}} was the Impostor, got caught, and named both",
-    "guessed": "They guessed {{guess}}",
+    "escaped": "The impostor ({{name}}) got away with it!",
     "nextRound": "Next round",
     "matchWinner": "{{names}} wins",
-    "half": "{{name}} was the Impostor, got caught, and named half of it",
-    "guessedNothing": "{{name}} was the Impostor, got caught, and got neither",
-    "standings": "Standings"
+    "standings": "Standings",
+    "impostor": "impostor",
+    "caught": "The impostor ({{name}}) was caught! They have one last chance now!",
+    "guessedBoth": "{{name}} guessed: {{guess}} — and got both right!",
+    "guessedHalf": "{{name}} guessed: {{guess}} — only one was right",
+    "guessedNone": "{{name}} guessed: {{guess}} — and got neither"
   },
   "deck": {
     "style": {

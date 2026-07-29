@@ -82,6 +82,22 @@ export const font = {
  * it lands on, one of the two contrasts with it, and the pair contrasts with
  * each other.
  */
+/**
+ * A choice that has been made.
+ *
+ * Paper, because flame is what says *this is the action* — and a screen where
+ * every option you touched is flame leaves the one button that does something
+ * looking like the fourth thing highlighted on it. The border goes paper too,
+ * so a selected option reads as one solid block rather than an outlined box
+ * with a fill inside it.
+ */
+export const chosen = {
+  backgroundColor: color.paper,
+  borderColor: color.paper,
+  color: color.ink,
+  "&:hover": { backgroundColor: color.paper, borderColor: color.paper },
+} as const;
+
 export const focusRing = {
   outline: `2px solid ${color.ink}`,
   outlineOffset: 2,

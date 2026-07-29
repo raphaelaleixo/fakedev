@@ -180,10 +180,18 @@ const theme = createTheme({
           color: color.muted,
           fontFamily: font.mono,
           "&:hover": { backgroundColor: color.inkPanel },
+          /**
+           * Paper, not flame. These are choices being made — a target, a
+           * property — and there are several of them on the way to one commit.
+           * Flame is what says *this is the action*, so spending it on every
+           * step leaves the button that actually does something looking like
+           * the fourth thing highlighted on the screen.
+           */
           "&.Mui-selected": {
-            backgroundColor: color.flame,
-            color: color.onFlame,
-            "&:hover": { backgroundColor: color.flame },
+            backgroundColor: color.paper,
+            color: color.ink,
+            borderColor: color.paper,
+            "&:hover": { backgroundColor: color.paper },
           },
         },
       },

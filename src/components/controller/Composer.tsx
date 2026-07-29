@@ -15,7 +15,7 @@ import { supportedCssProperties } from "../../game/css";
 import { rankSuggestions } from "../../game/suggest";
 import { STYLE_SCHEMA, getKeySchema } from "../../game/content/keySchema";
 import type { ComposerDraft, ComposerMove, Edit, EditTarget } from "../../game/types";
-import { color, dim, font } from "../../theme/tokens";
+import { chosen, color, dim, font } from "../../theme/tokens";
 import ValueEditor from "./ValueEditor";
 import ColorSwatch from "../ColorSwatch";
 import { LOREM } from "../../game/constants";
@@ -173,25 +173,31 @@ export default function Composer({
         <Step index={3} label={t("composer.slot")}>
           <Stack spacing={0.5}>
             {slots.map((slot) => {
-              const chosen = draft.key === slot.key;
+              const isChosen = draft.key === slot.key;
               return (
                 <Button
                   key={slot.key}
                   onClick={() => set({ key: slot.key, value: "" })}
-                  variant={chosen ? "contained" : "outlined"}
-                  sx={{ justifyContent: "space-between", fontFamily: font.mono }}
+                  variant="outlined"
+                  // Secondary, so the ring is paper rather than flame: these
+                  // are the same kind of choice as the toggles a row above,
+                  // and the only flame on this screen should be the commit.
+                  color="secondary"
+                  sx={{
+                    justifyContent: "space-between",
+                    fontFamily: font.mono,
+                    ...(isChosen && chosen),
+                  }}
                 >
                   <Box component="span">{slot.key}</Box>
-                  {/* Mixed toward the fill this variant actually has, so the
+                  {/* Mixed toward the fill this button actually has, so the
                       hint stays quieter than the key without going see-through
                       over whatever is behind the button. */}
                   <Box
                     component="span"
                     sx={{
                       fontSize: "0.85em",
-                      color: chosen
-                        ? dim(color.onFlame, 70, color.flame)
-                        : dim(color.paper, 70),
+                      color: isChosen ? dim(color.ink, 60, color.paper) : dim(color.paper, 70),
                     }}
                   >
                     {slot.value === undefined ? (

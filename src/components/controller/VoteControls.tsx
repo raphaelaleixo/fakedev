@@ -6,7 +6,7 @@ import { getComponent, getStyle } from "../../game/content/deck";
 import { foldEdits } from "../../game/fold";
 import RenderWindow from "../canvas/RenderWindow";
 import type { Card, Edit, StealGuess } from "../../game/types";
-import { color, font } from "../../theme/tokens";
+import { chosen, color, font } from "../../theme/tokens";
 import type { SeatInfo } from "../canvas/LiveInspector";
 
 /**
@@ -54,18 +54,18 @@ export function VotePicker({
             <Button
               key={seat.id}
               onClick={() => setPicked(seat.id)}
-              variant={picked === seat.id ? "contained" : "outlined"}
+              variant="outlined"
+              color="secondary"
               size="large"
               sx={{
                 justifyContent: "flex-start",
                 fontFamily: font.mono,
                 fontSize: "1.1rem",
-                // Seat color is the rule down the side; the name stays ink.
                 borderColor: color.inkRule,
+                ...(picked === seat.id ? chosen : { color: color.paper }),
+                // Seat colour is the rule down the side, and it survives being
+                // picked — it is who this row is, not what state it is in.
                 borderLeft: `6px solid ${SEAT_COLORS[seat.color]}`,
-                ...(picked === seat.id
-                  ? { backgroundColor: color.flame, color: color.onFlame }
-                  : { color: color.paper }),
               }}
             >
               {seat.name}
@@ -173,8 +173,13 @@ function Slate({
             <Button
               key={id}
               onClick={() => onPick(id)}
-              variant={picked === id ? "contained" : "outlined"}
-              sx={{ justifyContent: "flex-start", fontSize: "1.05rem" }}
+              variant="outlined"
+              color="secondary"
+              sx={{
+                justifyContent: "flex-start",
+                fontSize: "1.05rem",
+                ...(picked === id && chosen),
+              }}
             >
               {card ? t(card.labelKey) : id}
             </Button>

@@ -51,19 +51,15 @@ export default function ControllerShell({
     >
       <AppHeader roomState={roomState} seatName={seatName} seatColor={seatColor} />
 
+      {/* No panel around the controls. A bordered card inside a page whose
+          only content is that card is a box drawn around the whole screen —
+          the controls sit on the field, and the header and the role bar are
+          the two edges that frame them. */}
       <Box
         component="main"
-        sx={{ flex: 1, p: { xs: 1.5, sm: 2 }, width: "100%", maxWidth: 680, mx: "auto" }}
+        sx={{ flex: 1, p: { xs: 2, sm: 3 }, width: "100%", maxWidth: 680, mx: "auto" }}
       >
-        <Box
-          sx={{
-            backgroundColor: color.inkPanel,
-            border: `1px solid ${color.inkRule}`,
-            p: { xs: 2, sm: 3 },
-          }}
-        >
-          {children}
-        </Box>
+        {children}
       </Box>
 
       <RoleBar isChameleon={isChameleon} secret={secret} t={t} />

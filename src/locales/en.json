@@ -100,7 +100,9 @@
     "commitFailed": "That edit didn't land. Try again.",
     "styleLabel": "Style",
     "componentLabel": "Component",
-    "decksHint": "Everything it could be"
+    "decksHint": "Everything it could be",
+    "voteFailed": "That vote didn't land. Try again.",
+    "stealFailed": "That guess didn't land. Try again."
   },
   "composer": {
     "target": "Where",

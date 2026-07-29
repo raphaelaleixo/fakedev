@@ -74,11 +74,10 @@ export default function ControllerShell({
           // content, and without it the scroll never engages.
           minHeight: 0,
           overflowY: "auto",
-          // Content sits at the top and takes the height it needs. Stretching
-          // it to the frame pushed every screen's last control onto the bottom
-          // edge, which reads as a page that has been pulled apart to fill
-          // space rather than one that ends where it ends.
-          alignContent: "start",
+          // Plain block flow, so content takes the height it needs and stops.
+          // It was a one-row grid, which stretched its child to the frame and
+          // pushed every screen's last control onto the bottom edge — a page
+          // pulled apart to fill space rather than one that ends where it ends.
           p: { xs: 2, sm: 3 },
           width: "100%",
           maxWidth: 680,

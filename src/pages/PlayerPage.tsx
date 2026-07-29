@@ -20,17 +20,27 @@ export default function PlayerPage() {
   const { roomState, matchState, loading, notFound, loadRoom, commitEdit, vote, steal } =
     useGame();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  /**
+   * Which action failed, as a copy key — not the thrown message.
+   *
+   * A write can fail in any phase and the player has to be told in the one they
+   * are in: "that edit didn't land" is no use to somebody whose vote didn't
+   * land. The thrown message is a Firebase string in English written for us,
+   * not for them, so what gets shown is our own line about the move they just
+   * made.
+   */
+  const [failed, setFailed] = useState<string | null>(null);
 
   const seat = Number(playerId);
 
-  async function run(action: () => Promise<void>) {
+  async function run(action: () => Promise<void>, failureKey: string) {
     setBusy(true);
-    setError(null);
+    setFailed(null);
     try {
       await action();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "generic");
+      console.error(e);
+      setFailed(failureKey);
     } finally {
       setBusy(false);
     }
@@ -70,7 +80,7 @@ export default function PlayerPage() {
 
   async function handleCommit(edit: Edit) {
     if (!id) return;
-    await run(() => commitEdit(id, edit));
+    await run(() => commitEdit(id, edit), "controller.commitFailed");
   }
 
   return (
@@ -85,20 +95,30 @@ export default function PlayerPage() {
       seatColor={slot.data?.color ?? seatColorFor(seat)}
       roomState={roomState}
     >
+      {/* Every phase writes something, so every phase can fail. This used to
+          live inside the turn, which is the one branch where a failure was
+          already obvious — a board that did not change. A vote that silently
+          does not land looks exactly like a vote that did. */}
+      {failed && (
+        <Typography role="alert" sx={{ mb: 2, color: color.flame }}>
+          {t(failed)}
+        </Typography>
+      )}
+
       {round.phase === "voting" ? (
         <VotePicker
           seats={seats}
           voterId={seat}
           locked={round.votes?.[seat]}
           busy={busy}
-          onVote={(suspectId) => run(() => vote(id!, seat, suspectId))}
+          onVote={(suspectId) => run(() => vote(id!, seat, suspectId), "controller.voteFailed")}
         />
       ) : round.phase === "steal" ? (
         isChameleon ? (
           <StealPicker
             edits={round.edits}
             busy={busy}
-            onSteal={(guess) => run(() => steal(id!, guess))}
+            onSteal={(guess) => run(() => steal(id!, guess), "controller.stealFailed")}
           />
         ) : (
           <Waiting>{t("controller.stealWait")}</Waiting>
@@ -117,11 +137,6 @@ export default function PlayerPage() {
             onCommit={handleCommit}
             busy={busy}
           />
-          {error && (
-            <Typography sx={{ mt: 2, color: color.flame }}>
-              {t("controller.commitFailed")}
-            </Typography>
-          )}
         </Box>
       ) : (
         // Whose turn it is, and nothing else. No render mirror, no inspector.

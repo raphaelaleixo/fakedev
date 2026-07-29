@@ -65,7 +65,17 @@ export default function Composer({
   const [draft, setDraft] = useState<ComposerDraft>({});
 
   const allProperties = useMemo(() => supportedCssProperties(), []);
-  const curated = useMemo(() => STYLE_SCHEMA.map((entry) => entry.key), []);
+  /**
+   * Alphabetical, not the order the schema is written in.
+   *
+   * The schema is grouped by concern — layout, then colour, then border, then
+   * type — which reads well as a file and badly as a list you are scanning on
+   * a phone with the table waiting. Alphabetical costs less than it looks like
+   * it should: the families stay adjacent anyway, since `border-*`, `font-*`
+   * and `text-*` sort together. What it does cost is `display` leading, which
+   * was the schema quietly recommending where to start.
+   */
+  const curated = useMemo(() => STYLE_SCHEMA.map((entry) => entry.key).sort(), []);
 
   // A span isn't a place to play until somebody has brought it into being, so
   // the board opens up as the round goes on.

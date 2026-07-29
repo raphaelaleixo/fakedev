@@ -2,9 +2,10 @@ import { useState, type ReactNode } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Stack } from "@mui/material";
+import { visuallyHidden } from "@mui/utils";
 import { FullscreenToggle, RoomInfoModal, type RoomState } from "react-gameroom";
-import { SEAT_COLORS } from "../game/constants";
 import type { SeatColor } from "../game/types";
+import SeatAvatar from "./canvas/SeatAvatar";
 import { color, font } from "../theme/tokens";
 import { Wordmark } from "./Wordmark";
 
@@ -65,19 +66,25 @@ export default function AppHeader({
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
         {slot}
 
+        {/* The same avatar the big screen draws, so a player can find
+            themselves in the contributors list without matching a colour to a
+            swatch — it is one picture of a person, used everywhere.
+
+            The avatar alone: the name is beside it on the TV and on the
+            player's own device it answers a question nobody is asking. The
+            initial and the colour are what identify a seat, and they are both
+            in here. */}
         {seatName && (
-          <Box
-            sx={{
-              px: 1.25,
-              py: 0.5,
-              fontFamily: font.mono,
-              fontSize: "0.8rem",
-              color: color.paper,
-              borderLeft: `4px solid ${seatColor ? SEAT_COLORS[seatColor] : color.inkRule}`,
-              backgroundColor: color.inkPanel,
-            }}
-          >
-            {seatName}
+          <Box sx={{ display: "inline-flex" }}>
+            <SeatAvatar seat={{ id: -1, name: seatName, color: seatColor ?? "slate" }} lit size={24} />
+            {/* Kept for anything that cannot see a coloured disc. `SeatAvatar`
+                is decorative by contract — it is `aria-hidden`, and it says so
+                on the grounds that a name always sits beside it. Taking the
+                name away visually does not make that untrue, it just moves it
+                out of sight. */}
+            <Box component="span" sx={visuallyHidden}>
+              {seatName}
+            </Box>
           </Box>
         )}
 

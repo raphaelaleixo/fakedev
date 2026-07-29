@@ -44,16 +44,19 @@ describe("ControllerShell", () => {
    * The decks are public knowledge in any game you've played twice, so showing
    * them leaks nothing — it just lets the Chameleon pick a hypothesis and play
    * toward it instead of improvising.
+   *
+   * The control is a "?", so its accessible name is the only thing carrying
+   * what it opens — which is the trade an icon-only button makes.
    */
   test("offers the Chameleon both decks to aim at", () => {
     const { container } = show(true);
-    expect(screen.getByText("Everything it could be")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Everything it could be" })).toBeInTheDocument();
     expect(container.textContent).toContain("Neumorphic");
     expect(container.textContent).toContain("Toggle Switch");
   });
 
   test("never offers the decks to a Dev, who has no use for them", () => {
     show(false);
-    expect(screen.queryByText("Everything it could be")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Everything it could be" })).toBeNull();
   });
 });

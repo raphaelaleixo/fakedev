@@ -24,13 +24,13 @@
   },
   "howToPlay": {
     "title": "How to play",
-    "goal": "A group of players must work together to find the one Chameleon among them, while that player tries to avoid detection.",
-    "secret": "Each round, players see the round's Secret — a style and a component, e.g. “Neumorphic · Toggle Switch”. The Chameleon is only told that a style and a component were drawn, and never learns which.",
-    "aim": "Nobody is trying to finish it. You are making the code look like the Secret, not build one — enough that the others can see you know it, and not so much that the Chameleon works it out.",
-    "turns": "Players take turns making one CSS edit each — name a property, give a value to one somebody else named, or add text. After everyone has had two turns, everyone votes on who they think the Chameleon is.",
+    "goal": "A group of players must work together to find the one Impostor among them, while that player tries to avoid detection.",
+    "secret": "Each round, players see the round's Secret — a style and a component, e.g. “Neumorphic · Toggle Switch”. The Impostor is only told that a style and a component were drawn, and never learns which.",
+    "aim": "Nobody is trying to finish it. You are making the code look like the Secret, not build one — enough that the others can see you know it, and not so much that the Impostor works it out.",
+    "turns": "Players take turns making one CSS edit each — name a property, give a value to one somebody else named, or add text. After everyone has had two turns, everyone votes on who they think the Impostor is.",
     "board": "The screen shows the code as it grows, not the component it would render, and every edit is in its author's colour.",
-    "escape": "The Chameleon wins if they don't get the majority vote.",
-    "steal": "But even if the Chameleon gets caught, they get one chance to guess the Secret. Get both halves and they still win. Get one and they salvage a point.",
+    "escape": "The Impostor wins if they don't get the majority vote.",
+    "steal": "But even if the Impostor gets caught, they get one chance to guess the Secret. Get both halves and they still win. Get one and they salvage a point.",
     "points": "First to five points takes the match.",
     "table": "Four to ten players, one screen everyone can see, and a device each.",
     "back": "Back to the start"
@@ -94,7 +94,7 @@
     "yourTurn": "Your turn",
     "otherTurn": "{{name}} is editing",
     "lookUp": "Look at the big screen",
-    "stealWait": "The Chameleon is guessing",
+    "stealWait": "The Impostor is guessing",
     "waitingForStart": "Waiting for the round to start",
     "badSeat": "That seat isn't in this room.",
     "commitFailed": "That edit didn't land. Try again.",
@@ -144,15 +144,15 @@
   },
   "result": {
     "theSecretWas": "It was",
-    "caught": "{{name}} was the Chameleon, and got caught",
-    "escaped": "{{name}} was the Chameleon, and walked away with it",
-    "tied": "The vote tied — {{name}} was the Chameleon, and escapes",
-    "stolen": "{{name}} was the Chameleon, got caught, and named both",
+    "caught": "{{name}} was the Impostor, and got caught",
+    "escaped": "{{name}} was the Impostor, and walked away with it",
+    "tied": "The vote tied — {{name}} was the Impostor, and escapes",
+    "stolen": "{{name}} was the Impostor, got caught, and named both",
     "guessed": "They guessed {{guess}}",
     "nextRound": "Next round",
     "matchWinner": "{{names}} wins",
-    "half": "{{name}} was the Chameleon, got caught, and named half of it",
-    "guessedNothing": "{{name}} was the Chameleon, got caught, and got neither"
+    "half": "{{name}} was the Impostor, got caught, and named half of it",
+    "guessedNothing": "{{name}} was the Impostor, got caught, and got neither"
   },
   "deck": {
     "style": {

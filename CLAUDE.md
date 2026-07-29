@@ -174,7 +174,11 @@ in it. Asking for any other weight silently resolves to one of those two.
 
 Use these in code and UI; don't invent synonyms.
 
-**Chameleon** (the hidden role; their controller reads `FAKE DEV`) ·
+**Impostor** in the UI, **Chameleon** in the code — the one place these
+deliberately differ. Players get the word every table already knows; the domain
+keeps `chameleonId`, `isChameleon` and the rest, because renaming a field that
+appears in Firebase documents is not worth the churn. Their controller reads
+`FAKE DEV` either way. ·
 **Devs** (everyone else) · **Contributors** (everyone taking turns, as the big
 screen's sidebar labels them — *including* the Chameleon, which is why this is
 not a synonym for Devs) · **Canvas** (the TV surface) · **Render Window** ·

@@ -141,9 +141,9 @@ describe("ResultScreen", () => {
     expect(screen.getByText("Primary Button")).toBeInTheDocument();
   });
 
-  test("names the Chameleon even when they were caught and lost", () => {
+  test("names the Impostor even when they were caught and lost", () => {
     show(<ResultScreen round={mockRoundAt("result", { styleId: "wireframe", componentId: "avatar" })} {...props} />);
-    expect(screen.getByText(/Ines was the Chameleon, got caught, and got neither/)).toBeInTheDocument();
+    expect(screen.getByText(/Ines was the Impostor, got caught, and got neither/)).toBeInTheDocument();
   });
 
   test("credits naming both halves", () => {

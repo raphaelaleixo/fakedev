@@ -1,5 +1,8 @@
 import GlobalStyles from "@mui/material/GlobalStyles";
-import { color, font, radius } from "./tokens";
+import { color, focusRing, font, motion, radius } from "./tokens";
+
+/** `inkPanel` -> `ink-panel`, so the custom properties read like CSS. */
+const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
 /**
  * Styles for the headless components `react-gameroom` ships — it deliberately
@@ -10,6 +13,28 @@ export default function AppGlobalStyles() {
   return (
     <GlobalStyles
       styles={{
+        /**
+         * The tokens, as custom properties.
+         *
+         * Emitted from the same objects the components import, so there is one
+         * source and no chance of a hex here disagreeing with a hex there. They
+         * exist for the CSS that has no component to live in — the view
+         * transition rules below, `react-gameroom`'s headless components — and
+         * so anything reading the DOM sees a named colour rather than a hex
+         * emotion generated.
+         *
+         * The MUI palette deliberately keeps the literals: it runs values
+         * through `alpha()` and friends, which parse colours and cannot parse
+         * `var(--flame)`.
+         */
+        ":root": {
+          ...Object.fromEntries(Object.entries(color).map(([name, value]) => [`--${kebab(name)}`, value])),
+          ...Object.fromEntries(Object.entries(motion).map(([name, value]) => [`--motion-${kebab(name)}`, value])),
+          "--font-display": font.display,
+          "--font-mono": font.mono,
+          "--font-prose": font.prose,
+        },
+
         // The page surfaces set their own colour; this is only what shows
         // through an overscroll bounce, and white there is jarring.
         body: { backgroundColor: color.ink },
@@ -68,16 +93,16 @@ export default function AppGlobalStyles() {
          * than sharing one rule.
          */
         "::view-transition-old(cover-art)": {
-          animation: "cover-drop 460ms cubic-bezier(0.5, 0, 0.85, 0.3) both",
+          animation: `cover-drop var(--motion-slow) var(--motion-exit) both`,
         },
         "::view-transition-old(cover-band), ::view-transition-old(cover-foot)": {
-          animation: "cover-drop 420ms 120ms cubic-bezier(0.5, 0, 0.85, 0.3) both",
+          animation: `cover-drop var(--motion-slow) var(--motion-stagger) var(--motion-exit) both`,
         },
         "::view-transition-new(cover-band), ::view-transition-new(cover-foot)": {
-          animation: "cover-rise 460ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
+          animation: `cover-rise var(--motion-slow) var(--motion-enter) both`,
         },
         "::view-transition-new(cover-art)": {
-          animation: "cover-rise 560ms 60ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
+          animation: `cover-rise var(--motion-slow) var(--motion-stagger) var(--motion-enter) both`,
         },
 
         /**
@@ -97,26 +122,26 @@ export default function AppGlobalStyles() {
         "@keyframes stage-in-right": { from: { transform: "translateX(100%)" } },
 
         "html.vt-round-start::view-transition-old(root)": {
-          animation: "stage-out-left 460ms cubic-bezier(0.65, 0, 0.35, 1) both",
+          animation: `stage-out-left var(--motion-slow) var(--motion-travel) both`,
         },
         "html.vt-round-start::view-transition-new(root)": {
-          animation: "stage-in-right 460ms cubic-bezier(0.65, 0, 0.35, 1) both",
+          animation: `stage-in-right var(--motion-slow) var(--motion-travel) both`,
         },
         "html.vt-round-start::view-transition-old(masthead), html.vt-round-start::view-transition-new(masthead)":
           { animation: "none" },
 
         "::view-transition-new(masthead)": {
-          animation: "masthead-drop 340ms 80ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
+          animation: `masthead-drop var(--motion-base) var(--motion-stagger) var(--motion-enter) both`,
         },
         "::view-transition-old(masthead)": {
-          animation: "masthead-lift 260ms cubic-bezier(0.4, 0, 1, 1) both",
+          animation: `masthead-lift var(--motion-quick) var(--motion-exit) both`,
         },
 
         // Everything unnamed rides in `root`: the cover's empty half on one
         // side, the arriving page's content on the other.
-        "::view-transition-old(root)": { animation: "content-out 180ms ease-in both" },
+        "::view-transition-old(root)": { animation: `content-out var(--motion-quick) var(--motion-exit) both` },
         "::view-transition-new(root)": {
-          animation: "content-in 360ms 140ms cubic-bezier(0.2, 0.8, 0.3, 1) both",
+          animation: `content-in var(--motion-base) var(--motion-stagger) var(--motion-enter) both`,
         },
 
         /**
@@ -130,6 +155,20 @@ export default function AppGlobalStyles() {
           },
         },
 
+        /**
+         * The heading RouteFocus lands on gets no ring.
+         *
+         * WCAG 2.4.7 is about *keyboard operable* components, and this one is
+         * not: `tabindex="-1"` keeps it out of the tab order, so nobody can
+         * ever reach it by tabbing. It is focused only by script, to announce
+         * the new view — and a browser default ring drawn around a headline is
+         * both meaningless and the loudest thing on the page.
+         *
+         * Scoped to the attribute RouteFocus sets rather than to headings in
+         * general, so this can never quietly swallow a real indicator.
+         */
+        "[data-route-focus]:focus": { outline: "none" },
+
         ".fullscreen-toggle": {
           fontFamily: font.mono,
           fontSize: "0.8rem",
@@ -140,6 +179,8 @@ export default function AppGlobalStyles() {
           padding: "6px 12px",
           cursor: "pointer",
           "&:hover": { color: color.paper, borderColor: color.paper },
+          // `react-gameroom` ships it headless, so its focus ring is ours too.
+          "&:focus-visible": focusRing,
         },
 
         ".room-info-modal": {

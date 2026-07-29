@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
-import AppHeader from "../components/AppHeader";
+import PageShell from "../components/PageShell";
 import { useOpenRoom } from "../hooks/useOpenRoom";
 import { color, font } from "../theme/tokens";
 
@@ -28,18 +28,8 @@ export default function JoinPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: "100dvh",
-        backgroundColor: color.ink,
-        color: color.paper,
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <AppHeader />
+    <PageShell fill>
       <Box
-        component="main"
         sx={{
           flex: 1,
           display: "flex",
@@ -138,6 +128,6 @@ export default function JoinPage() {
           )}
         </Box>
       </Box>
-    </Box>
+    </PageShell>
   );
 }

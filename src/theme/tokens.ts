@@ -68,6 +68,49 @@ export const font = {
   prose: 'system-ui, -apple-system, "Segoe UI", sans-serif',
 } as const;
 
+/**
+ * A focus ring that survives both surfaces.
+ *
+ * `outline: currentColor` was wrong, and wrong in the worst place: the cover's
+ * primary button is flame type on ink, sitting on the flame band, so the ring
+ * was drawn *outside* the button in flame — on flame. Invisible. The colour of
+ * an element's text says nothing about what is behind the element.
+ *
+ * Nothing single-coloured works everywhere here: paper reads on ink but barely
+ * on flame, ink reads on flame but not on ink. So the ring is two, adjacent —
+ * paper filling the offset gap, ink immediately outside it. Whichever surface
+ * it lands on, one of the two contrasts with it, and the pair contrasts with
+ * each other.
+ */
+export const focusRing = {
+  outline: `2px solid ${color.ink}`,
+  outlineOffset: 2,
+  boxShadow: `0 0 0 2px ${color.paper}`,
+} as const;
+
+/**
+ * Motion, as three easings and a scale of durations.
+ *
+ * These were literals scattered through the transition CSS — four spellings of
+ * the same curve, eleven durations between 60ms and 560ms with nothing saying
+ * which were meant to match. Naming them makes the choreography legible: things
+ * arriving use `enter`, things leaving use `exit`, and anything travelling the
+ * width of the screen uses `travel`.
+ */
+export const motion = {
+  /** Decelerating: for anything arriving, which should settle rather than stop. */
+  enter: "cubic-bezier(0.2, 0.8, 0.3, 1)",
+  /** Accelerating: for anything leaving, which should get out of the way. */
+  exit: "cubic-bezier(0.5, 0, 0.85, 0.3)",
+  /** Even at both ends, for a surface crossing the whole viewport. */
+  travel: "cubic-bezier(0.65, 0, 0.35, 1)",
+  quick: "180ms",
+  base: "340ms",
+  slow: "460ms",
+  /** The beat one thing waits so another can lead it. */
+  stagger: "80ms",
+} as const;
+
 /** Flat shapes, hard edges. Nothing here is rounded much and nothing is shadowed. */
 export const radius = {
   none: 0,

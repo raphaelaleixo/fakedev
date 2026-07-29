@@ -16,7 +16,7 @@ import {
   StealScreen,
   VotingScreen,
 } from "../components/canvas/VoteScreens";
-import AppHeader from "../components/AppHeader";
+import PageShell from "../components/PageShell";
 import { seatColorFor } from "../game/match";
 import { color } from "../theme/tokens";
 
@@ -149,27 +149,11 @@ export default function RoomPage() {
  * Masthead plus whatever the phase is showing, filling the viewport. It must
  * stay mounted across every phase change — see the note above `body`.
  */
-function Shell({
-  roomState,
-  children,
-}: {
-  roomState?: RoomState;
-  children: ReactNode;
-}) {
+function Shell({ roomState, children }: { roomState?: RoomState; children: ReactNode }) {
   return (
-    <Box
-      sx={{
-        minHeight: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: color.ink,
-      }}
-    >
-      <AppHeader roomState={roomState} />
-      <Box component="main" sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {children}
-      </Box>
-    </Box>
+    <PageShell roomState={roomState} fill>
+      {children}
+    </PageShell>
   );
 }
 

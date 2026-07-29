@@ -1,8 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Box, Container, Link, Stack, Typography } from "@mui/material";
-import AppHeader from "../components/AppHeader";
+import { Container, Link, Stack, Typography } from "@mui/material";
+import PageShell from "../components/PageShell";
 import LiveInspector, { type SeatInfo } from "../components/canvas/LiveInspector";
 import { foldEdits } from "../game/fold";
 import { seatColorFor } from "../game/match";
@@ -25,9 +25,8 @@ export default function HowToPlayPage() {
   const { t } = useTranslation();
 
   return (
-    <Box sx={{ minHeight: "100dvh", backgroundColor: color.ink, color: color.paper }}>
-      <AppHeader />
-      <Container component="main" maxWidth="sm" sx={{ py: { xs: 4, md: 7 } }}>
+    <PageShell>
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 7 } }}>
         <Typography variant="h3" component="h1">
           {t("howToPlay.title")}
         </Typography>
@@ -94,7 +93,7 @@ export default function HowToPlayPage() {
           {t("howToPlay.back")}
         </Link>
       </Container>
-    </Box>
+    </PageShell>
   );
 }
 

@@ -70,6 +70,9 @@ const HOUSES_WIDTH = "min(clamp(13rem, 26.5cqi, 18.4rem), 42dvh)";
  * bottom border and reading as the footer covering the button.
  */
 const SEAM_OVERLAP = 2;
+
+/** How far `focusRing` extends past the element it is on: offset, then ring. */
+const FOCUS_RING_REACH = 10;
 const flame = { backgroundColor: color.flame, color: color.ink, ...bleed } as const;
 
 /**
@@ -154,10 +157,10 @@ export default function HomePage() {
           sx={{
             ...flame,
             pt: { xs: 3, md: 4 },
-            // Reserves the strip the footer paints over; without it the
-            // outlined button's bottom border was being clipped, which read as
-            // the footer covering the button.
-            pb: `${SEAM_OVERLAP}px`,
+            // Reserves the strip the footer paints over, plus room for a focus
+            // ring — which is drawn *outside* the button, so a control sitting
+            // flush at the bottom has its ring painted over by the footer.
+            pb: `${SEAM_OVERLAP + FOCUS_RING_REACH}px`,
             containerType: "inline-size",
             viewTransitionName: "cover-band",
           }}

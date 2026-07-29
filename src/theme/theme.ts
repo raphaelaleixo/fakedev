@@ -1,5 +1,5 @@
 import { createTheme } from "@mui/material/styles";
-import { color, font, radius } from "./tokens";
+import { color, focusRing, font, radius } from "./tokens";
 
 /**
  * The app is dark. Every surface a player touches — cover, lobby, canvas,
@@ -71,11 +71,42 @@ const theme = createTheme({
         root: { border: `1px solid ${color.inkRule}`, backgroundImage: "none" },
       },
     },
+    // No ripple anywhere. The app is flat by design — hairlines separate and
+    // elevation never does — and a spreading circle is elevation's cousin.
+    MuiButtonBase: { defaultProps: { disableRipple: true } },
     MuiButton: {
-      defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
           borderRadius: radius.sm,
+          /**
+           * Flat, said here rather than through `disableElevation`.
+           *
+           * That prop emits `&.Mui-focusVisible { box-shadow: none }`, which
+           * cancelled half the focus ring — the inner one is a box-shadow, and
+           * on the flame band that inner ring is the half doing the work.
+           * Zeroing the shadow ourselves keeps buttons flat and leaves focus
+           * free to draw.
+           */
+          boxShadow: "none",
+          "&:hover": { boxShadow: "none" },
+          /**
+           * Press feedback, now that the ripple is gone.
+           *
+           * A scale rather than a darker fill, because the fill is the one
+           * thing that differs across variants — contained is ink, outlined and
+           * text are transparent — so a colour shift would be invisible on two
+           * of the three. This is the same on all of them, and on both
+           * surfaces.
+           *
+           * Individual `scale` rather than `transform`, so nothing here has to
+           * know whether something else already set a transform.
+           */
+          "&:active": { boxShadow: "none", scale: "0.97" },
+          transition:
+            "scale 80ms ease-out, background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out",
+          // A press is a response to input, not motion for its own sake — so it
+          // still happens, it just stops being animated.
+          "@media (prefers-reduced-motion: reduce)": { transition: "none" },
           paddingInline: 20,
           paddingBlock: 10,
           /**
@@ -94,16 +125,8 @@ const theme = createTheme({
             color: color.inkPunct,
             borderColor: color.inkRule,
           },
-          /**
-           * MUI suppresses the UA focus ring, so put a real one back. Drawing
-           * it in `currentColor` is what lets one rule work on both surfaces:
-           * ink type on the flame band, flame type on every dark page. The
-           * offset keeps it clear of the fill.
-           */
-          "&:focus-visible": {
-            outline: `2px solid currentColor`,
-            outlineOffset: 2,
-          },
+          // MUI suppresses the UA focus ring, so put a real one back.
+          "&:focus-visible": focusRing,
         },
         contained: { "&:hover": { backgroundColor: color.paper, color: color.ink } },
         /**
@@ -182,6 +205,9 @@ const theme = createTheme({
       },
     },
     MuiSlider: { styleOverrides: { root: { color: color.flame } } },
+    // Links are focusable too, and MUI leaves them to the UA — which draws a
+    // ring the same colour on both surfaces, so it disappears on one of them.
+    MuiLink: { styleOverrides: { root: { "&:focus-visible": focusRing } } },
   },
 });
 

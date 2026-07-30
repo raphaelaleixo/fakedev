@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host",
     "og": "node scripts/og-image.mjs",
+    "icons": "node scripts/icons.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

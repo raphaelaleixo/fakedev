@@ -30,6 +30,7 @@ function beat(round: Round, extra: Partial<Parameters<typeof ResolutionScreen>[0
       finished={false}
       onRevealDone={() => undefined}
       onNext={() => undefined}
+      onNewGame={() => undefined}
       {...extra}
     />,
   );
@@ -273,5 +274,40 @@ describe("the answer beat", () => {
   test("shares the win when two players tie at the top", () => {
     beat(RESULT, { finished: true, winnerIds: [1, 2] });
     expect(screen.getByText("Rafa & Ana wins")).toBeInTheDocument();
+  });
+
+  /**
+   * The finished room used to be a dead end: the winner line replaced the only
+   * button on the screen and nothing took its place, so a table that had just
+   * played a whole match had no way to start another one.
+   */
+  test("offers a new game once the match is over, and not before", () => {
+    const onNewGame = vi.fn();
+    beat(RESULT, { finished: true, winnerIds: [1], onNewGame });
+
+    screen.getByRole("button", { name: "New game" }).click();
+    expect(onNewGame).toHaveBeenCalledTimes(1);
+  });
+
+  test("keeps the new game out of a live match", () => {
+    beat(RESULT);
+    expect(screen.queryByRole("button", { name: "New game" })).toBeNull();
+  });
+
+  /**
+   * The label is the cover's, deliberately. "Play again" would promise the
+   * table carries over, and none of it does — this opens a different room.
+   */
+  test("says it is opening while the room is being made", () => {
+    beat(RESULT, { finished: true, winnerIds: [1], newGamePending: true });
+    expect(screen.getByRole("button", { name: "Opening…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  test("says so when the room could not be opened", () => {
+    beat(RESULT, { finished: true, winnerIds: [1], newGameFailed: true });
+    expect(screen.getByRole("alert")).toHaveTextContent(/couldn't open a room/i);
   });
 });

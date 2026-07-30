@@ -5,6 +5,7 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import type { RoomState } from "react-gameroom";
 import { useGame } from "../contexts/GameContext";
 import { roundStage, stageTransition } from "../game/round";
+import { useOpenRoom } from "../hooks/useOpenRoom";
 import { useViewTransition } from "../hooks/useViewTransition";
 import Lobby from "../components/Lobby";
 import Canvas from "../components/canvas/Canvas";
@@ -34,6 +35,11 @@ export default function RoomPage() {
     nextRound,
   } = useGame();
   const [starting, setStarting] = useState(false);
+  /**
+   * The way out of a finished match, and it leaves this room behind — the same
+   * hook the cover presses, so a rematch and a cold start are one path.
+   */
+  const { open: openRoom, opening, failed } = useOpenRoom();
 
   /**
    * The round starting is not a navigation — same URL, same page, a status
@@ -140,6 +146,9 @@ export default function RoomPage() {
             winnerIds={matchState?.winnerIds}
             onRevealDone={() => id && closeVoting(id)}
             onNext={() => id && nextRound(id)}
+            onNewGame={openRoom}
+            newGamePending={opening}
+            newGameFailed={failed}
           />
         );
     }

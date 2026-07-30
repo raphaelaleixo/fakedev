@@ -73,6 +73,9 @@ export default function ResolutionScreen({
   winnerIds,
   onRevealDone,
   onNext,
+  onNewGame,
+  newGamePending,
+  newGameFailed,
 }: {
   round: Round;
   phase: ResolutionPhase;
@@ -82,6 +85,10 @@ export default function ResolutionScreen({
   winnerIds?: number[];
   onRevealDone: () => void;
   onNext: () => void;
+  /** Only ever pressed when `finished` — opens a new room, not a rematch. */
+  onNewGame: () => void;
+  newGamePending?: boolean;
+  newGameFailed?: boolean;
 }) {
   const { t } = useTranslation();
   const [named, setNamed] = useState(false);
@@ -308,6 +315,9 @@ export default function ResolutionScreen({
               finished={finished}
               winnerIds={winnerIds}
               onNext={onNext}
+              onNewGame={onNewGame}
+              newGamePending={newGamePending}
+              newGameFailed={newGameFailed}
             />
           )}
         </Box>
@@ -496,12 +506,18 @@ function Answer({
   finished,
   winnerIds,
   onNext,
+  onNewGame,
+  newGamePending,
+  newGameFailed,
 }: {
   round: Round;
   seats: SeatInfo[];
   finished: boolean;
   winnerIds?: number[];
   onNext: () => void;
+  onNewGame: () => void;
+  newGamePending?: boolean;
+  newGameFailed?: boolean;
 }) {
   const { t } = useTranslation();
   const outcome = round.outcome;
@@ -534,13 +550,42 @@ function Answer({
       <Typography sx={beatLine}>{headline}</Typography>
 
       {finished ? (
-        <Typography sx={{ ...beatLine, color: color.flame }}>
-          {t("result.matchWinner", {
-            names: (winnerIds ?? [])
-              .map((id) => seats.find((s) => s.id === id)?.name ?? `#${id}`)
-              .join(" & "),
-          })}
-        </Typography>
+        /**
+         * The match ends here and the way on is a *new room*, not a rematch —
+         * so this is the cover's New game, and it says so. "Play again" would
+         * promise the table carries over, and nothing does: the seats, the
+         * scores and both used pools are gone with the old room.
+         *
+         * The press is a prop, like `onNext` beside it. `useOpenRoom` — which
+         * owns the double-press guard and the frame-then-`flushSync` that keeps
+         * the view transition animating against a committed state — is called
+         * by `RoomPage` and handed down. Calling the hook here would drag
+         * `useNavigate` *and* `useGame` into a screen that otherwise renders
+         * from its props, and every test of it would need a router and a
+         * provider to draw a scoreboard.
+         */
+        <>
+          <Typography sx={{ ...beatLine, color: color.flame }}>
+            {t("result.matchWinner", {
+              names: (winnerIds ?? [])
+                .map((id) => seats.find((s) => s.id === id)?.name ?? `#${id}`)
+                .join(" & "),
+            })}
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={onNewGame}
+            aria-disabled={newGamePending}
+          >
+            {t(newGamePending ? "home.newGamePending" : "home.newGame")}
+          </Button>
+          {newGameFailed && (
+            <Typography role="alert" variant="caption" sx={{ color: color.flame }}>
+              {t("home.newGameFailed")}
+            </Typography>
+          )}
+        </>
       ) : (
         <Button variant="contained" size="large" onClick={onNext}>
           {t("result.nextRound")}

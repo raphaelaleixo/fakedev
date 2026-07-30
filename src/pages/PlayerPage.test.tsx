@@ -129,3 +129,54 @@ describe("PlayerPage, when a write fails", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
+
+/**
+ * The match ending, which the controller used to sleep through.
+ *
+ * `result` is the phase every round ends in, so before this the winner of a
+ * whole match and somebody about to play another round were shown the same
+ * four words. The distinguishing fact is on the match, not the round.
+ */
+describe("PlayerPage, when the match is over", () => {
+  /** Seat 1 is this device — see `show`. */
+  const finishedMatch = (winnerIds: number[]) =>
+    ({
+      matchState: {
+        status: "finished",
+        winnerIds,
+        scores: { 1: 5, 2: 3 },
+        round: { ...mockRoundAt("result"), votes: {} },
+      },
+    }) as unknown as Partial<GameContextValue>;
+
+  test("tells the winner they won, and what they finished on", () => {
+    show("result", finishedMatch([1]));
+
+    expect(screen.getByText("You won")).toBeInTheDocument();
+    expect(screen.getByText("5 points, and the match")).toBeInTheDocument();
+  });
+
+  test("names the winner to everybody else, with their own total", () => {
+    show("result", finishedMatch([2]));
+
+    expect(screen.getByText("Ana wins")).toBeInTheDocument();
+    expect(screen.getByText("You finished with 5")).toBeInTheDocument();
+    expect(screen.queryByText("You won")).toBeNull();
+  });
+
+  /** A shared win is still a win, and the phone says so plainly. */
+  test("reads the same when the win is shared", () => {
+    show("result", finishedMatch([1, 2]));
+    expect(screen.getByText("You won")).toBeInTheDocument();
+  });
+
+  /**
+   * The regression that matters: this branch is shared with every ordinary
+   * round, and stealing `result` from it would break all of them.
+   */
+  test("leaves a mid-match round ending alone", () => {
+    show("result");
+    expect(screen.getByText("The round has ended")).toBeInTheDocument();
+    expect(screen.queryByText("You won")).toBeNull();
+  });
+});

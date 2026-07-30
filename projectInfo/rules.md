@@ -218,7 +218,10 @@ every vote at once.
 **Resolution** — the Chameleon revealed **always**, both halves of the Secret
 revealed, the render shown for the first time, points and the scoreboard.
 
-**Match end** — winner and final standings.
+**Match end** — not a screen of its own. The resolution holds, the winner is
+named where the next-round button was, and a **New game** beside it opens a
+fresh room. The scoreboard already on that screen is the final standings.
+Nothing carries over: a new match is a new room, and everybody rejoins.
 
 ## Controller (`/room/:id/player/:playerId`)
 

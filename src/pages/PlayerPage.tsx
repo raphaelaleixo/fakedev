@@ -91,6 +91,16 @@ export default function PlayerPage() {
   const component = getComponent(round.componentId);
   const active = activePlayerId(round);
 
+  /**
+   * The match ending is a property of the *match*, not the round, so it has to
+   * be read from `status` rather than from a phase. The round underneath it is
+   * still in `result` — it is the last one played, and the TV is still holding
+   * it up.
+   */
+  const matchOver = matchState?.status === "finished" && round.phase === "result";
+  const iWon = matchState?.winnerIds?.includes(seat) ?? false;
+  const myScore = matchState?.scores?.[seat] ?? 0;
+
   const seats: SeatInfo[] = roomState.players
     .filter((p) => p.status !== "empty")
     .map((p) => ({
@@ -151,6 +161,31 @@ export default function PlayerPage() {
             note={t("controller.guessing")}
           />
         )
+      ) : matchOver ? (
+        /**
+         * The one ending that is *yours*.
+         *
+         * The TV is the shared ending — it holds the board, the Secret and the
+         * standings — so the only thing this screen can say that the room
+         * cannot is how it went for you. Telling the winner "the round has
+         * ended", which is what this branch used to do, is the version of that
+         * sentence with the news taken out.
+         *
+         * A shared win reads the same as a solo one. You won; how many people
+         * you won with is the scoreboard's business.
+         */
+        <Waiting
+          headline={
+            iWon
+              ? t("controller.youWon")
+              : t("result.matchWinner", {
+                  names: (matchState?.winnerIds ?? [])
+                    .map((id) => seats.find((s) => s.id === id)?.name ?? `#${id}`)
+                    .join(" & "),
+                })
+          }
+          note={t(iWon ? "controller.yourFinalScore" : "controller.youFinished", { score: myScore })}
+        />
       ) : round.phase !== "turns" ? (
         /**
          * Two states share this branch and only one of them is an ending. The

@@ -38,6 +38,8 @@ const PHASES: (RoundPhase | "lobby")[] = [
 ];
 
 const SCORES = { 1: 3, 2: 1, 4: 2, 5: 1 };
+/** Whoever is top of `SCORES` — the shared win is one id away if it needs seeing. */
+const WINNER_IDS = [1];
 
 export default function MockBigScreen() {
   const [view, setView] = useState<RoundPhase | "lobby">("turns");
@@ -53,6 +55,8 @@ export default function MockBigScreen() {
   const [steal, setSteal] = useState(0);
   const [lockedIn, setLockedIn] = useState(MOCK_SEATS.length);
   const [verdict, setVerdict] = useState<MockVerdict>("caught");
+  /** The match ending, which is otherwise only reachable by playing to five. */
+  const [finished, setFinished] = useState(false);
   const [slow, setSlow] = useState(false);
 
   // Scales every duration in the choreography at once, so the *order* of the
@@ -101,9 +105,12 @@ export default function MockBigScreen() {
             phase={phase}
             seats={MOCK_SEATS}
             scores={SCORES}
-            finished={false}
+            finished={view === "result" && finished}
+            winnerIds={WINNER_IDS}
             onRevealDone={() => setView("steal")}
             onNext={() => setView("turns")}
+            // A mock must not open a real room; the lobby is where one lands.
+            onNewGame={() => setView("lobby")}
           />
         );
       }
@@ -175,6 +182,12 @@ export default function MockBigScreen() {
         {view === "result" && (
           <Button size="small" variant="outlined" onClick={() => setSteal((s) => (s + 1) % 3)}>
             steal: {["both", "one", "neither"][steal]}
+          </Button>
+        )}
+
+        {view === "result" && (
+          <Button size="small" variant="outlined" onClick={() => setFinished((f) => !f)}>
+            match: {finished ? "over" : "playing"}
           </Button>
         )}
 

@@ -68,7 +68,8 @@ export default function TurnRail({
                     flex: "none",
                     fontFamily: font.display,
                     fontWeight: 800,
-                    fontSize: "0.95rem",
+                    // Inherited from the row, so the score grows with the name
+                    // rather than shrinking away from it on a big screen.
                     fontVariantNumeric: "tabular-nums",
                     color: active ? color.flame : dim(color.flame, 70),
                   }}

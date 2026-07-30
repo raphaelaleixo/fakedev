@@ -71,14 +71,26 @@ export function SeatRow({
       component="li"
       aria-current={current || undefined}
       sx={{
+        /**
+         * The one knob the whole row is drawn from.
+         *
+         * This list is read from the other side of a room, so it scales with
+         * the viewport like the inspector beside it rather than sitting at a
+         * laptop's idea of small. Everything below is in `em`, which means the
+         * avatar, the gaps and the round's value all follow this one number and
+         * the row keeps its proportions at every size.
+         *
+         * The floor is what it used to be flat, so nothing shrinks on a phone.
+         */
+        fontSize: "clamp(0.95rem, 1.3vw, 1.4rem)",
         display: "flex",
         alignItems: "center",
-        gap: 1.25,
-        py: 1,
+        gap: "0.66em",
+        py: "0.5em",
         "&:not(:last-of-type)": { borderBottom: `1px solid ${color.inkRule}` },
       }}
     >
-      <SeatAvatar seat={seat} lit={lit} ringed={ringed} />
+      <SeatAvatar seat={seat} lit={lit} ringed={ringed} size="1.9em" />
       {/* The name and the word beside it sit on one baseline, which is the
           only way two different type sizes look deliberate rather than
           nudged. Nested rather than aligned across the whole row: baseline
@@ -104,7 +116,6 @@ export function SeatRow({
             whiteSpace: "nowrap",
             fontFamily: font.display,
             fontWeight: 600,
-            fontSize: "0.95rem",
             color: lit ? color.paper : dim(color.paper, 60),
           }}
         >

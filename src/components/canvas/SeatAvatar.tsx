@@ -25,7 +25,11 @@ export default function SeatAvatar({
   lit?: boolean;
   /** A ring, for the one seat the screen is currently about. */
   ringed?: boolean;
-  size?: number;
+  /**
+   * Pixels, or any CSS length. A length in `em` lets a row that scales with the
+   * viewport carry its avatar with it instead of pinning it to one number.
+   */
+  size?: number | string;
 }) {
   const tint = seat ? SEAT_COLORS[seat.color] : color.muted;
   const name = seat?.name ?? "?";
@@ -44,7 +48,9 @@ export default function SeatAvatar({
         color: color.ink,
         fontFamily: font.display,
         fontWeight: 800,
-        fontSize: size * 0.5,
+        // Half the circle either way — the initial is drawn to the avatar, not
+        // to whatever type it happens to be sitting next to.
+        fontSize: typeof size === "number" ? size * 0.5 : `calc(${size} * 0.5)`,
         lineHeight: 1,
         // A ring rather than a fill change, so the seat colour stays the seat
         // colour whatever the screen is doing with it.

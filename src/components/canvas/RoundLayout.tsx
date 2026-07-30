@@ -90,8 +90,10 @@ export default function RoundLayout({
           fontFamily: font.display,
           fontWeight: 600,
           // Between the label it was and the question it becomes: big enough to
-          // head a column, small enough not to compete with the round.
-          fontSize: "clamp(1rem, 1.5vw, 1.25rem)",
+          // head a column, small enough not to compete with the round. The cap
+          // clears the roster's own, so the list can never outgrow its heading
+          // on a wide screen.
+          fontSize: "clamp(1rem, 1.6vw, 1.7rem)",
           lineHeight: 1.2,
           color: color.paper,
         }}

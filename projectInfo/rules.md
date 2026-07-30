@@ -9,9 +9,9 @@ them.*
 A hidden-role party game for frontend developers, adapted from *A Fake Artist
 Goes to New York* (Oink Games). Instead of drawing on a shared sheet of paper,
 players build a UI component together, one code edit at a time. The TV shows the
-DOM as it accumulates; laptops are private controllers. Everyone knows what's
-being built except the **Chameleon**, who must bluff through two turns without
-ever learning it.
+DOM as it accumulates; each player's own device — phone or laptop — is a private
+controller. Everyone knows what's being built except the **Chameleon**, who must
+bluff through two turns without ever learning it.
 
 **The goal is not to finish the component. It's to see who is working toward
 it.** Rounds end half-built, and that is correct — the paper game's drawing is
@@ -155,9 +155,12 @@ caught and the Chameleon escapes.
 
 ## The steal, split across both axes
 
-A caught Chameleon guesses **both halves**, from two slates of five drawn at
-steal time — five styles and five components, each including the true answer.
+A caught Chameleon guesses **both halves** over the **full deck** — any of the
+thirteen styles and any of the fourteen components, from a searchable dropdown.
 One answer per axis, no second attempt.
+
+*This replaces the slates of five this spec originally called for; the reasoning
+is in `decisions.md`, along with the odds it costs.*
 
 **They see the render while they guess.** This is the one place a controller
 shows it, and it's what keeps the steal as fair as the paper game's, where the
@@ -210,7 +213,7 @@ the DOM filling the rest of the screen.
 **Vote** — the countdown, then who has locked in (never who they picked), then
 every vote at once.
 
-**Steal** — that the Chameleon is guessing. Never the slates.
+**Steal** — that the Chameleon is guessing. Never the guess itself.
 
 **Resolution** — the Chameleon revealed **always**, both halves of the Secret
 revealed, the render shown for the first time, points and the scoreboard.
@@ -230,7 +233,7 @@ revealed, the render shown for the first time, points and the scoreboard.
 - **Not your turn** — whose turn it is, and nothing else. No DOM mirror.
 - **Your turn** — the move composer above.
 - **Vote** — tap a player, confirm, locked.
-- **Caught Chameleon only** — the render, and the two slates.
+- **Caught Chameleon only** — the render, and the two guesses.
 - **Never shown** — other players' roles, other players' pending edits, or the
   DOM.
 
@@ -241,19 +244,28 @@ revealed, the render shown for the first time, points and the scoreboard.
 - **Rejoin** — the same URL restores seat, role and Secret. The masthead's room
   code opens the QR and seat links from any screen.
 - **Tie vote** — nobody is caught; the Chameleon escapes with +2.
-- **Illegal moves** — impossible by construction; every step is a constrained
-  set, and values are gated on `CSS.supports`.
+- **Illegal moves** — a move can't be malformed: the target and move steps are
+  closed sets, and a value has to pass `CSS.supports` before it can be
+  committed. What is *not* constrained is the vocabulary — the property list
+  comes from the browser and values can be free-form. See `decisions.md` on the
+  whitelist question.
 - **Writing the answer down** — impossible. Copy is fixed lorem ipsum; the only
   thing a text move decides is *where* a span exists.
 - **Player leaves in lobby** — fine. Below 4, the match can't start.
 
 ## Vocabulary
 
-**Chameleon** (the hidden role; their controller reads `FAKE DEV`) · **Devs** ·
-**Canvas** (the TV surface) · **Live Inspector** (the DOM pane) · **Render
-Window** (the resolution reveal) · **Commit** (one player edit) · **Style** and
-**Component** (the two halves of a Secret) · **Steal** (the caught Chameleon's
-guess) · **Open** and **Answer** (the two halves of a declaration)
+**Chameleon** in the code, **Impostor** in the UI — the one place these
+deliberately differ. Players get the word every table already knows; the domain
+keeps `chameleonId` and `isChameleon`, because renaming a field that appears in
+Firebase documents isn't worth the churn. Their controller reads `FAKE DEV`
+either way. ·
+**Devs** (everyone else) · **Contributors** (everyone taking turns, as the big
+screen's sidebar labels them — *including* the Chameleon, so not a synonym for
+Devs) · **Canvas** (the TV surface) · **Live Inspector** (the DOM pane) ·
+**Render Window** (the resolution reveal) · **Commit** (one player edit) ·
+**Style** and **Component** (the two halves of a Secret) · **Steal** (the caught
+Chameleon's guess) · **Open** and **Answer** (the two halves of a declaration)
 
 ## Still open
 

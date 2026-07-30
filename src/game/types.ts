@@ -218,7 +218,7 @@ export type RoundPhase =
   | "voting"
   /** Votes revealed together on the TV. */
   | "reveal"
-  /** Caught Chameleon picks from the 5-card slate. Nobody else acts. */
+  /** Caught Chameleon names both halves over the full deck. Nobody else acts. */
   | "steal"
   /** Chameleon + Secret public, points awarded, scoreboard. */
   | "result";

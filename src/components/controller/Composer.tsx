@@ -38,10 +38,11 @@ interface Slot {
  * somebody's intent, maybe yours, maybe not. Choosing between those is the game,
  * so the moves sit side by side as equals rather than as stages of one flow.
  *
- * Keyboard-first: everyone plays this on a laptop, so the property step is a
- * type-to-filter autocomplete with the curated set pre-listed. Chips are
- * browsable for a player who doesn't know a property exists; typing falls
- * through to every property the browser supports for one who does.
+ * The property step is a type-to-filter autocomplete that opens its list on
+ * focus, which is what lets one control serve both devices: the curated set is
+ * browsable by tapping for a player who doesn't know a property exists, and
+ * typing widens the search to every property the browser supports for one who
+ * does. A phone never has to raise a keyboard to play a normal turn.
  *
  * Note what this deliberately does *not* do: no progress meter, nothing nudging
  * a player toward filling anything in. Finishing the component was never the

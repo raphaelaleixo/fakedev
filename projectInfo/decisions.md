@@ -5,16 +5,6 @@ contradict it, they win, and the reason is recorded here.
 
 ## Resolved from `rules.md`'s open list
 
-**Decoy selection — similarity groups, 5 per group.** Every Secret carries a
-required `group`. Groups hold exactly 5 cards, so 15 cards per category is
-exactly 3 groups, and the steal slate *is* the Secret's group, shuffled. No
-draw logic beyond a shuffle.
-
-*Known cost:* the slate is deterministic per Secret — only the order varies. A
-group that plays often will eventually learn that `Progress Bar` always appears
-beside the same four cards. Fixable later by widening groups to 7–8 and drawing
-4, which needs no type change.
-
 **No private state.** This is a game played with friends in one room. Hidden
 information is hidden by what each surface *renders*, not by what it receives:
 one `game` node, every client subscribes to all of it. The TV holds the Secret
@@ -137,14 +127,33 @@ dev-flavored move and a good tell, but **capped at the same 24 characters** as
 `{label}` and `{text}`, or the two-text-slot design is quietly three with one
 uncapped.
 
-## Everyone is on laptops
+## Any device — reversing "everyone is on laptops"
 
-Assumed input device for the controller is a laptop with a keyboard, not a
-thumb. Type-to-filter is therefore the *primary* input and chips are the
-secondary affordance — the composer is built keyboard-first. This also removes
-the ergonomic objection to free-form values (typing
-`linear-gradient(135deg, #ff71ce, #01cdfe)` on a phone is miserable; on a
-keyboard it's nothing).
+This section used to assume a laptop with a keyboard, not a thumb: type-to-filter
+was the *primary* input, chips the secondary affordance, and free-form values
+were justified on the grounds that typing
+`linear-gradient(135deg, #ff71ce, #01cdfe)` on a phone is miserable while on a
+keyboard it's nothing. **That assumption is withdrawn — a phone is a first-class
+controller.**
+
+What changed is that typing stopped being the primary path. The value step is
+**chosen by the key's `valueType`**, so the common moves never need a keyboard at
+all: an enum is a row of chips, a colour is the twelve-swatch palette, a length
+is a number field beside a unit select. The property step opens its list on
+focus, so the curated set is browsable by tapping and typing only widens the
+search to everything the browser supports. Free text is what an unauthored key
+falls through to — the escape hatch, not the road.
+
+The premise was sound and the conclusion outlived it. "Typing a gradient on a
+phone is miserable" is still true; it just stopped being the thing a turn asks
+you to do.
+
+Consequences already in the code, recorded here so they don't read as accidents:
+the Secret bar sits along the *bottom* of the controller, where a thumb is and
+where a neighbour glancing over doesn't see it first, and it pads to
+`env(safe-area-inset-bottom)`. Type-to-filter remains — it's still the fastest
+input for anyone who knows the property they want, which on a laptop is most
+turns. It is no longer the input the design is *built around*.
 
 Routes and the two-surface split are unchanged.
 
@@ -156,10 +165,10 @@ everywhere except one screen: the steal.
 In the paper game the fake artist guesses **while looking at the finished
 drawing** — it's on the table in front of everyone. The render is that drawing.
 Now that it only appears at resolution, withholding it until after the guess
-would make our steal strictly harder than the source, and the 20% blind floor
-and the +3 payout were both balanced against the source.
+would make our steal strictly harder than the source, and both the blind odds
+and the payout for a perfect steal were balanced against the source.
 
-So the caught Chameleon's controller shows the render above the slate. The Devs
+So the caught Chameleon's controller shows the render above the guess. The Devs
 still don't see it — the TV holds it for resolution — so the reveal beat
 survives intact, and the asymmetry is deliberate: the person guessing gets what
 the paper game gives them, and nobody else gets an early look.
